@@ -330,4 +330,6 @@ of writting HTML within the closure, inside the module one should draw elements 
 More will be written on that later, but for the most part all HTML elements should be drawn through the UI
 library. This will also allow future theme overriding to be added (in the works).
 
+The UI library may be found under: /mcp_root/App/Lib/UI
+Example of module usage: /mcp_root/Component/Site/Module/List/List.php (~line 72) - only other way would be HTML there
 
