@@ -287,3 +287,47 @@ should be placed in models. NEVER run queries witin modules or god have mercy on
 soul - templates <shivers>. Templates and Modules may call methods on a DAO that return data
 but never skip creating a DAO method running queries directly within modules or templates.
 
+* Drawing User Interface Elements
+
+Initailly, using straight HTML seemed to work fine in templates. However, with the emergence
+of table, list and pager builders it become very clear that either HTML for form controls
+would either need to be hardcoded in closures defined in a module or separated out into
+an additional layer. So going with the lesser of evils a completely new, separate layer
+was developed with the purpose of drawing User interface elements. What I am coining
+as the User Interface Library has been written completely separatly of the MCP. It may
+be pulled away from the MCP, but the MCP may not be pulled away from it (unless on were
+to write there own UI library handler). 
+
+The purpose of the UI library is to make is to provide snippets of reusable code for drawing
+common HTML elements such as; headings or building of complex elements such as; forms, tables
+etc. Most templates have been updated to use the UI library to result in more bug proof code
+and provide a common, consistent interface to draw UI elements.
+
+The way to draw any UI element is to provide the path relative to the elements directory and pass
+in the required items as an associative array. Required items are defined in the settings() method
+for any UI element. Anything with 'required' => true is an item that is required. When a required
+item is not passed as expected an exception will be thrown. Similarly when an element doesn't exist, that
+was required an exception will thrown.
+
+A single method has been added to the MCP facade to allow direct interfacion with the UI library: ui().
+
+That method is a direct gateway to UI->draw() method, wile allowing the MCP to react or possibly change
+how something is drawn in the future, or even pull away the entire UI library completely using something
+else, though logic would be necessary to do so, for the namespace mappings of each drawn element.
+
+Drawing UI example:
+
+echo $this->_objMCP->ui('Common.Field.Link',array('url'=>'#','label'=>'Hello'));
+
+Within any template the ui method may be used directly without referencing the MCP, facade:
+
+echo $this->ui('Common.Field.Link',array('url'=>'#','label'=>'Hello'));
+
+Where this becomes mostly useful is inside modules, when defining table configuration with a field
+mutation, for example changing a title of a node to a link or displaying the form control. Instead
+of writting HTML within the closure, inside the module one should draw elements through the UI library.
+
+More will be written on that later, but for the most part all HTML elements should be drawn through the UI
+library. This will also allow future theme overriding to be added (in the works).
+
+
