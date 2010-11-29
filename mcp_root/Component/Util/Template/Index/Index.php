@@ -1,0 +1,1 @@
+<p>Default index page</p>

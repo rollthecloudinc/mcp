@@ -1,0 +1,124 @@
+<?xml version="1.0"?>
+<config>
+	<site_title>
+		<label>Title</label>
+		<value>Default Title</value>
+		<type>text</type>
+	</site_title>
+	<site_heading>
+		<label>Heading</label>
+		<value>Default Heading</value>
+		<type>text</type>
+	</site_heading>
+	<site_master_template>
+		<label>Master Template</label>
+		<value>/Component/Util/Template/Master/Master.php</value>
+		<type>path</type>
+	</site_master_template>
+	<site_header_module>
+		<label>Header Module</label>
+		<value>Component.Util.Module.Header</value>
+		<type>component</type>
+	</site_header_module>
+	<site_footer_module>
+		<label>Footer Module</label>
+		<value>Component.Util.Module.Footer</value>
+		<type>component</type>
+	</site_footer_module>
+	<site_css_module>
+		<label>CSS Module</label>
+		<value>Component.Util.Module.Display.CSS</value>
+		<type>component</type>
+	</site_css_module>
+	<site_css_template>
+		<label>CSS Template</label>
+		<value>/Component/Util/Template/Display/CSS/CSS.php</value>
+		<type>path</type>
+	</site_css_template>
+	<site_css_folder>
+		<label>CSS Folder</label>
+		<value>/Site/*/css</value>
+		<type>path</type>
+	</site_css_folder>
+	<site_js_module>
+		<label>JS Module</label>
+		<value>Component.Util.Module.Display.JS</value>
+		<type>component</type>
+	</site_js_module>
+	<site_js_template>
+		<label>JS Template</label>
+		<value>/Component/Util/Template/Display/JS/JS.php</value>
+		<type>path</type>
+	</site_js_template>
+	<site_js_folder>
+		<label>JS Folder</label>
+		<value>/Site/*/js</value>
+		<type>path</type>
+	</site_js_folder>
+	<site_meta_module>
+		<label>Meta Module</label>
+		<value>Component.Util.Module.Display.Meta</value>
+		<type>component</type>
+	</site_meta_module>
+	<site_meta_template>
+		<label>Meta Template</label>
+		<value>/Component/Util/Template/Display/Meta/Meta.php</value>
+		<type>path</type>
+	</site_meta_template>
+	<site_email_html_master_template>
+		<label>Email HTML Master Template</label>
+		<value>/Component/Util/Template/Master/Email/HTML.php</value>
+		<type>path</type>
+	</site_email_html_master_template>
+	<site_email_plain_text_master_template>
+		<label>Email Text Master Template</label>
+		<value>/Component/Util/Template/Master/Email/PlainText.php</value>
+		<type>path</type>
+	</site_email_plain_text_master_template>
+	<site_img_folder>
+		<label>IMG Folder</label>
+		<value>/Site/*/img</value>
+		<type>path</type>
+	</site_img_folder>
+	<site_download_folder>
+		<label>Public Download Folder</label>
+		<value>/Site/*/dl</value>
+		<type>path</type>
+	</site_download_folder>
+	<site_public_folder>
+		<label>Public HTTP Folder</label>
+		<value>/Site/*/public</value>
+		<type>path</type>
+	</site_public_folder>
+	<site_doctype>
+		<label>Doctype</label>
+		<value>HTML 4.01 Strict</value>
+		<values>
+			<value>
+				<label>HTML 4.01 Strict</label>
+				<value>HTML 4.01 Strict</value>
+			</value>
+			<value>
+				<label>HTML 4.01 Transitional</label>
+				<value>HTML 4.01 Transitional</value>
+			</value>
+			<value>
+				<label>XHTML 1.0 Strict</label>
+				<value>XHTML 1.0 Strict</value>
+			</value>
+			<value>
+				<label>XHTML 1.0 Transitional</label>
+				<value>XHTML 1.0 Transitional</value>
+			</value>
+			<value>
+				<label>HTML 5</label>
+				<value>HTML 5</value>
+			</value>
+		</values>
+	</site_doctype>
+	<site_admin_module>
+		<label>Admin Module</label>
+		<value>Component.Util.Module.Admin</value>
+		<type>component</type>
+	</site_admin_module>
+</config>

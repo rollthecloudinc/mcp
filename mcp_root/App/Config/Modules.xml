@@ -1,0 +1,879 @@
+<?xml version="1.0"?>
+<modules>
+	<mod pkg="Component.Util.Module.Pagination">
+		<config>
+			<items_label_plural>
+				<label>Plural Items Label</label>
+				<required>Y</required>
+				<default>Items</default>
+				<type>text</type>
+			</items_label_plural>
+			<items_label_singular>
+				<label>Singular Items Label</label>
+				<required>Y</required>
+				<default>Item</default>
+				<type>text</type>
+			</items_label_singular>
+			<visible_pages>
+				<label>Pages Visible</label>
+				<required>Y</required>
+				<default>5</default>
+				<type>numeric</type>
+			</visible_pages>
+		</config>
+	</mod>
+	<mod pkg="Component.User.Module.Registration.Form">
+		<frm>
+			<username>
+				<label>Username</label>
+				<required>Y</required>
+				<min>1</min>
+				<max>24</max>
+				<type>custom_username</type>
+			</username>
+			<email_address>
+				<label>Email</label>
+				<required>Y</required>
+				<min>1</min>
+				<max>128</max>
+				<type>custom_email</type>
+			</email_address>
+			<pwd>
+				<label>Password</label>
+				<required>Y</required>
+				<min>7</min>
+				<max>20</max>
+				<type>custom_password</type>
+			</pwd>
+		</frm>
+	</mod>
+	<mod pkg="Component.Field.Module.Form">
+		<frm>
+			<entity>
+				<label>Entity</label>
+				<required>Y</required>
+				<size>10</size>
+				<dao>
+					<pkg>Component.Field.DAO.DAOField</pkg>
+					<method>fetchEntities</method>
+				</dao>
+			</entity>
+			<cfg_name>
+				<label>Name</label>
+				<required>Y</required>
+				<min>1</min>
+				<max>128</max>
+				<type>field_name</type>
+			</cfg_name>
+			<cfg_label>
+				<label>Label</label>
+				<required>Y</required>
+				<min>1</min>
+				<max>128</max>
+				<type>text</type>
+			</cfg_label>
+			<cfg_description>
+				<label>Help Text</label>
+				<required>N</required>
+				<type>text</type>
+				<textarea>1</textarea>
+			</cfg_description>
+			<cfg_required>
+				<label>Required</label>
+				<required>Y</required>
+				<values>
+					<value>
+						<value>Y</value>
+						<label>Yes</label>
+					</value>
+					<value>
+						<value>N</value>
+						<label>No</label>
+					</value>
+				</values>
+				<default>Y</default>
+			</cfg_required>
+			<cfg_default>
+				<label>Default</label>
+				<required>N</required>
+				<type>text</type>
+			</cfg_default>
+			<cfg_min>
+				<label>Min. Chars</label>
+				<required>N</required>
+				<type>numeric</type>
+			</cfg_min>
+			<cfg_max>
+				<label>Max. Chars</label>
+				<required>N</required>
+				<type>numeric</type>
+			</cfg_max>
+			<cfg_type>
+				<label>Type</label>
+				<required>N</required>
+				<min>1</min>
+				<max>128</max>
+				<type>text</type>
+			</cfg_type>
+			<cfg_sql>
+				<label>SQL</label>
+				<required>N</required>
+				<type>sql</type>
+				<textarea>1</textarea>
+			</cfg_sql>
+			<cfg_dao_pkg>
+				<label>DAO Pkg.</label>
+				<required>N</required>
+				<min>1</min>
+				<max>255</max>
+				<type>dao</type>
+			</cfg_dao_pkg>
+			<cfg_dao_method>
+				<label>DAO Method</label>
+				<required>N</required>
+				<min>1</min>
+				<max>255</max>
+				<type>dao_method</type>
+			</cfg_dao_method>
+			<cfg_dao_args>
+				<label>DAO Args</label>
+				<required>N</required>
+				<multi>5</multi>
+			</cfg_dao_args>
+			<cfg_static>
+				<label>Static</label>
+				<required>Y</required>
+				<values>
+					<value>
+						<value>1</value>
+						<label>Yes</label>
+					</value>
+					<value>
+						<value>0</value>
+						<label>No</label>
+					</value>
+				</values>
+				<default>0</default>
+			</cfg_static>
+			<cfg_textarea>
+				<label>Textarea</label>
+				<required>Y</required>
+				<values>
+					<value>
+						<value>1</value>
+						<label>Yes</label>
+					</value>
+					<value>
+						<value>0</value>
+						<label>No</label>
+					</value>
+				</values>
+				<default>0</default>
+			</cfg_textarea>
+			<cfg_size>
+				<label>Size</label>
+				<required>N</required>
+				<min>1</min>
+				<max>2</max>
+				<type>numeric</type>
+			</cfg_size>
+			<db_value>
+				<label>Value Type</label>
+				<required>Y</required>
+				<dao>
+					<pkg>Component.Field.DAO.DAOField</pkg>
+					<method>fetchDBValueTypes</method>
+				</dao>
+				<default>varchar</default>
+			</db_value>
+			<cfg_image>
+				<label>Image</label>
+				<required>Y</required>
+				<values>
+					<value>
+						<value>1</value>
+						<label>Yes</label>
+					</value>
+					<value>
+						<value>0</value>
+						<label>No</label>
+					</value>
+				</values>
+				<default>0</default>
+			</cfg_image>
+		</frm>
+	</mod>
+	<mod pkg="Component.Site.Module.Form">
+		<frm>
+			<site_name>
+				<label>Name</label>
+				<required>Y</required>
+				<min>4</min>
+				<max>128</max>
+				<type>site_name</type>
+			</site_name>
+			<site_directory>
+				<label>Folder</label>
+				<required>Y</required>
+				<min>4</min>
+				<max>128</max>
+				<type>site_directory</type>
+			</site_directory>
+			<site_module_prefix>
+				<label>Module Prefix</label>
+				<required>Y</required>
+				<min>4</min>
+				<max>65</max>
+				<type>site_module_prefix</type>
+			</site_module_prefix>
+		</frm>
+	</mod>
+	<mod pkg="Component.Navigation.Module.Form.Link">
+		<frm>	
+			<link_title>
+				<label>Link Name</label>
+				<required>Y</required>
+				<min>1</min>
+				<max>96</max>
+			</link_title>
+			<browser_title>
+				<label>Browser Title</label>
+				<required>N</required>
+				<min>1</min>
+				<max>96</max>
+			</browser_title>
+			<page_heading>
+				<label>Page Heading</label>
+				<required>N</required>
+				<min>1</min>
+				<max>96</max>
+			</page_heading>
+			<parent_id>
+				<label>Links Parent</label>
+				<required>Y</required>
+				<min>4</min>
+				<max>255</max>
+			</parent_id>
+			<target_window>
+				<label>Target Window</label>
+				<required>Y</required>
+				<max>10</max>
+				<min>1</min>
+				<default>_self</default>
+			</target_window>
+			<link_url>
+				<label>URL</label>
+				<required>N</required>
+				<max>255</max>
+				<min>1</min>
+			</link_url>
+			<sites_internal_url>
+				<label>URL</label>
+				<required>N</required>
+				<max>255</max>
+				<min>1</min>
+			</sites_internal_url>
+			<target_module>
+				<label>Mod.</label>
+				<required>N</required>
+				<max>255</max>
+				<min>1</min>
+			</target_module>
+			<target_template>
+				<label>Tpl.</label>
+				<required>N</required>
+				<max>255</max>
+				<min>1</min>
+			</target_template>
+			<header_content>
+				<label>Header</label>
+				<required>N</required>
+				<min>1</min>
+			</header_content>
+			<body_content>
+				<label>Body</label>
+				<required>N</required>
+				<min>1</min>
+			</body_content>
+			<footer_content>
+				<label>Footer</label>
+				<required>N</required>
+				<min>1</min>
+			</footer_content>
+			<header_content_type>
+				<label>Type</label>
+				<required>N</required>
+				<min>1</min>
+				<max>10</max>
+				<default>html</default>
+			</header_content_type>
+			<body_content_type>
+				<label>Type</label>
+				<required>N</required>
+				<min>1</min>
+				<max>10</max>
+				<default>html</default>
+			</body_content_type>
+			<footer_content_type>
+				<label>Type</label>
+				<required>N</required>
+				<min>1</min>
+				<max>10</max>
+				<default>html</default>
+			</footer_content_type>
+			<datasource_query>
+				<label>SQL</label>
+				<required>N</required>
+			</datasource_query>
+			<datasource_dao>
+				<label>Pkg.</label>
+				<required>N</required>
+				<min>1</min>
+				<max>255</max>
+			</datasource_dao>
+			<datasource_dao_method>
+				<label>Call</label>
+				<required>N</required>
+				<min>1</min>
+				<max>255</max>
+			</datasource_dao_method>
+		</frm>
+	</mod>
+	<mod pkg="Component.Navigation.Module.Form.Menu">
+		<frm>
+			<menu_title>
+				<label>Title</label>
+				<required>Y</required>
+				<max>96</max>
+				<type>text</type>
+			</menu_title>
+			<menu_location>
+				<label>Position</label>
+				<required>Y</required>
+				<dao>
+					<pkg>Component.Navigation.DAO.DAONavigation</pkg>
+					<method>fetchNavLocations</method>
+				</dao>
+			</menu_location>
+			<display_title>
+				<label>Display Title</label>
+				<required>N</required>
+				<default>1</default>
+				<values>
+					<value>
+						<value>1</value>
+						<label>Yes</label>
+					</value>
+					<value>
+						<value>0</value>
+						<label>No</label>
+					</value>
+				</values>
+			</display_title>
+		</frm>
+	</mod>
+	<mod pkg="Component.Node.Module.Form.Entry">
+		<frm>
+			<node_types_id>
+				<label>Content Type</label>
+				<required>Y</required>
+				<dao>
+					<pkg>Component.Node.DAO.DAONode</pkg>
+					<method>fetchNodeTypes</method>
+					<args>
+						<arg>IF(t.pkg IS NULL,t.system_name,CONCAT(t.system_name,'::',t.pkg)) value,IF(t.pkg IS NULL,t.system_name,CONCAT(t.pkg,'::',t.system_name)) label</arg>
+						<arg>t.sites_id = SITES_ID</arg>
+						<arg>label ASC</arg>
+					</args>
+				</dao>
+			</node_types_id>
+			<node_title>
+				<label>Title</label>
+				<required>Y</required>
+				<max>128</max>
+				<type>node_title</type>
+			</node_title>
+			<node_subtitle>
+				<label>Subtitle</label>
+				<required>N</required>
+				<max>128</max>
+			</node_subtitle>
+			<node_content>
+				<label>Body</label>
+				<required>Y</required>
+				<textarea>1</textarea>
+			</node_content>
+			<intro_content>
+				<label>Teaser</label>
+				<required>N</required>
+				<textarea>1</textarea>
+			</intro_content>
+			<content_type>
+				<label>Body Type</label>
+				<required>Y</required>
+				<default>html</default>
+				<dao>
+					<pkg>Component.Node.DAO.DAONode</pkg>
+					<method>fetchContentTypes</method>
+					<args>
+						<arg>content_type</arg>
+					</args>
+				</dao>
+			</content_type>
+			<intro_type>
+				<label>Teaser Type</label>
+				<required>Y</required>
+				<default>html</default>
+				<dao>
+					<pkg>Component.Node.DAO.DAONode</pkg>
+					<method>fetchContentTypes</method>
+					<args>
+						<arg>intro_type</arg>
+					</args>
+				</dao>
+			</intro_type>
+			<node_published>
+				<label>Published</label>
+				<required>Y</required>
+				<default>1</default>
+				<values>
+					<value>
+						<value>1</value>
+						<label>Published</label>
+					</value>
+					<value>
+						<value>0</value>
+						<label>Unpublished</label>
+					</value>
+				</values>
+			</node_published>
+		</frm>
+	</mod>
+	<mod pkg="Component.Node.Module.Form.Comment">
+		<frm>
+			<commenter_first_name>
+				<label>First Name</label>
+				<required>Y</required>
+				<max>24</max>
+			</commenter_first_name>
+			<commenter_last_name>
+				<label>Last name</label>
+				<required>Y</required>
+				<max>24</max>
+			</commenter_last_name>
+			<commenter_email>
+				<label>Email</label>
+				<required>Y</required>
+				<max>128</max>
+				<type>email</type>
+			</commenter_email>
+			<comment_content>
+				<label>Comment</label>
+				<required>Y</required>
+			</comment_content>
+		</frm>
+	</mod>
+	<mod pkg="Component.Node.Module.List.Entry">
+		<config>
+			<node_type>
+				<label>Node Type</label>
+				<required>Y</required>
+				<dao>
+					<pkg>Component.Node.DAO.DAONode</pkg>
+					<method>fetchNodeTypes</method>
+					<args>
+						<arg>t.node_types_id value,IF(t.pkg IS NULL,t.system_name,CONCAT(t.pkg,'::',t.system_name)) label</arg>
+						<arg>t.sites_id = SITES_ID</arg>
+						<arg>label ASC</arg>
+					</args>
+				</dao>
+			</node_type>
+			<nodes_per_page>
+				<label>Per Page</label>
+				<required>Y</required>
+				<default>10</default>
+				<type>numeric</type>
+			</nodes_per_page>
+			<nodes_sort_order>
+				<label>Sort Order</label>
+				<required>Y</required>
+				<default>n.created_on_timestamp DESC</default>
+				<values>
+					<value>
+						<value>n.created_on_timestamp DESC</value>
+						<label>Created Desc.</label>
+					</value>
+					<value>
+						<value>n.created_on_timestamp ASC</value>
+						<label>Created Asc.</label>
+					</value>
+					<value>
+						<value>n.sort_order DESC</value>
+						<label>Sort Order Desc.</label>
+					</value>
+					<value>
+						<value>n.sort_order ASC</value>
+						<label>Sort Order Asc.</label>
+					</value>
+					<value>
+						<value>n.blog_title DESC</value>
+						<label>Title Desc.</label>
+					</value>
+					<value>
+						<value>n.blog_title ASC</value>
+						<label>Title Asc.</label>
+					</value>
+				</values>
+			</nodes_sort_order>
+			<display_username>
+				<label>Display Username?</label>
+				<required>Y</required>
+				<default>1</default>
+				<values>
+					<value>
+						<value>1</value>
+						<label>Yes</label>
+					</value>
+					<value>
+						<value>0</value>
+						<label>No</label>
+					</value>
+				</values>
+			</display_username>
+			<display_created_on_timestamp>
+				<label>Display Created Date?</label>
+				<required>Y</required>
+				<default>1</default>
+				<values>
+					<value>
+						<value>1</value>
+						<label>Yes</label>
+					</value>
+					<value>
+						<value>0</value>
+						<label>No</label>
+					</value>
+				</values>
+			</display_created_on_timestamp>
+			<enable_comments>
+				<label>Allow Comments?</label>
+				<required>Y</required>
+				<default>1</default>
+				<values>
+					<value>
+						<value>1</value>
+						<label>Yes</label>
+					</value>
+					<value>
+						<value>0</value>
+						<label>No</label>
+					</value>
+				</values>
+			</enable_comments>
+			<display_pagination>
+				<label>Display Pagination?</label>
+				<required>Y</required>
+				<default>1</default>
+				<values>
+					<value>
+						<value>1</value>
+						<label>Yes</label>
+					</value>
+					<value>
+						<value>0</value>
+						<label>No</label>
+					</value>
+				</values>
+			</display_pagination>
+			<users_id>
+				<label>User</label>
+				<default>USERS_ID</default>
+				<required>Y</required>
+				<sql>SELECT 'All Users' label,0 value UNION ALL SELECT username,users_id FROM MCP_USERS WHERE sites_id = SITES_ID</sql>
+			</users_id>
+			<sites_id>
+				<label>Site</label>
+				<default>SITES_ID</default>
+				<required>Y</required>
+				<sql>SELECT 'All Sites' label,0 value UNION ALL SELECT site_name,sites_id FROM MCP_SITES</sql>
+			</sites_id>
+			<back_label>
+				<label>Back Label</label>
+				<required>N</required>
+				<default></default>
+				<type>text</type>
+			</back_label>
+		</config>
+	</mod>
+	<mod pkg="Component.Node.Module.View.Entry">
+		<config>
+			<display_comments>
+				<label>Display Comments?</label>
+				<required>Y</required>
+				<default>1</default>
+				<values>
+					<value>
+						<value>1</value>
+						<label>Yes</label>
+					</value>
+					<value>
+						<value>0</value>
+						<label>No</label>
+					</value>
+				</values>
+			</display_comments>
+		</config>
+	</mod>
+	<mod pkg="Component.Node.Module.Form.Type">
+		<frm>
+			<system_name>
+				<label>System Name</label>
+				<min>1</min>
+				<max>128</max>
+				<required>Y</required>
+				<type>node_type_system_name</type>
+			</system_name>
+			<human_name>
+				<label>Human Name</label>
+				<min>1</min>
+				<max>128</max>
+				<required>Y</required>
+				<type>node_type_human_name</type>
+			</human_name>
+			<pkg>
+				<label>Pkg.</label>
+				<max>128</max>
+				<required>N</required>
+				<type>node_type_pkg</type>
+			</pkg>
+			<description>
+				<label>Description</label>
+				<required>N</required>
+				<textarea>Y</textarea>
+				<type>text</type>
+			</description>
+		</frm>
+	</mod>
+	<mod pkg="Component.Taxonomy.Module.Form.Term">
+		<frm>
+			<system_name>
+				<label>System Name</label>
+				<required>Y</required>
+				<max>128</max>
+				<type>term_system_name</type>
+			</system_name>
+			<human_name>
+				<label>Name</label>
+				<required>Y</required>
+				<max>128</max>
+				<type>term_human_name</type>
+			</human_name>
+			<parent_id>
+				<label>Parent</label>
+				<required>Y</required>
+				<size>5</size>
+			</parent_id>
+			<description>
+				<label>Description</label>
+				<required>N</required>
+				<type>text</type>
+				<textarea>1</textarea>
+			</description>
+		</frm>
+	</mod>
+	<mod pkg="Component.Taxonomy.Module.Form.Vocabulary">
+		<frm>
+			<system_name>
+				<label>System Name</label>
+				<required>Y</required>
+				<max>128</max>
+				<type>vocabulary_system_name</type>
+			</system_name>
+			<human_name>
+				<label>Human Name</label>
+				<required>Y</required>
+				<max>128</max>
+				<type>vocabulary_human_name</type>
+			</human_name>
+			<pkg>
+				<label>Pkg.</label>
+				<required>N</required>
+				<max>128</max>
+				<type>vocabulary_pkg</type>
+			</pkg>
+			<description>
+				<label>Description</label>
+				<required>N</required>
+				<type>text</type>
+				<textarea>1</textarea>
+			</description>
+		</frm>
+	</mod>
+	<mod pkg="Component.Auth.Module.Role.Form">
+		<frm>
+			<role_name>
+				<label>Name</label>
+				<min>5</min>
+				<max>128</max>
+				<required>Y</required>
+				<type>role_name</type>
+			</role_name>
+			<role_label>
+				<label>Label</label>
+				<min>5</min>
+				<max>128</max>
+				<required>Y</required>
+				<type>role_label</type>
+			</role_label>
+			<pkg>
+				<label>Pkg.</label>
+				<max>128</max>
+				<required>N</required>
+				<type>role_pkg</type>
+			</pkg>
+		</frm>
+	</mod>
+	<mod pkg="Component.Auth.Module.Permission.Form">
+		<frm>
+			<entity>
+				<label>Item</label>
+				<required>Y</required>
+				<size>10</size>
+				<dao>
+					<pkg>Component.Auth.DAO.DAOAuth</pkg>
+					<method>fetchPermissionEntities</method>
+				</dao>
+			</entity>
+			<pread>
+				<label>Read</label>
+				<required>N</required>
+				<type>bool</type>
+			</pread>
+			<pwrite>
+				<label>Write</label>
+				<required>N</required>
+				<type>bool</type>
+			</pwrite>
+			<padd>
+				<label>Create</label>
+				<required>N</required>
+				<type>bool</type>
+			</padd>
+			<pedit>
+				<label>Edit</label>
+				<required>N</required>
+				<type>bool</type>
+			</pedit>
+			<pdelete>
+				<label>Delete</label>
+				<required>N</required>
+				<type>bool</type>
+			</pdelete>
+		</frm>
+	</mod>
+	<mod pkg="PlatForm.ProjectPad.Module.Register">
+		<frm mixin="Component.User.Module.Registration.Form">
+			<first_name>
+				<label>First Name</label>
+				<required>Y</required>
+				<min>1</min>
+				<max>96</max>
+				<type>custom_first_name</type>
+			</first_name>
+			<last_name>
+				<label>Last Name</label>
+				<required>Y</required>
+				<min>1</min>
+				<max>96</max>
+				<type>custom_last_name</type>
+			</last_name>
+			<states_id>
+				<label>State</label>
+				<required>N</required>
+				<dao>
+					<pkg>Component.Util.DAO.DAOUtil</pkg>
+					<method>listAllStates</method>
+					<args>
+						<arg>s.human_name label,s.terms_id value</arg>
+						<arg></arg>
+						<arg>s.human_name ASC</arg>
+					</args>
+				</dao>
+			</states_id>
+		</frm>
+	</mod>
+	<mod pkg="PlatForm.ProjectPad.Module.Project.Form">
+		<frm mixin="Component.Node.Module.Form.Entry">
+			<categories_id>
+				<label>Category</label>
+				<required>Y</required>
+				<after>nodes_title</after>
+				<dao>
+					<pkg>PlatForm.ProjectPad.DAO.DAOProjectPadCategory</pkg>
+					<method>fetchCategoryOptions</method>
+					<args>
+						<arg>SITES_ID</arg>
+					</args>
+				</dao>
+			</categories_id>
+			<ideal_price>
+				<label>Ideal Price</label>
+				<required>N</required>
+				<type>numeric</type>
+			</ideal_price>
+			<node_content>
+				<label>Project</label>
+			</node_content>
+			<node_types_id static="Y">
+				<default>project::PlatForm.ProjectPad</default>
+			</node_types_id>
+			<node_subtitle static="Y">
+				<default></default>
+			</node_subtitle>
+			<content_type static="Y">
+				<default>text</default>
+			</content_type>
+			<intro_type static="Y">
+				<default>text</default>
+			</intro_type>
+			<intro_content static="Y">
+				<default></default>
+			</intro_content>
+			<node_published static="Y">
+				<default>1</default>
+			</node_published>
+		</frm>
+	</mod>
+	<mod pkg="PlatForm.ProjectPad.Module.Category.Form">
+		<frm mixin="Component.Taxonomy.Module.Form.Term">
+			<system_name>
+				<label>Category ID</label>
+			</system_name>
+			<human_name>
+				<label>Category</label>
+			</human_name>
+		</frm>
+	</mod>
+	<mod pkg="PlatForm.ProjectPad.Module.Filter.Project">
+		<frm>
+			<title>
+				<label>Title</label>
+				<max>128</max>
+				<required>N</required>
+				<type>text</type>
+			</title>
+			<category>
+				<label>Category</label>
+				<required>N</required>
+				<size>5</size>
+				<dao>
+					<pkg>PlatForm.ProjectPad.DAO.DAOProjectPadCategory</pkg>
+					<method>fetchCategoryOptions</method>
+					<args>
+						<arg>SITES_ID</arg>
+					</args>
+				</dao>
+			</category>
+		</frm>
+	</mod>
+</modules>

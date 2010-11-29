@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<main>
+	<site id="1">
+		<domain>local.site-one</domain>
+		<db>
+			<pass>password</pass>
+			<user>site_one</user>
+			<host>localhost</host>
+			<db>mcp</db>
+			<adapter>App.Resource.DB.MySQL</adapter>
+		</db>
+		<salt>d784rghjkd5890dfg12234cbcndpoq0dgdga</salt>
+	</site>
+	<site id="2">
+		<domain>local.site-two</domain>
+		<db>
+			<pass>password</pass>
+			<user>site_two</user>
+			<host>localhost</host>
+			<db>mcp</db>
+			<adapter>App.Resource.DB.PDO</adapter>
+		</db>
+		<salt>dhjbchjk1895ghfklghutyi34</salt>
+	</site>
+	<site id="2">
+		<domain>local.site-three</domain>
+		<db>
+			<pass>password</pass>
+			<user>site_three</user>
+			<host>localhost</host>
+			<db>mcp</db>
+			<adapter>App.Resource.DB.MySQLi</adapter>
+		</db>
+		<salt>dhjbchjk1895ghfklghutyi34</salt>
+	</site>
+</main>

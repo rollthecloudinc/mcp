@@ -1,0 +1,289 @@
+MCP Directory Overview 
+
+* Directories are NOT version controlled and must be created by developer for now.
+
+----------------------------------------------------------------------------------------
+* mcp_cache (read/write permissions)
+  - images
+
+Directory contains cache resources. At this point in time image requests are the only items being stored to this directory.
+
+----------------------------------------------------------------------------------------
+* mcp_config
+  - Main.xml
+
+Directory contains a single file Main.xml. This XML file will host each individual sites database connection credentials and domain name.
+
+Main.xml example:
+
+NOTE: The site attribute makes it possible to map the domain or multiple domains to a site. Site 0 is the default
+site when no site can be determined or no site exists. This will be the only required site by default so a database
+connection can be established for a new install.
+
+Adapter: database adapter
+- MySQL, MySQLi and PDO adapterr are compatible with each other. The only thing to note is that due
+to the nature of replicating  variable binding for the MySQL adapter using the feature will incur 
+a performance cost. For this reason most of the core program has been written using standard
+escaping, rather variable binding. Though, standard escaping and binding are supported, it will just
+changes some of the workflow around.
+
+Salt: sensitive data SALT
+- This value may be used to encrypt sensitive data. Within any MCP resource such as; module, DAO, template
+the value may be retreived via: $this->_objMCP->getSalt();.
+
+<?xml version="1.0"?>
+<main>
+	<site id="0">
+		<domain>www.xxxx.com</domain>
+		<db>
+			<pass>pass</pass>
+			<user>user</user>
+			<host>localhost</host>
+			<db>dbname</db>
+			<adapter>App.Resource.DB.PDO</adapter>
+		</db>
+		<salt>d784rghjkd5890dfg12234cbcndpoq0dgdga</salt>
+	</site>
+	<site id="1">
+		<domain>www.yyy.com</domain>
+		<domain>www.yyyxxx.com</domain>
+		<domain>www.yyybbb.com</domain>
+		<db>
+			<pass>pass</pass>
+			<user>user</user>
+			<host>localhost</host>
+			<db>dbname</db>
+			<adapter>App.Resource.DB.MySQL</adapter>
+		</db>
+		<salt>qgvrghjkd5890dfg1bjla78ndpoq0yuAp</salt>
+	</site>
+</main>
+
+----------------------------------------------------------------------------------------
+mcp_root
+  - App (version controlled)
+  - Component (version controlled)
+  - * PlatForm (needs to be created)
+  - * Site (needs to be created)
+
+Directory contains all vital framework resources such as; class, template and configuration files.
+
+The root directory will also contain a Site and PlatForm directory. Although these directories are not included by default they must be created. The Site directory will contain Site specific modules, templates and client-side entities such as; images, pdf files, etc.
+
+The PlatForm directory has similar purpose to the Component directory residing inside the root. The primary difference is usage. The Component directory is meant to organize global level modules and templates. For example, the Blog component isn’t designed for any specific site. So component directory is the perfect place for it.
+
+On the other hand, the PlatForm directory may be used to organize components that are application focused. For example, creating a SocialNetWork PlatForm and placing all files that are specific to that application inside.
+
+In either case the Component and PlatForm directory may be used in the same way. The only difference is really organization. 
+
+Component - Global functionality not specific to an individual application
+PlatForm - Application level hierarchy of components
+
+----------------------------------------------------------------------------------------
+www (http site root)
+  - * lib (needs to be created) - hosts JavaScript libraries
+    - JQuery (example)
+      - pkg (pkg directory always required)
+        - ... (framework files)
+  - base.xml
+  - css.php
+  - dao.php
+  - file.php
+  - img.php
+  - index.php
+  - js.php
+  - mod.php
+
+Directory contains all public access points for back-end functionality, third-party JavaScript APIs, MCP JavaScript API and base configuration file. The base configuration file base.xml makes it possible to override the default path to primary framework directories listed above. By default the directories are placed one directory above the site root for security purposes. However, you can modify the paths within the public access base configuration file to your needs.
+
+base.xml default:
+
+<?xml version="1.0"?>
+<base>
+	<config>../mcp_config</config>
+	<root>../mcp_root</root>
+	<site>../mcp_site</site>
+	<cache>../mcp_cache</cache>
+	<pkg>.</pkg>
+	<ds>/</ds>
+</base>
+
+
+  Public Access Entry Point Overview:
+
+  - base.xml: Declare paths to primary framework directories
+  - css.php: Serve up style sheet
+  - dao.php: Access any DataAccess layer method through public API - useful for javaScript API request - under development
+  - file.php: Access site download directory 
+  - img.php: Serve up site or database image
+  - index.php: Main entry point for navigating site
+  - js.php: Serve up site JavaScript file
+  - mod.php: Same as index.php but doesn’t wrap request in master template. This is useful for making AJAX requests and dumping content to screen without worrying about having the master template dumped again.
+
+
+-----------------------------------------------------------------------------------------------------
+Base directory and file structure:
+
+/
+
+mcp_cache (read and write permissions) *
+  - images
+
+mcp_config *
+  - Main.xml
+  
+mcp_root
+  - App
+  - Component
+  - PlatForm *
+  - Site *
+  
+www (site root)
+  - lib *
+  - base.xml
+  - css.php
+  - dao.php
+  - file.php
+  - img.php
+  - index.php
+  - js.php
+  - mod.php
+
+------------------------------------------------------------------------------------------------------
+MCP Base Database Tables
+
+see install.sql file
+
+All current application dependent table definitions are defined within dump file.
+
+Outline:
+
+ACL (deprecated) - moving to more flexible layer w/ less inital se-up using standard set of
+of permissions that may be extended on a case by case basis. More to come - permissions layer has
+not been added at all.
+
+Node
+All content is stored in the form of a node / generic piece of content. The node may than be
+given a context by assigning it to a node type such as; product, etc. PlatForms may define
+their own internal node types.
+
+Node Type
+All available node types such as; product, project, blog, editorial, etc
+
+Plans are underway to allow custom extension of node types adding fields through
+a GUI similiar to the Drupal CCK module. This will be a feature made available
+in the future. 
+
+Comment
+A comment may be assigned to a node. A node may have multiple types of comments
+as defined by the comment type table. At this point only a single comment type
+is used with a tree based nature.
+
+User
+A user is the base table for all registered members of the site. From here any site or
+platform may extend the users table to add custom data binded to a useer for particular
+applications such as; addresses, etc. Although, something like address may become
+a MCP native table. So a more appropriate example perhaps would be age.
+
+Taxonomy (consist of two tables at this time)
+
+Vocabulary
+All vocabularies within system - a vocabulary organizes a set of terms. For example,
+Categories is a common example of a vocabulary.
+
+Terms
+All terms within the system. A common example of terms are the the actual category names such as;
+boot, sweaters, shorts, etc.
+
+Terms is hieriachial whereas; vocabularies are not.
+
+Navigation (consist of two tables)
+
+Navigation
+Stores all navigation menus and settings specific to those menus such as; whether to display the title
+or position of menu on page.
+
+Navigation
+The individual links associated with the menu. 
+
+Navigation links are stored as tree whereas menus are not.
+
+Site
+All available sites.
+
+All entities within system will be assigned to a site unless globally available. There are not
+many instances of entities that are shared. The primary example at this time is the countries
+Vocabulary. All sites will use the same countries vocabulary.
+
+For the most part all data is assigned to a site. This makes it possible to easily manage
+multiple sites using the same database and code base. 
+
+Sessions (internal use only)
+manages client past and present sessions. All sessions management resolves to this table. This will
+make it possible to easily track hits, patterns, etc in future feature enhancements.
+ 
+Config
+Stores all site global configuration overrides. Site connfiguration variables such as; heading, banner, etc
+are stored in two parts. One part is an XML and another is within this table. The definitions that exist
+within the XML file (mcp_root/App/Config/Config.xml) are the global defaults. The settings within the XML
+are those that a new site starts off with initally. Than when changes are made the changes are stored
+in the database for the site. So the Config table contains all config settings that have been updated
+from the provides XML file defaults. 
+
+Any configuration setting saved/updated without a value will resolve back to the default
+defined in the config XML file.
+
+Data Cache
+Stores cached values as serialized string or flat value. Can be useful when displaying a vocabulary
+often, so that the entire vocabulary doesn't need to be rebuilt every request (buildng a full vocabulary
+is a recursive query process).
+
+Image Cache
+Paths to cached versions of images. The mappings are resolved based on the image and a set of options
+for the image that change the way the original is displayed such as; resizing, grayscale, etc. All of
+which transformations are process intensive, so the end result is cached.
+
+Field
+Fields may be used to extend table and content types with user defined form elements/fields. For example,
+a product node type could be extended with a price field. When this is done a price field will become
+available when entering new nodes of type product, just as price was an actual column in the database.
+Fields provide a method of creating "virtual columns" separate from the a tables actual schema yet, mixed
+in as if they were part of the schema on the application end. Currently has a away to go before done
+but the initial sturcture has been roughly developed. When completed it will be possible to add Virtual
+Fields to nearly all application entities such as; Users, Node Types, Terms, Vocabularies, etc. 
+
+------------------------------------------------------------------------------------------------------
+
+MCP Core Concepts
+
+Throughout the evolution of the MCP a standard set-up of patterns and work flow have been developed
+to ease the process of maintaining, updating and reducing replicated code. While it is not a functional
+requirement to adhere to many of the patterns, it is highly advised. The primary patterns and work flows
+of concern will be outlined below.
+
+-----------------------------------------------------------------------------------------------------
+
+* Class Instantiation
+
+The MCP makes use of a central method that instantiates all classes. When instantiating 
+classes NEVER use new. ALWAY use the below method in place of new.
+
+$this->_objMCP->getInstance('Component.Node.Module.DAO.DAONode',array($this->_objMCP));
+
+The first argument being the path to the class relative to the mcp_root directory.
+The second argument being an array of arguments to pass to the constructor, simple. 
+
+* Single Action Method Controllers
+
+The MCP does not stuff a bunch of actions into a single class. Instead controllers have 
+a single action; execute. Also, rather than using term controller MCP refers to its controllers 
+as modules. From an MVC pov though, a module is a controller with a single action. Related modules
+are grouped within the same package or directory. 
+
+* Models
+
+The base Model is DAO. Always extend MCPDAO when creating new DAOs. ALL business oriented code
+should be placed in models. NEVER run queries witin modules or god have mercy on your 
+soul - templates <shivers>. Templates and Modules may call methods on a DAO that return data
+but never skip creating a DAO method running queries directly within modules or templates.
+
