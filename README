@@ -252,6 +252,12 @@ in as if they were part of the schema on the application end. Currently has a aw
 but the initial sturcture has been roughly developed. When completed it will be possible to add Virtual
 Fields to nearly all application entities such as; Users, Node Types, Terms, Vocabularies, etc. 
 
+Views (todo)
+
+Views are in the works but when complete will allow the creation of query building and end theming through
+an API similar to that of Drupal views. Though within the MCP view data will be stored in a series of tables
+rather than being serialized into an unusable look-up format as done with Drupal views. More to come on this.
+
 ------------------------------------------------------------------------------------------------------
 
 MCP Core Concepts
