@@ -226,6 +226,32 @@
 				<max>65</max>
 				<type>site_module_prefix</type>
 			</site_module_prefix>
+			<site_domain>
+				<label>Domain</label>
+				<required>Y</required>
+				<min>5</min>
+				<max>255</max>
+				<type>site_domain</type>
+			</site_domain>
+			<site_db_adapter>
+				<label>Adapter</label>
+				<required>Y</required>
+				<default>App.Resource.DB.MySQL</default>
+				<values>
+					<value>
+						<value>App.Resource.DB.MySQL</value>
+						<label>Std. MySQL</label>
+					</value>
+					<value>
+						<value>App.Resource.DB.MySQLi</value>
+						<label>MySQLi</label>
+					</value>
+					<value>
+						<value>App.Resource.DB.PDO</value>
+						<label>PDO</label>
+					</value>
+				</values>
+			</site_db_adapter>
 		</frm>
 	</mod>
 	<mod pkg="Component.Navigation.Module.Form.Link">

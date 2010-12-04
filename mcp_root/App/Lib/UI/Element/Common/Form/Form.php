@@ -39,6 +39,9 @@ class Form implements \UI\Element {
 			,'method'=>array(
 				'default'=>'POST'
 			)
+			,'image_path'=>array(
+				'default'=>null
+			)
 		);
 	}
 	
@@ -132,24 +135,14 @@ class Form implements \UI\Element {
 									$input_type = 'text';
 							}
 							
+							$val = isset($data['multi'])?isset($values[$field][$i])?$values[$field][$i]:'':$values[$field];
+							
 							/*
 							* Override for file input 
 							*/
 							if(isset($data['image'])) {
 								$input_type = 'file';
-								
-								// show image preview
-								/*if(!is_array($values[$field]) && is_numeric($values[$field])) {
-									printf(
-										'<img src="%s/%u">'
-										,'http://local.mcp4/img.php'
-										,$values[$field]
-									);
-								}*/
-								
 							}
-							
-							$val = isset($data['multi'])?isset($values[$field][$i])?$values[$field][$i]:'':$values[$field];
 							
 							$out.= $ui->draw('Common.Form.Input',array(
 								'type'=>$input_type
@@ -160,6 +153,15 @@ class Form implements \UI\Element {
 								,'checked'=>strcmp($input_type,'checkbox') == 0 && $val?true:false
 								,'disabled'=>$strDisabled?true:false
 							));
+							
+							/*
+							* For images show thumbnail 
+							*/
+							if(isset($data['image']) && $val) {
+								$out.= $ui->draw('Common.Field.Thumbnail',array(
+									'src'=>( $image_path !== null?sprintf($image_path,(string) $val):$val )
+								));
+							}
 					
 						}
 						

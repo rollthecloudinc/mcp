@@ -221,7 +221,7 @@ class MCPFieldForm extends MCPModule {
 		
 		// Image foreign key reference
 		if($arrValues['cfg_image'] == 1) {
-			$arrValues['db_ref_table'] = 'MCP_IMAGES';
+			$arrValues['db_ref_table'] = 'MCP_MEDIA_IMAGES';
 			$arrValues['db_ref_col'] = 'images_id';
 		}
 		

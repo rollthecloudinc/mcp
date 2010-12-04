@@ -522,6 +522,44 @@ class MCPDAONode extends MCPDAO {
 	}
 	
 	/*
+	* Delete a node type
+	* 
+	* @param int node types id
+	*/
+	public function deleteNodeType($intNodeTypesId) {
+		
+		// NOTE: node type, nodes, permissions, fields and field values need to be cleaned-up
+		// purge and delete - delete merely hides data from user interface purge removed from db
+		
+		echo "<p>Deleting node type {$intNodeTypesId}</p>";
+		
+		$strSQLType = sprintf(
+			'DELETE FROM MCP_NODE_TYPES WHERE node_types_id = %s'
+			,$this->_objMCP->escapeString($intNodeTypesId)
+		);
+		
+		$strSQLNode = sprintf(
+			'DELETE FROM MCP_NODES WHERE node_types_id = %s'
+			,$this->_objMCP->escapeString($intNodeTypesId)
+		);
+		
+		$strSQLFields = sprintf(
+			"DELETE FROM MCP_FIELDS WHERE entity_type = 'MCP_NODE_TYPES' AND entity_id = %s"
+			,$this->_objMCP->escapeString($intNodeTypesId)
+		);
+		
+		/*$strSQLFieldValues = sprintf(
+			'DELETE FROM MCP_NODES WHERE node_types_id = %s'
+			,$this->_objMCP->escapeString($intNodeTypesId)
+		);*/
+		
+		echo "<p>$strSQLType</p>";
+		echo "<p>$strSQLNode</p>";
+		echo "<p>$strSQLFields</p>";
+		
+	}
+	
+	/*
 	* Create node URL safe title
 	* 
 	* @param str node title

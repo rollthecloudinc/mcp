@@ -91,7 +91,12 @@ class MCPEventHandler extends MCPResource {
 			* Call event listeners 
 			*/
 			foreach($this->_arrEvents[$strTarget][$strEvt] as $arrHandler) {
-				array_shift($arrHandler)->{array_shift($arrHandler)}(array('target'=>$objTarget,'event'=>$strEvt));
+				// closure support added
+				if(is_array($arrHandler)) {
+					array_shift($arrHandler)->{array_shift($arrHandler)}(array('target'=>$objTarget,'event'=>$strEvt));
+				} else {
+					call_user_func($arrHandler,array('target'=>$objTarget,'event'=>$strEvt));
+				}
 			}
 			
 			/*

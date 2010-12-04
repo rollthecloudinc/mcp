@@ -41,6 +41,11 @@ class MCPSiteList extends MCPModule {
 				,'mutation'=>null
 			)
 			,array(
+				'label'=>'Domain'
+				,'column'=>'site_domain'
+				,'mutation'=>null
+			)
+			,array(
 				'label'=>'Folder'
 				,'column'=>'site_directory'
 				,'mutation'=>null
@@ -72,6 +77,7 @@ class MCPSiteList extends MCPModule {
 					return $mcp->ui('Common.Form.Submit',array(
 						'label'=>'Delete'
 						,'name'=>"frmSite[action][delete][{$row['sites_id']}]"
+						,'disabled'=>!$row['allow_delete']
 					));
 				}
 			)
@@ -103,6 +109,21 @@ class MCPSiteList extends MCPModule {
 		*/
 		if($this->_strRequest === null) {
 			$this->_arrTemplateData['sites'] = $this->_objDAOSite->listAll('s.*',null,'s.site_name ASC');
+			
+			// Get delete and edit permissions (may also want to add in read)
+			$ids = array();
+			foreach($this->_arrTemplateData['sites'] as $site) {
+				$ids[] = $site['sites_id'];
+			}
+			
+			$permsEdit = $this->_objMCP->getPermission(MCP::EDIT,'Site',$ids);
+			$permsDelete = $this->_objMCP->getPermission(MCP::EDIT,'Site',$ids);
+			
+			// add in flags to determine whether user has permission to edit or delete site
+			foreach($this->_arrTemplateData['sites'] as &$site) {
+				$site['allow_edit'] = $permsEdit[$site['sites_id']]['allow'];
+				$site['allow_delete'] = $permsDelete[$site['sites_id']]['allow'];
+			}
 		}
 		
 		/*
@@ -126,8 +147,14 @@ class MCPSiteList extends MCPModule {
 		*/
 		$this->_arrTemplateData['create_link'] = "{$this->getBasePath(false)}/Add";
 		
+		/*
+		* Determine whether user is allowed to create a new site 
+		*/
+		$perm = $this->_objMCP->getPermission(MCP::ADD,'Site');
+		$this->_arrTemplateData['allow_create'] = $perm['allow'];
+		
 		// Edit or Add Site
-		if(strcmp('Edit',$this->_strRequest) === 0 || strcmp('Add',$this->_strRequest) === 0) {
+		if(strcmp('Edit',$this->_strRequest) === 0 || strcmp('Add',$this->_strRequest) === 0) {	
 			$this->_arrTemplateData['TPL_REDIRECT_CONTENT'] = $this->_objMCP->executeComponent(
 				'Component.Site.Module.Form'
 				,$arrArgs
@@ -164,6 +191,10 @@ class MCPSiteList extends MCPModule {
 	* @return str output
 	*/
 	public function displaySiteEditLink($value,$row) {
+		
+		if(!$row['allow_edit']) {
+			return 'Edit';
+		}
 		
 		return sprintf(
 			'<a href="%s/Edit/%u">Edit</a>'

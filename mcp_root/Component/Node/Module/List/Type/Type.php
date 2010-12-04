@@ -19,7 +19,12 @@ class MCPNodeListType extends MCPModule {
 	/*
 	* Alternate routing path 
 	*/
-	,$_strRequest;
+	,$_strRequest
+	
+	/*
+	* Node type id to perform action on 
+	*/
+	,$_intActionsId;
 	
 	public function __construct(MCP $objMCP,MCPModule $objParentModule=null,$arrConfig=null) {
 		parent::__construct($objMCP,$objParentModule,$arrConfig);
@@ -29,6 +34,48 @@ class MCPNodeListType extends MCPModule {
 	private function _init() {
 		// Get node data access layer
 		$this->_objDAONode = $this->_objMCP->getInstance('Component.Node.DAO.DAONode',array($this->_objMCP));
+		
+		// set-up delete event handler
+		$id =& $this->_intActionsId;
+		$dao = $this->_objDAONode;
+		
+		$this->_objMCP->subscribe($this,'NODE_TYPE_DELETE',function() use(&$id,$dao)  {
+			// delete the node type
+			$dao->deleteNodeType($id);
+		});
+	}
+	
+	/*
+	* Handle form submit 
+	*/
+	private function _handleFrm() {
+		
+		/*
+		* Get posted form data 
+		*/
+		$arrPost = $this->_objMCP->getPost('frmNodeTypeList');
+		
+		/*
+		* Route action 
+		*/
+		if($arrPost && isset($arrPost['action']) && !empty($arrPost['action'])) {
+			
+			/*
+			* Get action 
+			*/
+			$strAction = array_pop(array_keys($arrPost['action']));
+			
+			/*
+			* Get node types id 
+			*/
+			$this->_intActionsId = array_pop(array_keys(array_pop($arrPost['action'])));
+			
+			/*
+			* Fire event 
+			*/
+			$this->_objMCP->fire($this,"NODE_TYPE_".strtoupper($strAction));
+		}
+		
 	}
 	
 	/*
@@ -93,21 +140,35 @@ class MCPNodeListType extends MCPModule {
 	* get header configuration array for table display 
 	*/
 	protected function _getHeaders() {
+		
+		$mcp = $this->_objMCP;
 		return array(
 			array(
 				'label'=>'Classification'
 				,'column'=>'node_types_id'
 				,'mutation'=>array($this,'DisplayNodeTypeName')
-			)
+			)	
+			
 			,array(
 				'label'=>'&nbsp;'
 				,'column'=>'node_types_id'
 				,'mutation'=>array($this,'displayNodeTypeDynamicFieldLink')
 			)
+			
 			,array(
 				'label'=>'&nbsp;'
 				,'column'=>'node_types_id'
 				,'mutation'=>array($this,'displayNodeContentLink')
+			)
+			,array(
+				'label'=>'&nbsp;'
+				,'column'=>'node_types_id'
+				,'mutation'=>function($value,$row) use ($mcp) {
+					return $mcp->ui('Common.Form.Submit',array(
+						'label'=>'Delete'
+						,'name'=>"frmNodeTypeList[action][delete][$value]"
+					));
+				}
 			)
 		);
 	}
@@ -123,6 +184,11 @@ class MCPNodeListType extends MCPModule {
 		* Alternate internal redirect route
 		*/
 		$this->_strRequest = !empty($arrArgs) && in_array($arrArgs[0],array('Edit','Type','Fields','Add'))?array_shift($arrArgs):null;
+				
+		/*
+		* Handle form submit  
+		*/
+		$this->_handleFrm();
 		
 		/*
 		* Number of items per page 
@@ -149,9 +215,24 @@ class MCPNodeListType extends MCPModule {
 		$this->_arrTemplateData['create_link'] = "{$this->getBasePath(true,false)}/Add";
 		
 		/*
+		* Form action
+		*/
+		$this->_arrTemplateData['frm_action'] = $this->getBasePath();
+		
+		/*
+		* Form name 
+		*/
+		$this->_arrTemplateData['frm_name'] = 'frmNodeTypeList';
+		
+		/*
+		* Form method 
+		*/
+		$this->_arrTemplateData['frm_method'] = 'POST';
+		
+		/*
 		* set flag whether user is allowed to create node types 
 		*/
-		$create_perm = $this->_objMCP->getPermission(MCP::ADD,'NodeType');
+		$create_perm = $this->_objMCP->getPermission(MCP::ADD,'NodeType',null);
 		$this->_arrTemplateData['allow_node_type_create'] = $create_perm['allow'];
 		
 		/*

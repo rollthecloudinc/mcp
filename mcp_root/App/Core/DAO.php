@@ -60,7 +60,7 @@ abstract class MCPDAO extends MCPResource {
 			
 		}
 		
-		if(!empty($strCreated) && !array_key_exists($strCreated,$arrColumns)) {
+		if(!$boolUpdate && !empty($strCreated) && !array_key_exists($strCreated,$arrColumns)) {
 			$arrColumns[] = $strCreated;
 			$arrValues[] = 'NOW()';
 		}
@@ -75,45 +75,6 @@ abstract class MCPDAO extends MCPResource {
 		
 		return $this->_objMCP->query($strSQL);
 		
-	}
-	
-	/*
-	* Check user edit permissions for item
-	* - Allow child classes to define implementation
-	* 
-	* @param array item data
-	* [@param] item entity type such as; Node, Navigation Item, Navigation, ect.
-	* 
-	* @return bool true/false
-	*/
-	public function canEdit($arrItem,$strEntity=null) {
-		return true;
-	}
-	
-	/*
-	* Check user delete permissions for item
-	* - Allow child classes to define implementation
-	* 
-	* @param array item data
-	* [@param] item entity type such as; Node, Navigation Item, Navigation, ect.
-	* 
-	* @return bool true/false
-	*/
-	public function canDelete($arrItem,$strEntity=null) {
-		return true;
-	}
-	
-	/*
-	* Check user create permissions for item
-	* - Allow child classes to define implementation
-	* 
-	* @param array item data
-	* [@param] item entity type such as; Node, Navigation Item, Navigation, ect.
-	* 
-	* @return bool true/false
-	*/
-	public function canAdd($arrItem,$strEntity=null) {
-		return true;
 	}
 	
 }

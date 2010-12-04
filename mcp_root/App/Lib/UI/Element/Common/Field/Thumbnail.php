@@ -1,7 +1,7 @@
 <?php 
 namespace UI\Element\Common\Field;
 
-class Image implements \UI\Element {
+class Thumbnail implements \UI\Element {
 	
 	public function settings() {
 		return array(

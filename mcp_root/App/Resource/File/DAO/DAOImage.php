@@ -67,7 +67,7 @@ class MCPDAOImage extends MCPDAO {
 		/*
 		* Fetch image data 
 		*/
-		return array_pop($this->_objMCP->query("SELECT $strSelect FROM MCP_IMAGES WHERE images_id = {$this->_objMCP->escapeString($intId)}"));
+		return array_pop($this->_objMCP->query("SELECT $strSelect FROM MCP_MEDIA_IMAGES WHERE images_id = {$this->_objMCP->escapeString($intId)}"));
 		
 	}
 	
@@ -330,7 +330,7 @@ class MCPDAOImage extends MCPDAO {
 		* Insert image data into database 
 		*/
 		$intId = $this->_objMCP->query(sprintf(
-			"INSERT INTO MCP_IMAGES (sites_id,creators_id,image_label,image_mime,image_size,image_width,image_height,md5_checksum,created_on_timestamp) VALUES (%s,%s,'%s','%s','%s',%s,%s,'%s',NOW())"
+			"INSERT INTO MCP_MEDIA_IMAGES (sites_id,creators_id,image_label,image_mime,image_size,image_width,image_height,md5_checksum,created_on_timestamp) VALUES (%s,%s,'%s','%s','%s',%s,%s,'%s',NOW())"
 			,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
 			,$this->_objMCP->escapeString($this->_objMCP->getUsersId())
 			,$this->_objMCP->escapeString($arrImage['name'])

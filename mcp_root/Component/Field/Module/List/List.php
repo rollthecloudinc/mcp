@@ -161,7 +161,6 @@ class MCPFieldList extends MCPModule {
 			);
 			$strTpl = 'Redirect';
 		}
-		
 		return "List/$strTpl.php";
 	}
 	

@@ -360,7 +360,13 @@ class MCPDAOField extends MCPDAO {
 			* Handle special image resource field 
 			*/
 			if($this->isImageField($field_name,$strEntityType,$intEntitiesId,$intSitesId) === true) {
-				$field_value = $this->_objMCP->getInstance('App.Resource.File.DAO.DAOImage',array($this->_objMCP))->insert($field_value,true);
+				
+				if($field_value && isset($field_value['error']) && $field_value['error'] != 4) {
+					$field_value = $this->_objMCP->getInstance('App.Resource.File.DAO.DAOImage',array($this->_objMCP))->insert($field_value,true);
+				} else {
+					continue;
+				}
+				
 			}
 		
 			$strSQL = sprintf(

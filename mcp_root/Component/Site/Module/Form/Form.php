@@ -217,7 +217,21 @@ class MCPSiteForm extends MCPModule {
 	*/
 	protected function _frmSave() {
 		
-		echo '<pre>',print_r($this->_arrFrmValues),'</pre>';
+		$arrValues = $this->_arrFrmValues;
+		
+		/*
+		* Get the current site 
+		*/
+		$arrSite = $this->_getSite();
+		
+		/*
+		* When editing addition of sites_id triggers update instead of insert 
+		*/
+		if($arrSite !== null) {
+			$arrValues['sites_id'] = $arrSite['sites_id'];
+		}
+		
+		$this->_objDAOSite->save($arrValues);
 		
 	}
 	
@@ -282,12 +296,12 @@ class MCPSiteForm extends MCPModule {
 		
 		/*
 		* Check permissions 
-		* Can user add/ edit site?
+		* Can user create a new site or edit one?
 		*/
-		/*$perm = $this->_objMCP->getPermission('MCP_SITE',$intSitesId);
-		if(!$perm->allowed()) {
+		$perm = $this->_objMCP->getPermission( ($intSitesId !== null?MCP::EDIT:MCP::ADD) , 'Site' , $intSitesId);
+		if(!$perm['allow']) {
 			throw new MCPPermissionException($perm);
-		}*/
+		}
 		
 		/*
 		* Process the form 
