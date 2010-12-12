@@ -5,47 +5,53 @@ if(isset($_POST['frmView'])) echo '<pre>',print_r($_POST['frmView']),'</pre>';
 	<fieldset>
 		<legend>View</legend>
 		
-		<ul>
-			<li style="display: inline-block;">
-				<input type="radio" checked="checked" name="frmView[general][type]">
-				<label for="">Aggregate</label>
-			</li>
-			<li style="display: inline-block;">
-				<input type="radio" name="frmView[general][type]">
-				<label for="">Individual</label>
-			</li>
-		</ul>
+		<fieldset>
+			<legend>General</legend>
 
-		<ul>
-			<li>
-				<label for="">Name</label>
-				<input type="text" value="products">
-			</li>
-			<li>
-				<label for="">Base</label>
-				<select>
-					<option>--</option>
-					<option>Members</option>
-					<option selected="selected">Nodes</option>
-					<option>Terms</option>
-					<option>Vocabularies</option>
-				</select>
-			</li>
-		</ul>
-		
 				<ul>
 					<li>
-						<label for="">Paginate</label>
+						<label for="">Base</label>
 						<select>
-							<option selected="selected">Yes</option>
-							<option>No</option>
+							<option>--</option>
+							<option>Members</option>
+							<option selected="selected">Nodes</option>
+							<option>Terms</option>
+							<option>Vocabularies</option>
 						</select>
 					</li>
 					<li>
-						<label for="">Items Per Page</label>
+						<label for="">System Name</label>
+						<input type="text" value="products">
+					</li>
+					<li>
+						<label for="">Human Name</label>
+						<input type="text" value="Products List">
+					</li>
+					<li>
+						<label for="">Type</label>
+						<select>
+							<option selected="selected">Aggregate</option>
+							<option>Individual</option>
+						</select>
+					</li>
+					<li>
+						<label for="">Rows</label>
 						<input type="text" value="20">
 					</li>
+					<li>
+						<label for="">Heading</label>
+						<input type="text" value="Products {Search String 2}">
+					</li>
 				</ul>
+		
+				<ul>
+					<li>
+						<input type="checkbox" value="1">
+						<label for="">Paginate</label>
+					</li>
+				</ul>
+		
+		</fieldset>
 
 		<fieldset>
 			<legend>Arguments</legend>
@@ -71,7 +77,7 @@ if(isset($_POST['frmView'])) echo '<pre>',print_r($_POST['frmView']),'</pre>';
 				</select>
 				<input type="text" value="search_string" disabled="disabled" name="frmView[arguments][0][value]">
 				
-				<input type="submit" value="-" disabled="disabled" style="float: right;margin-left: 1em;">
+				<input type="submit" value="-" disabled="disabled" style="float: right;margin-left: 1em;" name="frmView[action][remove][arguments][0]">
 				<input type="submit" value="Override" style="float: right;" name="frmView[action][override][arguments][0]">
 			
 			</fieldset>
@@ -90,12 +96,12 @@ if(isset($_POST['frmView'])) echo '<pre>',print_r($_POST['frmView']),'</pre>';
 				</select>
 				<input type="text" value="1" name="frmView[arguments][1][value]">
 				
-				<input type="submit" value="-" style="float: right;margin-left: 1em;" disabled="disabled">
+				<input type="submit" value="-" style="float: right;margin-left: 1em;" disabled="disabled" name="frmView[action][remove][arguments][1]">
 				<input type="submit" value="Use Default" style="float: right;" name="frmView[action][use_default][arguments][1]">
 			
 			</fieldset>
 			
-			<p><input type="submit" value="+"></p>
+			<p><input type="submit" value="+" name="frmView[action][add][argument]"></p>
 			
 		</fieldset>
 		
@@ -134,16 +140,21 @@ if(isset($_POST['frmView'])) echo '<pre>',print_r($_POST['frmView']),'</pre>';
 						<input type="checkbox" checked="checked" disabled="disabled">
 						<label for="">Sortable</label>
 					</li>
+					<li style="display: inline-block">
+						<input type="checkbox" checked="checked" disabled="disabled">
+						<label for="">Editable</label>
+					</li>
 				</ul>
 			</fieldset>
 			<fieldset>
+				<input type="hidden" value="56" name="frmView[fields][0][id]">
 			
 				<input type="submit" value="-" style="float: right;margin-left: 1em;">
 				<input type="submit" value="Use Default" style="float: right;">
 				
 				<ul>
 					<li style="display: inline-block">
-						<select>
+						<select name="frmView[fields][0][field][]">
 							<option>--</option>
 							<option>id</option>
 							<option>site</option>
@@ -161,12 +172,12 @@ if(isset($_POST['frmView'])) echo '<pre>',print_r($_POST['frmView']),'</pre>';
 						</select>
 					</li>
 					<li style="display: inline-block">
-						<select>
+						<select name="frmView[fields][0][field][]">
 							<option selected="selected">main image</option>				
 						</select>
 					</li>
 					<li style="display: inline-block">
-						<select>
+						<select name="frmView[fields][0][field][]">
 							<option>--</option>
 							<option selected="selected">Image</option> <!--the actual image itself -->
 							<option>id</option>
@@ -180,27 +191,27 @@ if(isset($_POST['frmView'])) echo '<pre>',print_r($_POST['frmView']),'</pre>';
 				
 				<ul>
 					<li>
-						<select>
+						<select name="frmView[fields][0][option][0][type]">
 							<option selected="selected">Width</option>
 							<option>Height</option>
 							<option>Grayscale</option>
 							<option>B/W</option>
 						</select>
-						<input type="text" value="200">
-						<select>
+						<input type="text" value="200" name="frmView[fields][0][option][0][value]">
+						<select name="frmView[fields][0][option][0][location]">
 							<option selected="selected">value</option>
 							<option>arg</option>
 						</select>
 					</li>
 					<li>
-						<select>
+						<select name="frmView[fields][0][option][1][type]">
 							<option>Width</option>
 							<option>Height</option>
 							<option selected="selected">Grayscale</option>
 							<option>B/W</option>
 						</select>
-						<input type="text" value="true" disabled="disabled">
-						<select disabled="disabled">
+						<input type="text" value="true" disabled="disabled" name="frmView[fields][0][option][1][value]">
+						<select disabled="disabled" name="frmView[fields][0][option][1][location]">
 							<option selected="selected">value</option>
 							<option>arg</option>
 						</select>
@@ -208,13 +219,14 @@ if(isset($_POST['frmView'])) echo '<pre>',print_r($_POST['frmView']),'</pre>';
 				</ul>
 			</fieldset>
 			<fieldset>
+				<input type="hidden" value="221" name="frmView[fields][1][id]">
 			
 				<input type="submit" value="-" style="float: right;margin-left: 1em;">
 				<input type="submit" value="Use Default" style="float: right;">
 				
 				<ul>
 					<li style="display: inline-block">
-						<select>
+						<select name="frmView[fields][1][field][]">
 							<option>--</option>
 							<option>id</option>
 							<option>site</option>
@@ -232,13 +244,17 @@ if(isset($_POST['frmView'])) echo '<pre>',print_r($_POST['frmView']),'</pre>';
 						</select>
 					</li>
 					<li style="display: inline-block">
-						<select>
+						<select name="frmView[fields][1][field][]">
 							<option selected="selected">msrp</option>				
 						</select>
 					</li>
 					<li style="display: inline-block">
-						<input type="checkbox" checked="checked">
+						<input type="checkbox" checked="checked" value="1" name="frmView[fields][1][sortable]">
 						<label for="">Sortable</label>
+					</li>
+					<li style="display: inline-block">
+						<input type="checkbox" checked="checked" value="1" name="frmView[fields][1][editable]">
+						<label for="">Editable</label>
 					</li>
 				</ul>
 			</fieldset>

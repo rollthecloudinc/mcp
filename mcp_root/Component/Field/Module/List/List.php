@@ -59,6 +59,7 @@ class MCPFieldList extends MCPModule {
 		
 		// Closure module reference
 		$mod = $this;
+		$mcp = $this->_objMCP;
 		
 		return array(
 			array(
@@ -74,15 +75,35 @@ class MCPFieldList extends MCPModule {
 			,array(
 				'label'=>'&nbsp;'
 				,'column'=>'fields_id'
-				,'mutation'=>function($value,$row) use($mod) {
-					return sprintf(
-						'<a href="%s/Edit/%u">Edit</a>'
-						,$mod->getBasePath(false)
-						,$value
-					);
+				,'mutation'=>function($value,$row) use($mcp,$mod) {
+					
+					if(!$row['allow_edit']) {
+						return 'Edit';
+					}
+					
+					return $mcp->ui('Common.Field.Link',array(
+						'url'=>"{$mod->getBasePath(false)}/Edit/$value"
+						,'label'=>'Edit'
+					));
+					
 				}
 				
 			)
+			
+			,array(
+				'label'=>'&nbsp;'
+				,'column'=>'fields_id'
+				,'mutation'=>function($value,$row) use($mcp) {
+					
+					return $mcp->ui('Common.Form.Submit',array(
+						'name'=>'frmFieldList[action][delete]['.$value.']'
+						,'label'=>'Delete'
+						,'disabled'=>!$row['allow_delete']
+					));
+					
+				}
+			)
+			
 		);
 	}
 	
@@ -122,6 +143,24 @@ class MCPFieldList extends MCPModule {
 		);
 		
 		/*
+		* Add in field permissions 
+		*/
+		$ids = array();
+		foreach($this->_arrTemplateData['fields'] as $field) {
+			$ids[] = $field['fields_id'];
+		}
+		
+		if(!empty($ids)) {
+			$editPerms = $this->_objMCP->getPermission(MCP::EDIT,'Field',$ids);
+			$deletePerms = $this->_objMCP->getPermission(MCP::DELETE,'Field',$ids);
+		}
+		
+		foreach($this->_arrTemplateData['fields'] as &$field) {
+			$field['allow_edit'] = $editPerms[$field['fields_id']]['allow'];
+			$field['allow_delete'] = $deletePerms[$field['fields_id']]['allow'];
+		}
+		
+		/*
 		* Get the table display headers 
 		*/
 		$this->_arrTemplateData['headers'] = $this->_getHeaders();
@@ -130,6 +169,12 @@ class MCPFieldList extends MCPModule {
 		* Create new field link 
 		*/
 		$this->_arrTemplateData['create_link'] = "{$this->getBasePath(false)}/New/{$this->_strEntityType}".($this->_intEntitiesId !== null?"-{$this->_intEntitiesId}":'');
+		
+		/*
+		* Determine whether user is allowed to create a new field 
+		*/
+		$perm = $this->_objMCP->getPermission(MCP::ADD,'Field', ($this->_intEntitiesId === null?$this->_strEntityType:"{$this->_strEntityType}-{$this->_intEntitiesId}") );
+		$this->_arrTemplateData['allow_create'] = $perm['allow'];
 		
 		/*
 		* Redirection back link 
@@ -161,6 +206,7 @@ class MCPFieldList extends MCPModule {
 			);
 			$strTpl = 'Redirect';
 		}
+		
 		return "List/$strTpl.php";
 	}
 	

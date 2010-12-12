@@ -269,7 +269,7 @@ class MCPDAOField extends MCPDAO {
 			)
 		);
 		
-		foreach($tbls as $tbl) {	
+		foreach($tbls as $tbl) {
 			
 			// name of table
 			$value = array_pop($tbl);

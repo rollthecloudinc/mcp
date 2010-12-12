@@ -36,12 +36,16 @@ class MCPPermissionTerm extends MCPDAO implements MCPPermission {
 		foreach($permissions as $permission) {
 			$return[$permission['item_id']] = array(
 				'allow'=>(bool) $permission['allow_add']
+				,'msg_dev'=>$permission['deny_add_msg_dev']
+				,'msg_user'=>'You are not allowed to create term for specified vocabulary.'
 			);
 		}
 		
 		foreach(array_diff($ids,array_keys($return)) as $id) {
 			$return[$id] = array(
 				'allow'=>false
+				,'msg_dev'=>$permission['deny_add_msg_dev']
+				,'msg_user'=>'You are not allowed to create term for specified vocabulary.'
 			);
 		}
 		

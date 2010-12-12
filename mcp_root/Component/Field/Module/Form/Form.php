@@ -305,12 +305,11 @@ class MCPFieldForm extends MCPModule {
 		* Check permissions 
 		* Can user add/ edit field for entity?
 		*/
-		/*$perm = $this->_objMCP->getPermission('MCP_FIELD',$intFieldsId,array(
-			'entity'=>$this->_strEntityPreselect
-		));
-		if(!$perm->allowed()) {
+		$field = $this->_getField();
+		$perm = $this->_objMCP->getPermission(($field === null?MCP::ADD:MCP::EDIT),'Field', ( $field === null?$this->_strEntityPreselect:$field['fields_id'] ));
+		if(!$perm['allow']) {
 			throw new MCPPermissionException($perm);
-		}*/
+		}
 		
 		/*
 		* Process form 

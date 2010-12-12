@@ -94,7 +94,7 @@ class MCPNodeListType extends MCPModule {
 		// Fetch node types
 		$this->_arrTemplateData['node_types'] = $this->_arrTemplateData['node_types'] = $this->_objDAONode->fetchNodeTypes('t.*',$this->_getFilter($strLetter),$this->_getSort());
 		
-		// mixin permissions to edit and add content to node type
+		// mixin permissions to edit and delete content to node type
 		$ids = array();
 		foreach($this->_arrTemplateData['node_types'] as $nodeType) {
 			$ids[] = $nodeType['node_types_id'];
@@ -102,10 +102,12 @@ class MCPNodeListType extends MCPModule {
 		
 		if(!empty($ids)) {
 			$editPerms = $this->_objMCP->getPermission(MCP::EDIT,'NodeType',$ids);
+			$deletePerms = $this->_objMCP->getPermission(MCP::DELETE,'NodeType',$ids);
 		}
 		
 		foreach($this->_arrTemplateData['node_types'] as &$nodeType) {
 			$nodeType['allow_edit'] = $editPerms[$nodeType['node_types_id']]['allow'];
+			$nodeType['allow_delete'] = $deletePerms[$nodeType['node_types_id']]['allow'];
 		}
 		
 	}
@@ -167,6 +169,7 @@ class MCPNodeListType extends MCPModule {
 					return $mcp->ui('Common.Form.Submit',array(
 						'label'=>'Delete'
 						,'name'=>"frmNodeTypeList[action][delete][$value]"
+						,'disabled'=>!$row['allow_delete']
 					));
 				}
 			)

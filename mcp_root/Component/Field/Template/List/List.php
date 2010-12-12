@@ -3,10 +3,12 @@
 /*
 * Create field 
 */
-echo $this->ui('Common.Field.Link',array(
-	'url'=>$create_link
-	,'label'=>'New Field'
-));
+if($allow_create) {
+	echo $this->ui('Common.Field.Link',array(
+		'url'=>$create_link
+		,'label'=>'New Field'
+	));
+}
 
 /*
 * Build out table of fields 
