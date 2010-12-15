@@ -252,11 +252,63 @@ in as if they were part of the schema on the application end. Currently has a aw
 but the initial sturcture has been roughly developed. When completed it will be possible to add Virtual
 Fields to nearly all application entities such as; Users, Node Types, Terms, Vocabularies, etc. 
 
-Views (todo)
+Virtual Displays (VD package)
 
-Views are in the works but when complete will allow the creation of query building and end theming through
-an API similar to that of Drupal views. Though within the MCP view data will be stored in a series of tables
-rather than being serialized into an unusable look-up format as done with Drupal views. More to come on this.
+Displays will provide a User API to launch pages as navigation links using a variery of
+information within the database. Using the API non-programmers will be able to build basic
+to intermediate SQL statements, style, add pagination, permeissions and even actions using
+the primary entities within the system
+
+- Node
+- Site
+- User
+- Vocabulary
+- Term
+- Node Type
+- *Field
+
+Virtual displays may be used to create a products page, navigation menu, navigation sub menu or
+single node page with nested virtual displays. Displays will able to be embedded within one
+another and overrided at any level of the tree.
+
+proposed tables:
+
+vd_arguments
+define variables to make available to the display using unique names. Variables may be defined
+based on POST, GET, URL Agruments, PHP snippet or static value. Once an argument is used in a filter
+,sort or field it may not be delted until removed from all of its references within the query.
+
+vd_fields
+The fields to select. The query will be derived from what is being selected including automated
+logic to handle necessary joins. Joins for dynamic fields is one thing that is going to come
+pre-built, so there is no need to declare joins through the API, they will happen automatically
+based the what needs to be shown.
+
+vd_filters
+Filters will be used to limit the result set passed on a certain set of criteria such as;
+nodes that are products or terms within a certain vocabulary. 
+
+vd_sorting
+Similiar to fields one will be able to select any field and sort by it using ascending, descending
+or specific priority. Additionally, any fields selected may be marked as sortable. Making a field
+selection sortable will provide a up and down arrow for sorting that specific column without
+defining it here. The items explicitly declared for sorting will always be added to the query where as
+items makred as sortable will be controllable by the user using up and down arrows.
+
+vd_displays
+Display table will host all of a sites available dsiplays in a tree format. Each display
+will be required to have a unique name amoung its siblingings. Displays may be named
+the same thing unless they are siblings of one another. Displays will be siblings when
+they extend an existing display slightly modifying some aspect inheriting the primary
+definition.
+
+Actions
+
+Two primary actions exist for any given entity within the system: edit and delete. When
+creating or editing a display it may be checked as editable or deletable. When that occurs the
+users with permissions to delete or edit the base entity shown such as; node will be shown inputs
+to carry out those tasks. Addionally, it may be possible to edit the data directly within the view
+using AJAX, though a little far fetched at the moment but we'll see.
 
 ------------------------------------------------------------------------------------------------------
 

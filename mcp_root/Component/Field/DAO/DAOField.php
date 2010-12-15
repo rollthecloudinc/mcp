@@ -165,6 +165,7 @@ class MCPDAOField extends MCPDAO {
 					if(in_array($key,array('dao_pkg','dao_method','dao_args'))) continue;
 					
 					$values.= "<$key>$value</$key>";
+				
 				}
 			}
 			
@@ -229,14 +230,31 @@ class MCPDAOField extends MCPDAO {
 		$arrResult = $this->_objMCP->query('DESCRIBE MCP_FIELDS');
 		$arrValueTypes = array();
 		
+		/*
+		* abstracted labels - probably make more sense to average user
+		*/
+		$labels = array(
+			'image'=>'Image'
+			,'file'=>'File'
+			,'audio'=>'Audio'
+			,'video'=>'Video'
+			,'int'=>'Number'
+			,'varchar'=>'Short Text'
+			,'text'=>'Long Text'
+			,'price'=>'Price'
+			,'bool'=>'True/False'
+		);
+		
 		foreach($arrResult as $arrColumn) {
-			if(strcmp('db_value',$arrColumn['Field']) == 0) {
+			if(strcmp('db_value',$arrColumn['Field']) == 0 || strcmp('cfg_media',$arrColumn['Field']) == 0) {
 				
 				foreach(explode(',',str_replace("'",'',trim(trim($arrColumn['Type'],'enum('),')'))) as $strValue) {
-					$arrValueTypes[] = array('value'=>$strValue,'label'=>$strValue);
+					$arrValueTypes[] = array(
+						'value'=>$strValue
+						,'label'=>isset($labels[$strValue])?$labels[$strValue]:$strValue
+					);
 				}
 				
-				break;
 			}
 		}
 		
@@ -329,7 +347,7 @@ class MCPDAOField extends MCPDAO {
 			$arrField
 			,'MCP_FIELDS'
 			,'fields_id'
-			,array('entity_type','entities_id','cfg_name','cfg_label','cfg_description','cfg_required','cfg_default','cfg_type','cfg_values','cfg_sql','cfg_dao_pkg','cfg_dao_method','db_value','db_ref_table','db_ref_col')
+			,array('entity_type','entities_id','cfg_name','cfg_label','cfg_description','cfg_required','cfg_default','cfg_type','cfg_values','cfg_sql','cfg_dao_pkg','cfg_dao_method','db_value','cfg_media','db_ref_table','db_ref_col')
 			,null
 			,array('cfg_dao_args')
 		);
@@ -420,7 +438,7 @@ class MCPDAOField extends MCPDAO {
 		/*
 		* Fetch field data 
 		*/
-		$field = array_pop($this->listFields('f.cfg_image',sprintf(
+		$field = array_pop($this->listFields('f.cfg_media',sprintf(
 			"f.cfg_name = '%s' AND f.entity_type = '%s' AND f.entities_id %s AND f.sites_id = %s"
 			,$this->_objMCP->escapeString($strField)
 			,$this->_objMCP->escapeString($strEntity)
@@ -428,7 +446,7 @@ class MCPDAOField extends MCPDAO {
 			,$this->_objMCP->escapeString($intSitesId !== null?$intSitesId:$this->_objMCP->getSitesId())
 		)));
 		
-		return $field !== null?$field['cfg_image'] == 1?true:false:false;
+		return $field !== null?strcmp($field['cfg_media'],'image') == 0?true:false:false;
 		
 	}
 	

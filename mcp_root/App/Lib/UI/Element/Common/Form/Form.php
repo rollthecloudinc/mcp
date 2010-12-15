@@ -135,12 +135,15 @@ class Form implements \UI\Element {
 									$input_type = 'text';
 							}
 							
+							/*
+							* Functions with serialization for now only 
+							*/
 							$val = isset($data['multi'])?isset($values[$field][$i])?$values[$field][$i]:'':$values[$field];
 							
 							/*
 							* Override for file input 
 							*/
-							if(isset($data['image'])) {
+							if(isset($data['media'])) {
 								$input_type = 'file';
 							}
 							
@@ -157,7 +160,7 @@ class Form implements \UI\Element {
 							/*
 							* For images show thumbnail 
 							*/
-							if(isset($data['image']) && $val) {
+							if(isset($data['media']) && $val) {
 								$out.= $ui->draw('Common.Field.Thumbnail',array(
 									'src'=>( $image_path !== null?sprintf($image_path,(string) $val):$val )
 								));

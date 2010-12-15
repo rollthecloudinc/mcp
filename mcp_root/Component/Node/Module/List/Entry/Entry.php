@@ -88,12 +88,14 @@ class MCPNodeListEntry extends MCPModule {
 		*/
 		$arrNodeType = $this->_getNodeType();
 		
-		return sprintf(
+		$filter = sprintf(
 			"%s n.node_published = 1 AND n.deleted IS NULL"
 			
 			// view node of the specified type
 			,$arrNodeType !== null?"t.node_types_id = {$this->_objMCP->escapeString($arrNodeType['node_types_id'])} AND ":''
 		);
+		
+		return $filter;
 	}
 	
 	/*

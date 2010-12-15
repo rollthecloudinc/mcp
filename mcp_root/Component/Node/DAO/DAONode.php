@@ -284,9 +284,9 @@ class MCPDAONode extends MCPDAO {
 		* Build final SQL to select node type 
 		*/
 		$strSQL = sprintf(
-			'SELECT %s FROM MCP_NODE_TYPES WHERE system_name = ? %s AND sites_id = ?'
+			'SELECT %s FROM MCP_NODE_TYPES WHERE system_name = ? AND pkg %s AND sites_id = ?'
 			,$strSelect
-			,$pkg === null?'':' AND pkg = ?'
+			,$pkg === null?' IS NULL ':' = ?'
 		);
 		
 		// run query

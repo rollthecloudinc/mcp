@@ -186,21 +186,6 @@
 				</dao>
 				<default>varchar</default>
 			</db_value>
-			<cfg_image>
-				<label>Image</label>
-				<required>Y</required>
-				<values>
-					<value>
-						<value>1</value>
-						<label>Yes</label>
-					</value>
-					<value>
-						<value>0</value>
-						<label>No</label>
-					</value>
-				</values>
-				<default>0</default>
-			</cfg_image>
 		</frm>
 	</mod>
 	<mod pkg="Component.Site.Module.Form">

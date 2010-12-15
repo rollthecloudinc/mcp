@@ -132,11 +132,6 @@ class MCPFieldForm extends MCPModule {
 			}
 		}
 		
-		// Images result in foreign key reference - always use db_int for value
-		if($this->_arrFrmValues['cfg_image'] == 1) {
-			$this->_arrFrmValues['db_value'] = 'int';
-		}
-		
 	}
 	
 	/*
@@ -157,6 +152,11 @@ class MCPFieldForm extends MCPModule {
 				
 				case 'cfg_dao_args':
 					$this->_arrFrmValues[$strField] = isset($arrField[$strField])?unserialize(base64_decode($arrField[$strField])):'';
+					break;
+
+				// logic necessary to mixin media with primitive db values interface wise
+				case 'db_value':
+					$this->_arrFrmValues[$strField] = $arrField !== null && $arrField['cfg_media'] !== null?$arrField['cfg_media']:$arrField['db_value'];
 					break;
 				
 				// build expected entity value mask
@@ -218,11 +218,41 @@ class MCPFieldForm extends MCPModule {
 		if($entities_id !== null) {
 			$arrValues['entities_id'] = $entities_id;
 		}
-		
-		// Image foreign key reference
-		if($arrValues['cfg_image'] == 1) {
-			$arrValues['db_ref_table'] = 'MCP_MEDIA_IMAGES';
-			$arrValues['db_ref_col'] = 'images_id';
+			
+		/*
+		* Handle media type conversions
+		*/
+		switch($arrValues['db_value']) {
+				
+			case 'image':
+				$arrValues['cfg_media'] = 'image';
+				$arrValues['db_value'] = 'int';
+				$arrValues['db_ref_table'] = 'MCP_MEDIA_IMAGES';
+				$arrValues['db_ref_col'] = 'images_id';
+				break;
+				
+			case 'audio':
+				$arrValues['cfg_media'] = 'audio';
+				$arrValues['db_value'] = 'int';
+				$arrValues['db_ref_table'] = 'MCP_MEDIA_AUDIO';
+				$arrValues['db_ref_col'] = 'audio_id';
+				break;
+				
+			case 'video':
+				$arrValues['cfg_media'] = 'video';
+				$arrValues['db_value'] = 'int';
+				$arrValues['db_ref_table'] = 'MCP_MEDIA_VIDEO';
+				$arrValues['db_ref_col'] = 'video_id';
+				break;
+				
+			case 'file':
+				$arrValues['cfg_media'] = 'file';
+				$arrValues['db_value'] = 'int';
+				$arrValues['db_ref_table'] = 'MCP_MEDIA_FILES';
+				$arrValues['db_ref_col'] = 'files_id';
+				break;
+				
+			default:
 		}
 		
 		// Get the current field
@@ -305,11 +335,11 @@ class MCPFieldForm extends MCPModule {
 		* Check permissions 
 		* Can user add/ edit field for entity?
 		*/
-		$field = $this->_getField();
+		/*$field = $this->_getField();
 		$perm = $this->_objMCP->getPermission(($field === null?MCP::ADD:MCP::EDIT),'Field', ( $field === null?$this->_strEntityPreselect:$field['fields_id'] ));
 		if(!$perm['allow']) {
 			throw new MCPPermissionException($perm);
-		}
+		}*/
 		
 		/*
 		* Process form 
