@@ -97,8 +97,39 @@ class Form implements \UI\Element {
 					,'required'=>isset($data['required']) && $data['required'] == 'Y'?true:false
 				));
 					
-				$loops = isset($data['multi'])?$data['multi']:1;		
+				$loops = isset($data['multi'])?$data['multi']:1;	
+
+				// display multiple values as list for now
+				if( isset($data['multi']) ) {
+					
+					// create add new field submit/button
+					$out.= $ui->draw('Common.Form.Input',array(
+						'type'=>'submit'
+						,'name'=>"{$name}[action][add][{$field}]"
+						,'value'=>'+'
+						,'id'=>$idbase.strtolower(str_replace('_','-',$field)).'-add'
+					));				
+					
+					$out.= sprintf(
+						'<ol id="%s">'
+						,$idbase.strtolower(str_replace('_','-',$field)) // for multiple values label references container
+					);
+				}
+				
 				for($i=0;$i<$loops;$i++) {
+					
+					if( isset($data['multi']) ) {
+						$out.= '<li>';
+						
+						// create control to delete value
+						$out.= $ui->draw('Common.Form.Input',array(
+							'type'=>'submit'
+							,'name'=>"{$name}[action][delete][{$field}][{$i}]"
+							,'value'=>'-'
+							,'id'=>$idbase.strtolower(str_replace('_','-',$field)).'-'.($i+1).'-delete'
+						));
+						
+					}
 				
 					/*
 					* Print the field input, select, radio, checkbox, etc 
@@ -106,8 +137,8 @@ class Form implements \UI\Element {
 					if(isset($data['values'])) {
 							
 						$out.= $ui->draw('Common.Form.Select',array(
-							'name'=>sprintf('%s[%s]%s',$name,$field,(isset($data['multi'])?'[]':''))
-							,'id'=>$idbase.strtolower(str_replace('_','-',$field))
+							'name'=>sprintf('%s[%s]%s',$name,$field,(isset($data['multi'])?"[$i]":''))
+							,'id'=>$idbase.strtolower(str_replace('_','-',$field)).( isset($data['multi'])?'-'.($i+1):'' )
 							,'data'=>$data
 							,'value'=>$values[$field]
 							,'size'=>isset($data['size'])?$data['size']:null
@@ -118,8 +149,8 @@ class Form implements \UI\Element {
 						} else if(isset($data['textarea'])) {	
 
 							$out.= $ui->draw('Common.Form.TextArea',array(
-								'name'=>sprintf('%s[%s]%s',$name,$field,(isset($data['multi'])?'[]':''))
-								,'id'=>$idbase.strtolower(str_replace('_','-',$field))
+								'name'=>sprintf('%s[%s]%s',$name,$field,(isset($data['multi'])?"[$i]":''))
+								,'id'=>$idbase.strtolower(str_replace('_','-',$field)).( isset($data['multi'])?'-'.($i+1):'' )
 								,'disabled'=>$strDisabled?true:false
 								,'value'=>isset($data['multi'])?isset($values[$field][$i])?$values[$field][$i]:'':$values[$field]								
 							));
@@ -149,10 +180,10 @@ class Form implements \UI\Element {
 							
 							$out.= $ui->draw('Common.Form.Input',array(
 								'type'=>$input_type
-								,'name'=>sprintf('%s[%s]%s',$name,$field,(isset($data['multi'])?'[]':''))
+								,'name'=>sprintf('%s[%s]%s',$name,$field,(isset($data['multi'])?"[$i]":''))
 								,'value'=>strcmp($input_type,'checkbox') == 0?'1':$val
 								,'max'=>isset($data['max'])?$data['max']:null
-								,'id'=>$idbase.strtolower(str_replace('_','-',$field))
+								,'id'=>$idbase.strtolower(str_replace('_','-',$field)).( isset($data['multi'])?'-'.($i+1):'')
 								,'checked'=>strcmp($input_type,'checkbox') == 0 && $val?true:false
 								,'disabled'=>$strDisabled?true:false
 							));
@@ -168,7 +199,52 @@ class Form implements \UI\Element {
 					
 						}
 						
+						// close multiple value list element
+						if( isset($data['multi']) ) {
+							
+							/*
+							* IMPORTANT: For dynamic fields the field values primary key is needed
+							* to update any scalar dynamic field. 
+							*/
+							if($val instanceof \MCPField) {
+								$out.= $ui->draw('Common.Form.Input',array(
+									'type'=>'hidden'
+									,'name'=>"{$name}[$field][$i][id]"
+									,'value'=>$values[$field][$i]->getId()
+								));
+							}
+							
+							// Create controls to sort multiple values - render as a list / tree
+							$out.= $ui->draw('Common.Listing.Tree',array(
+								'value_key'=>'control'
+								,'data'=>array(
+									array(
+										'control'=>$ui->draw('Common.Form.Input',array(
+											'type'=>'submit'
+											,'value'=>'up'
+											,'id'=>$idbase.strtolower(str_replace('_','-',$field)).'-'.($i+1).'-up'
+											,'name'=>"{$name}[action][up][{$field}][{$i}]"
+										))
+									)
+									,array(
+										'control'=>$ui->draw('Common.Form.Input',array(
+											'type'=>'submit'
+											,'value'=>'down'
+											,'id'=>$idbase.strtolower(str_replace('_','-',$field)).'-'.($i+1).'-down'
+											,'name'=>"{$name}[action][down][{$field}][{$i}]"
+										))
+									)
+								)
+							));		
+							
+							$out.= '</li>';
+							
+						}
+						
 					}
+					
+					// close multiple value list
+					if( isset($data['multi']) ) $out.= '</ol>';
 				
 					/*
 					* Print field errors 

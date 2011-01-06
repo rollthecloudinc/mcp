@@ -18,6 +18,11 @@ $this->import('App.Core.VDItem');
 	public function getFieldEntityId() {
 		return '';
 	}
+	
+	// enables special tree handling
+	public function isTree() {
+		
+	}
 
 	public function getFields() {
 	
@@ -61,6 +66,10 @@ $this->import('App.Core.VDItem');
 			,'updated'=>array(
 				'column'=>'updated_on_timestamp'
 				,'binding'=>null
+			)
+			,'terms'=>array(
+				'column'=>'parent_id'
+				,'binding'=>'Term'
 			)
 		);
 	

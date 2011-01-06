@@ -280,6 +280,8 @@ class MCPNodeFormEntry extends MCPModule {
 		*/
 		$arrValues = $this->_arrFrmValues;
 		
+		//echo '<pre>',print_r($arrValues),'</pre>';
+		
 		/*
 		* Get current node 
 		*/
@@ -400,6 +402,9 @@ class MCPNodeFormEntry extends MCPModule {
 		* Process form 
 		*/
 		$this->_process();
+		
+		// echo '<pre>',print_r( $this->_getFrmConfig() ),'</pre>';
+		// echo '<pre>',print_r($this->_getNode()),'</pre>';
 		
 		$this->_arrTemplateData['name'] = $this->_getFrmName();
 		$this->_arrTemplateData['action'] = $this->getBasePath();

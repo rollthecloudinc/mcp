@@ -38,7 +38,7 @@ $this->import('App.Core.VDItem');
 				'column'=>'pkg'
 				,'binding'=>null
 			)
-			,'system name'=>array(
+			,'system_name'=>array(
 				'column'=>'system_name'
 				,'binding'=>null
 			)
@@ -57,6 +57,10 @@ $this->import('App.Core.VDItem');
 			,'created'=>array(
 				'column'=>'created_on_timestamp'
 				,'binding'=>null
+			)
+			,'nodes'=>array(
+				'column'=>'node_types_id'
+				,'binding'=>'Node'
 			)
 		);
 	

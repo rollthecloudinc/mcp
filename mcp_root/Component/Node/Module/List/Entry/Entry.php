@@ -131,11 +131,25 @@ class MCPNodeListEntry extends MCPModule {
 	* @return array headers
 	*/
 	protected function _getHeaders() {
+		
+		$mod = $this;
+		$mcp = $this->_objMCP;
+		
 		return array(
 			array(
 				'label'=>'Title'
 				,'column'=>'node_title'
-				,'mutation'=>null
+				,'mutation'=>function($title,$row) use ($mod,$mcp) {
+					
+					return $mcp->ui(
+						'Common.Field.Link'
+						,array(
+							'url'=>"{$mod->getBasePath()}/View/{$row['nodes_id']}"
+							,'label'=>$title
+						)
+					);
+					
+				}
 			)
 			,array(
 				'label'=>'&nbsp;'
@@ -165,7 +179,7 @@ class MCPNodeListEntry extends MCPModule {
 		/*
 		* Get redirect
 		*/
-		$this->_strRequest = !empty($arrArgs) && in_array($arrArgs[0],array('Create','Edit'))?array_shift($arrArgs):null;
+		$this->_strRequest = !empty($arrArgs) && in_array($arrArgs[0],array('Create','Edit','View'))?array_shift($arrArgs):null;
 		
 		/*
 		* Number of nodes per page 
@@ -182,6 +196,15 @@ class MCPNodeListEntry extends MCPModule {
 		if(strcmp('Create',$this->_strRequest) === 0 || strcmp('Edit',$this->_strRequest) === 0) {
 			$this->_arrTemplateData['TPL_REDIRECT_CONTENT'] = $this->_objMCP->executeComponent(
 				'Component.Node.Module.Form.Entry'
+				,$arrArgs
+				,null
+				,array($this)
+			);
+			$strTpl = 'Redirect';
+			
+		} else if(strcmp('View',$this->_strRequest) === 0) {
+			$this->_arrTemplateData['TPL_REDIRECT_CONTENT'] = $this->_objMCP->executeComponent(
+				'Component.Node.Module.View.Entry'
 				,$arrArgs
 				,null
 				,array($this)

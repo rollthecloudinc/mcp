@@ -70,7 +70,7 @@ class MCPDAONode extends MCPDAO {
 	/*
 	* List all nodes method for use with navigation link datasource callback 
 	*/
-	public function fetchNodes($strSelect='b.*',$strWhere=null,$strSort=null,$strLimit=null) {
+	public function fetchNodes($strSelect='n.*',$strWhere=null,$strSort=null,$strLimit=null) {
 		$args = func_get_args();
 		return array_shift(call_user_func_array(array($this,'listAll'),$args));
 	}
@@ -207,12 +207,13 @@ class MCPDAONode extends MCPDAO {
 	public function fetchById($intId,$strSelect='*') {
 		
 		$strSQL = sprintf(
-			'SELECT %s,node_types_id tmp_node_types_id FROM MCP_NODES WHERE nodes_id = ?'
+			'SELECT %s,node_types_id tmp_node_types_id FROM MCP_NODES WHERE nodes_id = %u'
 			,$strSelect
+			,(int) $intId
 		);
 		
 		// fetch node
-		$arrNode = array_pop($this->_objMCP->query($strSQL,array((int) $intId)));
+		$arrNode = array_pop($this->_objMCP->query($strSQL));
 		
 		// decorate node with dynamic field values
 		$arrNode = $this->_objMCP->addFields($arrNode,$intId,'MCP_NODE_TYPES',$arrNode['tmp_node_types_id']);
@@ -516,7 +517,7 @@ class MCPDAONode extends MCPDAO {
 			$arrNodeType
 			,'MCP_NODE_TYPES'
 			,'node_types_id'
-			,array('system_name','human_name','pkg','description')
+			,array('system_name','human_name','pkg','description','theme_tpl')
 			,'created_on_timestamp'
 		);		
 	}

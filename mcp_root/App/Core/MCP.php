@@ -1416,8 +1416,22 @@ class MCP {
 		* Add the data 
 		*/
 		foreach($arrFields as $arrField) {
+			
+			if(!isset($arrField['field_name'])) continue;
+			
 			$arrData[$arrField['field_name']] = $arrField['field_value'];
+			
+			/*
+			* relational row data for fields storing foreign key. Fields not storing
+			* a foreign key relationship will be NULL.
+			*/
+			//$arrData["{$arrField['field_name']}:relation"] = $arrField['field_value_relation'];
+			
+			//$arrData["{$arrField['field_name']}:field_values_id"] = $arrField['field_values_id'];
+			
 		}
+		
+		// echo '<pre>',print_r($arrData),'</pre>';
 		
 		return $arrData;
 		

@@ -42,7 +42,7 @@ class MCPNodeViewEntry extends MCPModule {
 		
 		if($arrNode === null) return false;
 		
-		$boolShowLink = $this->_objMCP->hasPermission('LOGGED_IN',$this);
+		$boolShowLink = false; // $this->_objMCP->hasPermission('LOGGED_IN',$this);
 		
 		/*if(!$boolShowLink) return $boolShowLink;
 		
@@ -65,9 +65,18 @@ class MCPNodeViewEntry extends MCPModule {
 		* Edit node switch 
 		*/
 		$this->_boolEdit = !empty($arrArgs) && strcmp($arrArgs[0],'Edit') == 0 && array_shift($arrArgs)?true:false; 
-		
+
 		if($this->_strNodesId !== null) {
-			$this->_arrTemplateData['node'] = $this->_objDAONode->fetchNodeByUrl($this->_strNodesId,$this->_objMCP->getSitesId());
+			
+			if( is_numeric($this->_strNodesId) ) {
+				$this->_arrTemplateData['node'] = $this->_objDAONode->fetchById((int) $this->_strNodesId);
+			} else {
+				/*
+				* @TODO: Need to pass the node type also 
+				*/
+				$this->_arrTemplateData['node'] = $this->_objDAONode->fetchNodeByUrl($this->_strNodesId,$this->_objMCP->getSitesId());
+			}
+			
 		} else {
 			$this->_arrTemplateData['node'] = null;
 		}
@@ -87,6 +96,16 @@ class MCPNodeViewEntry extends MCPModule {
 			$strTpl = 'Entry/Edit.php';
 		} else {
 			$strTpl = 'Entry/Entry.php';
+			
+			// Get the theme template
+			if($this->_arrTemplateData['node'] !== null) {
+				// Get the node type data to resolve theme
+				$arrNodeType = $this->_objDAONode->fetchNodeTypeById($this->_arrTemplateData['node']['node_types_id']);
+				
+				// Set the node type theme template
+				$strTpl = $arrNodeType['theme_tpl'] === null?$strTpl:$arrNodeType['theme_tpl'];
+			}
+			
 		}
 		
 		$this->_arrTemplateData['BASE_PATH'] = $this->getBasePath(false);

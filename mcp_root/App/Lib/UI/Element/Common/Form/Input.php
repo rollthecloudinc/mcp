@@ -17,7 +17,7 @@ class Input implements \UI\Element {
 				'required'=>true
 			)
 			,'id'=>array(
-				'required'=>true
+				'required'=>false
 			)
 			,'max'=>array(
 				'default'=>null

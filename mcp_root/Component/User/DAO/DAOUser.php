@@ -106,7 +106,7 @@ class MCPDAOUser extends MCPDAO {
 		           ,$this->_objMCP->escapeString($intSitesId)
 		           ,$this->_objMCP->escapeString($strUsername)
 		           ,$this->_objMCP->escapeString($strPassword)
-		 	);	
+		 	);
 
 		 return array_pop($this->_objMCP->query($strSQL));
 	}

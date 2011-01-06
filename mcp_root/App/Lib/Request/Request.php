@@ -67,9 +67,23 @@ class Request {
 			
 			// add in files
 			if($post !== null && isset($_FILES[$strName],$_FILES[$strName]['error'])) {
+				
 				foreach(array_keys($_FILES[$strName]['error']) as $field) {
 					foreach(array_keys($_FILES[$strName]) as $attr) {
-						$post[$field][$attr] = isset($_FILES[$strName][$attr][$field])?$_FILES[$strName][$attr][$field]:null;
+						
+						// multiple file upload handling vs. single upload
+						if( is_array($_FILES[$strName][$attr][$field]) ) {
+							
+							foreach($_FILES[$strName][$attr][$field] as $item=>$data) {
+								$post[$field][$item][$attr] = isset($_FILES[$strName][$attr][$field][$item])?$_FILES[$strName][$attr][$field][$item]:null;
+							}
+							
+						} else {
+							
+							$post[$field][$attr] = isset($_FILES[$strName][$attr][$field])?$_FILES[$strName][$attr][$field]:null;
+							
+						}
+						
 					}
 				}
 			}

@@ -67,10 +67,19 @@ class MCPDAOField extends MCPDAO {
 		* Intention is to keep this light considering the amount of times
 		* it may run per a request. All available table indexes are used
 		* to increase effeciency.
+		* 
+		* field_value_relation column is used so that all rows in result set have the same
+		* associative keys in the end regardless of storing a foreign key.
 		*/
 		$strSQL = sprintf(
 			"SELECT
 			     f.cfg_name field_name
+			     ,f.db_ref_table ref_table
+			     ,f.db_ref_col ref_col
+			     ,f.cfg_serialized serialized
+			     ,f.cfg_multi multi
+			     ,fv.field_values_id
+			     ,fv.weight
 			     ,CASE
 			     
 			         WHEN fv.fields_id IS NULL AND f.cfg_default IS NOT NULL
@@ -92,6 +101,7 @@ class MCPDAOField extends MCPDAO {
 			         THEN fv.db_text
 			         
 			         ELSE NULL END field_value
+			         ,NULL field_value_relation
 			  FROM
 			     MCP_FIELDS f 
 			  LEFT OUTER
@@ -106,17 +116,140 @@ class MCPDAOField extends MCPDAO {
 			  AND
 			     f.entity_type = '%s'
 			  AND
-			     f.entities_id %s"
+			     f.entities_id %s
+			ORDER
+			   BY
+			     fv.weight ASC"
 			,$this->_objMCP->escapeString($intRowsId)
 			,$this->_objMCP->escapeString($intSitesId !== null?$intSitesId:$this->_objMCP->getSitesId())
 			,$this->_objMCP->escapeString($strEntityType)
 			,$intEntitiesId !== null?"= {$this->_objMCP->escapeString($intEntitiesId)}":' IS NULL'
 		);
 		
+		// echo "<p>$strSQL</p>";
+		
 		// fetch the fielded data
 		$arrFields = $this->_objMCP->query($strSQL);
 		
-		return $arrFields;
+		$arrValues = array();	
+		foreach($arrFields as $arrField) {
+			
+			$value = $arrField['field_value'];
+			$relation = null;
+			
+			/*
+			* Unserialize serialized values 
+			*/
+			if($arrField['serialized'] && $value !== null) {
+				$value = unserialize( base64_decode( $value ) );
+			}
+			
+			/*
+			* Resolve foreign key references
+			* 
+			* reference table and column MUST be defined (no magic resolution here such as primary key of table)
+			* 
+			* NOTE: At this point in time relations to nodes, terms or users will include dynamic fields. 
+			* 
+			* WARNING: The only catch is adding it would make it possible to run into an infinite loop. Therefore,
+			* at this time it is being left out though support may be added in the future pending handling of possible
+			* infinite oop scenarios.
+			*/
+			if($arrField['ref_table'] !== null && $arrField['ref_col'] !== null) {
+			
+				if($value !== null) {
+					/*
+					* For now query the reltion table directly. In the future certain tables could be bound to specific DAOs
+					* forwarding the responsibility of selecting the data to dao responsible for managing the given relational
+					* entity. This approach would also add support for dynamic fields on relational entities as outlined above.
+					*/				
+					switch("{$arrField['ref_table']}::{$arrField['ref_col']}") {
+						
+						// field references an image
+						case 'MCP_MEDIA_IMAGES::images_id':
+							
+							// get the images dao
+							$objDAOImage = $this->_objMCP->getInstance('App.Resource.File.DAO.DAOImage',array($this->_objMCP));
+							
+							// fetch the image data
+							$relation = $objDAOImage->fetchById((int) $value);  					
+							break;
+		
+						// field references a node
+						case 'MCP_NODES::nodes_id':
+							
+							// get the node dao
+							$objDAONode = $this->_objMCP->getInstance('Component.Node.DAO.DAONode',array($this->_objMCP));
+							
+							// fetch the node data
+							$relation = $objDAONode->fetchById((int) $value);
+							
+							break;
+		
+						// field references a term
+						case 'MCP_TERMS::terms_id':
+							
+							// get the taxonomy dao
+							$objDAOTaxonomy = $this->_objMCP->getInstance('Component.Taxonomy.DAO.DAOTaxonomy',array($this->_objMCP));
+							
+							// fetch the term data
+							$relation = $objDAOTaxonomy->fetchTermById((int) $value);
+							
+							break;
+							
+						// field references a user
+						case 'MCP_USERS::users_id':
+							
+							// get the user dao
+							$objDAOUser = $this->_objMCP->getInstance('Component.User.DAO.DAOUser',array($this->_objMCP));
+							
+							// fetch the users data
+							$relation = $objDAOUser->fetchById((int) $value);
+							
+							break;
+							
+						/*
+						* NOTE: No handler exists for node types, sites, vocabularies and config values because
+						* they shouldn't be referenced. The reference of such entities could easily
+						* be supported but will likely result in more problems than they will solve.
+						*/
+							
+						default:
+						
+					}
+				}
+			
+			}
+			
+			$field = new MCPField();	
+
+			// bind the to string value and field values primary key
+			$field->setValue($value);
+			$field->setId($arrField['field_values_id']);
+
+			if($relation !== null) {
+				foreach($relation as $prop=>$val) {
+					$field->{$prop} = $val;
+				}
+			}
+			
+			if($arrField['multi'] == 1) {
+				$arrValues[$arrField['field_name']]['field_name'] = $arrField['field_name'];
+				$arrValues[$arrField['field_name']]['field_value'][] = $field;
+				//$arrValues[$arrField['field_name']]['field_value_relation'][] = $relation;
+				//$arrValues[$arrField['field_name']]['field_values_id'][] = $arrField['field_values_id'];
+			} else {
+				$arrValues[$arrField['field_name']]['field_name'] = $arrField['field_name'];
+				$arrValues[$arrField['field_name']]['field_value'] = $field;
+				//$arrValues[$arrField['field_name']]['field_value_relation'] = $relation;
+				//$arrValues[$arrField['field_name']]['field_values_id'] = $arrField['field_values_id'];
+			}
+			
+		}
+		
+		// echo '<pre>',print_r($arrValues),'</pre>';
+		
+		return $arrValues;
 		
 	}
 	
@@ -162,7 +295,7 @@ class MCPDAOField extends MCPDAO {
 					
 					$key = substr($attr,4);
 					
-					if(in_array($key,array('dao_pkg','dao_method','dao_args'))) continue;
+					if(in_array($key,array('dao_pkg','dao_method','dao_args','multi','multi_limit'))) continue;
 					
 					$values.= "<$key>$value</$key>";
 				
@@ -189,6 +322,16 @@ class MCPDAOField extends MCPDAO {
 				}
 				
 				$values.= '</dao>';
+			}
+			
+			/* Build in support for multi field value */
+			if($field['cfg_multi'] != 0) {
+				
+				// absence of multi_limit translates to unlimited amount of multiple values for field
+				// @TODO: integrate infinite number of value support into form management system. At this
+				// time is only supports a fixed number. So for now use a fixed value.
+				$values.= '<multi>'. ( empty($field['cfg_multi_limit']) ? 5 : $field['cfg_multi_limit'] ) .'</multi>';
+				
 			}
 			
 			$strXML.= "<$name>$values</$name>";
@@ -366,6 +509,19 @@ class MCPDAOField extends MCPDAO {
 	public function saveFieldValues($arrFields,$intRowsId,$strEntityType,$intEntitiesId,$intSitesId=null) {
 		
 		/*
+		* @TODO: Get all field definitions to properly resolve m:n fields 
+		*/
+		
+		/*
+		* Build out SQL to select field definition data
+		* 
+		* sites_id = $intSitesId 
+		* entity_type = $strEntityType
+		* entities_id (IS NULL || $intRowsId)
+		* cfg_name = {field_name}
+		*/
+		
+		/*
 		* Might need to determine a better way to do this considering the query will be run 
 		* once per field in its current state. It works, but there is probably a better way to do it. 
 		* 
@@ -375,19 +531,50 @@ class MCPDAOField extends MCPDAO {
 		foreach($arrFields as $field_name=>$field_value) {
 			
 			/*
+			* Get field definition
+			*/
+			$arrField = array_pop($this->listFields('f.*',sprintf(
+				"f.sites_id = %s AND f.entity_type = '%s' AND f.entities_id %s AND f.cfg_name = '%s'"
+				,$this->_objMCP->escapeString($intSitesId !== null?$intSitesId:$this->_objMCP->getSitesId())
+				,$this->_objMCP->escapeString($strEntityType)
+				,$intEntitiesId !== null?"= {$this->_objMCP->escapeString($intEntitiesId)}":' IS NULL'
+				,$this->_objMCP->escapeString($field_name)
+			)));
+			
+			/*
 			* Handle special image resource field 
 			*/
-			if($this->isImageField($field_name,$strEntityType,$intEntitiesId,$intSitesId) === true) {
+			if(strcmp($arrField['cfg_media'],'image') == 0) {
 				
-				if($field_value && isset($field_value['error']) && $field_value['error'] != 4) {
-					$field_value = $this->_objMCP->getInstance('App.Resource.File.DAO.DAOImage',array($this->_objMCP))->insert($field_value,true);
+				if($arrField['cfg_multi'] == 1) {
+					
+					foreach( array_keys($field_value) as $index) {
+						
+						if($field_value[$index] && isset($field_value[$index]['error']) && $field_value[$index]['error'] != 4) {
+							$field_value[$index]['value'] = $this->_objMCP->getInstance('App.Resource.File.DAO.DAOImage',array($this->_objMCP))->insert($field_value[$index],true);
+						} else {
+							unset($field_value[$index]);
+							continue;
+						}
+					
+					}
+					
 				} else {
-					continue;
+					
+					if($field_value && isset($field_value['error']) && $field_value['error'] != 4) {
+						$field_value = $this->_objMCP->getInstance('App.Resource.File.DAO.DAOImage',array($this->_objMCP))->insert($field_value,true);
+					} else {
+						continue;
+					}				
+					
 				}
 				
 			}
+			
+			// @TODO: add handling for other media types such as; video, audio, file, ect
 		
-			$strSQL = sprintf(
+			// deprecated as of move to supporting scalar fields
+			/*$strSQL = sprintf(
 				"INSERT IGNORE INTO MCP_FIELD_VALUES (fields_id,rows_id,db_varchar,db_text,db_int,db_bool,db_price)
 				    SELECT
 				         fields_id
@@ -418,7 +605,19 @@ class MCPDAOField extends MCPDAO {
 				,$this->_objMCP->escapeString($field_name)
 			);
 			
-			$this->_objMCP->query($strSQL);
+			$this->_objMCP->query($strSQL);*/
+			
+			/*
+			* Switch to save field that represents m:n reltionship vs. 1:n 
+			* Example, an images field that stores multiple images so that 
+			* one doesn't need to hack the system using image_1,image_2,image_3,... which
+			* would make other things very difficult and ineffecient.
+			*/
+			if($arrField['cfg_multi'] == 1) {
+				$this->_saveScalarFieldValue($arrField['fields_id'],$intRowsId,$field_value);
+			} else {
+				$this->_saveAtomicFieldValue($arrField['fields_id'],$intRowsId,$field_value);
+			}
 		
 		}
 		
@@ -599,6 +798,227 @@ class MCPDAOField extends MCPDAO {
 			,'label ASC'
 		);
 		
+	}
+
+	/*
+	* @param int fields id
+	* @param int rows id
+	* @param mix new value 
+	*/
+	private function _saveAtomicFieldValue($intFieldsId,$intRowsId,$mixValue) {
+		
+		/*
+		* Determine whether to use an update or insert based on whether a value
+		* exists for the field id and row id combination.
+		*/
+		$strSQL = sprintf(
+			"SELECT
+			      field_values_id
+			   FROM
+			      MCP_FIELD_VALUES
+			  WHERE
+			      fields_id = %s
+			    AND
+			      rows_id = %s
+			  LIMIT
+			      1"
+			,$this->_objMCP->escapeString($intFieldsId)
+			,$this->_objMCP->escapeString($intRowsId)
+		);
+		
+		$arrFieldValue = array_pop($this->_objMCP->query($strSQL));
+		
+		/*
+		* insert / update switch 
+		*/
+		if($arrFieldValue !== null) {
+			
+			return $this->_updateFieldValue($arrFieldValue['field_values_id'],$mixValue);
+			
+		} else {
+			
+			return $this->_insertFieldValue($intFieldsId,$intRowsId,$mixValue);
+			
+		}
+		
+	}
+	
+	/*
+	* @param int fields id
+	* @param int rows id
+	* @param array values to save 
+	*/
+	private function _saveScalarFieldValue($intFieldsId,$intRowsId,$arrValues) {
+		
+		foreach($arrValues as $arrValue) {
+			
+			// id means the value is being changed that exists
+			if( isset($arrValue['id']) ) {
+				
+				// update	
+				$this->_updateFieldValue($arrValue['id'],$arrValue['value']);
+				
+			} else {
+				
+				// insert				
+				$this->_insertFieldValue($intFieldsId,$intRowsId,$arrValue['value']);
+				
+			}
+			
+		}
+		
+	}
+	
+	/*
+	* @param int field values id (MCP_FIELD_VALUES primary key)
+	* @param mix value
+	*/
+	private function _updateFieldValue($intFieldValuesId,$mixValue) {
+		
+		$serialized = base64_encode(serialize($mixValue));
+		
+		/*
+		* Only one field will be updated with the new value all others will be NULL based
+		* on the storage type.
+		*/
+		$strSQL =
+			"UPDATE
+			      MCP_FIELD_VALUES
+			  INNER
+			   JOIN
+			      MCP_FIELDS
+			     ON
+			      MCP_FIELD_VALUES.fields_id = MCP_FIELDS.fields_id
+			    SET	    
+			       MCP_FIELD_VALUES.db_varchar = (
+			            CASE
+			                WHEN MCP_FIELDS.db_value = 'varchar'
+			                THEN '{$this->_objMCP->escapeString( $mixValue )}'
+			                ELSE NULL
+			            END
+			       )    
+			      ,MCP_FIELD_VALUES.db_text = (
+			           CASE
+			               WHEN MCP_FIELDS.db_value = 'text' AND MCP_FIELDS.cfg_serialized = 1
+			               THEN '$serialized'
+			               WHEN MCP_FIELDS.db_value = 'text'
+			               THEN '{$this->_objMCP->escapeString( $mixValue )}'
+			               ELSE NULL
+			           END
+			       )		      
+			      ,MCP_FIELD_VALUES.db_int = (
+			           CASE
+			               WHEN MCP_FIELDS.db_value = 'int'
+			               THEN {$this->_objMCP->escapeString( (int) $mixValue )}
+			               ELSE NULL
+			           END
+			       )			      
+			      ,MCP_FIELD_VALUES.db_bool = (
+			           CASE
+			               WHEN MCP_FIELDS.db_value = 'bool'
+			               THEN {$this->_objMCP->escapeString( (int) $mixValue )}
+			               ELSE NULL
+			           END
+			       )			      
+			      ,MCP_FIELD_VALUES.db_price = (
+			           CASE
+			               WHEN MCP_FIELDS.db_value = 'price'
+			               THEN '{$this->_objMCP->escapeString( $mixValue )}'
+			               ELSE NULL
+			           END
+			       )		      
+			  WHERE
+			      MCP_FIELD_VALUES.field_values_id = {$this->_objMCP->escapeString($intFieldValuesId)}";
+		
+		// echo "<p>$strSQL</p>";
+		return $this->_objMCP->query($strSQL);
+		
+	}
+	
+	/*
+	* @param int fields id (MCP_FIELDS primary key)
+	* @param int rows id 
+	* @param mix value
+	*/
+	private function _insertFieldValue($intFieldsId,$intRowsId,$mixValue) {
+		
+		$serialized = base64_encode(serialize($mixValue));
+		
+		/*
+		* Only one field will contain the value all others will be null based on the fields
+		* storage type. 
+		*/
+		$strSQL =
+			"INSERT IGNORE INTO MCP_FIELD_VALUES (fields_id,rows_id,db_varchar,db_text,db_int,db_bool,db_price)
+				    SELECT
+				         fields_id
+				         ,{$this->_objMCP->escapeString( $intRowsId )} rows_id
+				         
+				         ,CASE
+				             WHEN db_value = 'varchar'
+				             THEN '{$this->_objMCP->escapeString( $mixValue )}'
+				             ELSE NULL
+				          END db_varchar
+				          
+				         ,CASE
+				             WHEN db_value = 'text' AND cfg_serialized = 1
+				             THEN '$serialized'
+				             WHEN db_value = 'text'
+				             THEN '{$this->_objMCP->escapeString( $mixValue )}'
+				             ELSE NULL
+				          END db_text
+				          
+				         ,CASE
+				             WHEN db_value = 'int'
+				             THEN {$this->_objMCP->escapeString( (int) $mixValue )}
+				             ELSE NULL
+				          END db_int
+				          
+				         ,CASE
+				             WHEN db_value = 'bool'
+				             THEN {$this->_objMCP->escapeString( (int) $mixValue )}
+				             ELSE NULL
+				          END db_bool
+				          
+				         ,CASE
+				            WHEN db_value = 'price'
+				            THEN '{$this->_objMCP->escapeString( $mixValue )}'
+				            ELSE NULL
+				          END db_price
+				          
+				      FROM
+				         MCP_FIELDS
+				     WHERE
+				         fields_id = {$this->_objMCP->escapeString( $intFieldsId )}";
+		
+		// echo "<p>$strSQL</p>";
+		return $this->_objMCP->query($strSQL);
+		
+	}
+	
+}
+
+class MCPField extends StdClass {
+	
+	private 
+	
+	$_value
+	,$_id;
+	
+	public function setValue($value) {
+		$this->_value = $value;
+	}
+	
+	public function setId($id) {
+		$this->_id = $id;
+	}
+	
+	public function getId() {
+		return $this->_id;
+	}
+	
+	public function __toString() {
+		return (string) $this->_value;
 	}
 	
 }

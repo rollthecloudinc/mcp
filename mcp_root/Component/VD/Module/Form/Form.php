@@ -12,7 +12,8 @@ class MCPVDForm extends MCPModule {
 		
 		// testing algorithm development
 		$objDAOVD = $this->_objMCP->getInstance('Component.VD.DAO.DAOVD',array($this->_objMCP));
-		$objDAOVD->fetchViewById();
+		//$objDAOVD->fetchViewById();
+		$display = $objDAOVD->fetchDisplayById(1);
 		
 		return 'Form/Form.php';
 	}
