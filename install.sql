@@ -47,7 +47,7 @@ CREATE TABLE `MCP_CACHED_IMAGES` (
   `cached_images_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `base_images_id` blob NOT NULL,
   PRIMARY KEY (`cached_images_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=80 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=115 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -65,7 +65,7 @@ CREATE TABLE `MCP_CACHED_IMAGES_OPTIONS` (
   PRIMARY KEY (`cached_images_options_id`),
   UNIQUE KEY `cached_images_id` (`cached_images_id`,`images_option`,`images_value`),
   KEY `cached_images_id_2` (`cached_images_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=101 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=136 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -90,7 +90,8 @@ CREATE TABLE `MCP_COMMENTS` (
   `comment_content` longtext NOT NULL,
   `updated_on_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `created_on_timestamp` timestamp NULL DEFAULT NULL,
-  `deleted` timestamp NULL DEFAULT NULL,
+  `deleted_on_timestamp` timestamp NULL DEFAULT NULL,
+  `deleted` tinyint(3) unsigned DEFAULT '0',
   PRIMARY KEY (`comments_id`),
   KEY `parent_id` (`parent_id`),
   KEY `comment_type` (`comment_type`,`comment_types_id`),
@@ -99,7 +100,7 @@ CREATE TABLE `MCP_COMMENTS` (
   KEY `comment_published` (`comment_published`),
   KEY `commenter_email` (`commenter_email`),
   KEY `deleted` (`deleted`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -160,14 +161,16 @@ CREATE TABLE `MCP_FIELDS` (
   `cfg_static` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT 'make this field invisible to user interface, always use default value',
   `cfg_size` tinyint(3) unsigned DEFAULT NULL COMMENT 'size attribute of a select menu',
   `cfg_serialized` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT 'Whether data will be stored serialized',
-  `cfg_image` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `cfg_multi` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `cfg_multi_limit` smallint(5) unsigned DEFAULT NULL,
+  `cfg_media` enum('image','video','audio','file') DEFAULT NULL,
   `db_value` enum('varchar','text','int','price','bool') NOT NULL DEFAULT 'text' COMMENT 'database value mapping storage column',
   `db_ref_table` varchar(128) DEFAULT NULL COMMENT 'Foreign key reference table',
   `db_ref_col` varchar(128) DEFAULT NULL COMMENT 'Foreign key reference table column',
   PRIMARY KEY (`fields_id`),
   UNIQUE KEY `sites_id` (`sites_id`,`entity_type`,`entities_id`,`cfg_name`),
   KEY `entity_type` (`entity_type`,`entities_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=15 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=21 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -186,25 +189,27 @@ CREATE TABLE `MCP_FIELD_VALUES` (
   `db_int` bigint(20) DEFAULT NULL COMMENT 'Neg/Pos integer value',
   `db_price` decimal(20,2) DEFAULT NULL COMMENT 'Price value',
   `db_bool` tinyint(3) unsigned DEFAULT NULL COMMENT 'Boolean binary 0 or 1 representation',
+  `weight` mediumint(9) DEFAULT '0',
   PRIMARY KEY (`field_values_id`),
-  UNIQUE KEY `fields_id` (`fields_id`,`rows_id`),
   KEY `db_varchar` (`db_varchar`),
   KEY `db_int` (`db_int`),
   KEY `db_price` (`db_price`),
   KEY `db_bool` (`db_bool`),
+  KEY `fields_id` (`fields_id`,`rows_id`),
+  KEY `weight` (`weight`),
   FULLTEXT KEY `db_text` (`db_text`),
   FULLTEXT KEY `db_varchar_2` (`db_varchar`)
-) ENGINE=MyISAM AUTO_INCREMENT=23 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=127 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `MCP_IMAGES`
+-- Table structure for table `MCP_MEDIA_IMAGES`
 --
 
-DROP TABLE IF EXISTS `MCP_IMAGES`;
+DROP TABLE IF EXISTS `MCP_MEDIA_IMAGES`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `MCP_IMAGES` (
+CREATE TABLE `MCP_MEDIA_IMAGES` (
   `images_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `sites_id` bigint(20) unsigned NOT NULL,
   `creators_id` bigint(20) unsigned NOT NULL,
@@ -222,7 +227,7 @@ CREATE TABLE `MCP_IMAGES` (
   KEY `creators_id` (`creators_id`),
   KEY `sites_id_2` (`sites_id`,`creators_id`),
   KEY `deleted` (`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=9 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=99 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -236,16 +241,20 @@ CREATE TABLE `MCP_NAVIGATION` (
   `navigation_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `sites_id` bigint(20) unsigned DEFAULT NULL,
   `users_id` bigint(20) unsigned NOT NULL,
-  `menu_title` varchar(96) NOT NULL,
+  `system_name` varchar(128) NOT NULL,
+  `menu_title` varchar(128) NOT NULL,
   `display_title` tinyint(3) unsigned NOT NULL DEFAULT '1',
   `menu_location` enum('top','left','bottom','right') NOT NULL DEFAULT 'left',
   `updated_on_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `created_on_timestamp` timestamp NULL DEFAULT NULL,
+  `deleted_on_timestamp` timestamp NULL DEFAULT NULL,
+  `deleted` tinyint(3) unsigned DEFAULT '0',
   PRIMARY KEY (`navigation_id`),
+  UNIQUE KEY `sites_id_2` (`sites_id`,`system_name`,`deleted`),
   KEY `menu_location` (`menu_location`),
   KEY `sites_id` (`sites_id`),
   KEY `users_id` (`users_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -288,14 +297,15 @@ CREATE TABLE `MCP_NAVIGATION_LINKS` (
   `datasources_row_id` bigint(20) unsigned DEFAULT NULL,
   `updated_on_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `created_on_timestamp` timestamp NULL DEFAULT NULL,
-  `deleted` timestamp NULL DEFAULT NULL,
+  `deleted_on_timestamp` timestamp NULL DEFAULT NULL,
+  `deleted` tinyint(3) unsigned DEFAULT '0',
   PRIMARY KEY (`navigation_links_id`),
   UNIQUE KEY `sites_id` (`sites_id`,`sites_internal_url`),
   KEY `sites_id_2` (`sites_id`,`creators_id`),
   KEY `parent_type` (`parent_type`,`parent_id`),
   KEY `creators_id` (`creators_id`),
   KEY `deleted` (`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=103 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=104 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -309,7 +319,7 @@ CREATE TABLE `MCP_NODES` (
   `nodes_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `sites_id` bigint(20) unsigned NOT NULL,
   `authors_id` bigint(20) unsigned NOT NULL,
-  `node_types_id` bigint(20) unsigned DEFAULT NULL,
+  `node_types_id` bigint(20) unsigned NOT NULL,
   `content_type` enum('html','php','text') NOT NULL DEFAULT 'html',
   `intro_type` enum('html','php','text') NOT NULL DEFAULT 'html',
   `node_published` tinyint(3) unsigned NOT NULL DEFAULT '1',
@@ -320,14 +330,15 @@ CREATE TABLE `MCP_NODES` (
   `intro_content` longtext,
   `updated_on_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `created_on_timestamp` timestamp NULL DEFAULT NULL,
-  `deleted` timestamp NULL DEFAULT NULL,
+  `deleted_on_timestamp` timestamp NULL DEFAULT NULL,
+  `deleted` tinyint(3) unsigned DEFAULT '0',
   PRIMARY KEY (`nodes_id`),
-  UNIQUE KEY `node_url` (`node_url`,`sites_id`,`node_types_id`),
+  UNIQUE KEY `node_url` (`node_url`,`sites_id`,`node_types_id`,`deleted`),
   KEY `sites_id` (`sites_id`),
   KEY `node_published` (`node_published`),
   KEY `authors_id` (`authors_id`),
   KEY `deleted` (`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=31 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=47 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -341,17 +352,20 @@ CREATE TABLE `MCP_NODE_TYPES` (
   `node_types_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `sites_id` bigint(20) unsigned NOT NULL,
   `creators_id` bigint(20) unsigned DEFAULT NULL COMMENT 'May be created by system',
-  `pkg` varchar(128) DEFAULT NULL,
+  `pkg` varchar(128) NOT NULL DEFAULT '',
   `system_name` varchar(128) NOT NULL,
   `human_name` varchar(128) NOT NULL,
+  `theme_tpl` varchar(255) DEFAULT NULL,
   `description` longtext,
   `updated_on_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `created_on_timestamp` timestamp NULL DEFAULT NULL,
+  `deleted_on_timestamp` timestamp NULL DEFAULT NULL,
+  `deleted` tinyint(3) unsigned DEFAULT '0',
   PRIMARY KEY (`node_types_id`),
-  UNIQUE KEY `sites_id` (`sites_id`,`pkg`,`system_name`),
-  UNIQUE KEY `sites_id_2` (`sites_id`,`pkg`,`human_name`),
+  UNIQUE KEY `sites_id` (`sites_id`,`pkg`,`system_name`,`deleted`),
+  UNIQUE KEY `sites_id_2` (`sites_id`,`pkg`,`human_name`,`deleted`),
   KEY `creators_id` (`creators_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=10 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=15 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -417,7 +431,7 @@ CREATE TABLE `MCP_PERMISSIONS_USERS` (
   `read_own_child` tinyint(3) unsigned DEFAULT NULL,
   PRIMARY KEY (`permissions_id`),
   UNIQUE KEY `item_type` (`item_type`,`item_id`,`users_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=10 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=13 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -438,7 +452,7 @@ CREATE TABLE `MCP_SESSIONS` (
   `session_data` blob,
   PRIMARY KEY (`sessions_id`),
   UNIQUE KEY `sid` (`sid`)
-) ENGINE=MyISAM AUTO_INCREMENT=1029 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=1264 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -450,16 +464,19 @@ DROP TABLE IF EXISTS `MCP_SITES`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `MCP_SITES` (
   `sites_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `creators_id` bigint(20) unsigned DEFAULT NULL,
   `site_name` varchar(128) NOT NULL,
   `site_directory` varchar(128) NOT NULL,
   `site_module_prefix` varchar(64) NOT NULL DEFAULT '',
   `updated_on_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `created_on_timestamp` timestamp NULL DEFAULT NULL,
+  `deleted_on_timestamp` timestamp NULL DEFAULT NULL,
+  `deleted` tinyint(3) unsigned DEFAULT '0',
   PRIMARY KEY (`sites_id`),
-  UNIQUE KEY `site_name` (`site_name`),
-  UNIQUE KEY `site_directory` (`site_directory`),
-  UNIQUE KEY `site_module_prefix` (`site_module_prefix`)
-) ENGINE=MyISAM AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
+  UNIQUE KEY `site_name` (`site_name`,`deleted`),
+  UNIQUE KEY `site_directory` (`site_directory`,`deleted`),
+  UNIQUE KEY `site_module_prefix` (`site_module_prefix`,`deleted`)
+) ENGINE=MyISAM AUTO_INCREMENT=10 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -480,12 +497,13 @@ CREATE TABLE `MCP_TERMS` (
   `weight` tinyint(3) unsigned DEFAULT NULL,
   `updated_on_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `created_on_timestamp` timestamp NULL DEFAULT NULL,
-  `deleted` timestamp NULL DEFAULT NULL,
+  `deleted_on_timestamp` timestamp NULL DEFAULT NULL,
+  `deleted` tinyint(3) unsigned DEFAULT '0',
   PRIMARY KEY (`terms_id`),
-  UNIQUE KEY `parent_type` (`parent_type`,`parent_id`,`system_name`),
-  UNIQUE KEY `parent_type_2` (`parent_type`,`parent_id`,`human_name`),
+  UNIQUE KEY `parent_type` (`parent_type`,`parent_id`,`system_name`,`deleted`),
+  UNIQUE KEY `parent_type_2` (`parent_type`,`parent_id`,`human_name`,`deleted`),
   KEY `creators_id` (`creators_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=330 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=331 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -504,138 +522,136 @@ CREATE TABLE `MCP_USERS` (
   `uuid` char(40) DEFAULT NULL,
   `updated_on_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `created_on_timestamp` timestamp NULL DEFAULT NULL,
+  `deleted_on_timestamp` timestamp NULL DEFAULT NULL,
   `last_login_timestamp` timestamp NULL DEFAULT NULL,
   `banned_until_timestamp` timestamp NULL DEFAULT NULL,
   `user_data` blob,
+  `deleted` tinyint(3) unsigned DEFAULT '0',
   PRIMARY KEY (`users_id`),
-  UNIQUE KEY `sites_id` (`sites_id`,`username`),
-  UNIQUE KEY `sites_id_2` (`sites_id`,`email_address`)
-) ENGINE=MyISAM AUTO_INCREMENT=15 DEFAULT CHARSET=utf8;
+  UNIQUE KEY `sites_id` (`sites_id`,`username`,`deleted`),
+  UNIQUE KEY `sites_id_2` (`sites_id`,`email_address`,`deleted`)
+) ENGINE=MyISAM AUTO_INCREMENT=16 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `MCP_VIEW_COLUMNS`
+-- Table structure for table `MCP_VD_DISPLAYS`
 --
 
-DROP TABLE IF EXISTS `MCP_VIEW_COLUMNS`;
+DROP TABLE IF EXISTS `MCP_VD_DISPLAYS`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `MCP_VIEW_COLUMNS` (
-  `columns_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `views_id` bigint(20) unsigned NOT NULL COMMENT 'view column selection belongs to foreign key reference',
-  `override_id` bigint(20) unsigned DEFAULT NULL COMMENT 'self foreign key reference to column id being overriden',
-  `object` varchar(128) NOT NULL COMMENT 'object of column being used in view',
-  `property` varchar(128) NOT NULL COMMENT 'objects property being used as the column',
-  `description` longtext COMMENT 'description of selections purpose from a business goal/end-user stand-point',
+CREATE TABLE `MCP_VD_DISPLAYS` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `parent_type` enum('site','display') NOT NULL,
+  `parent_id` bigint(20) unsigned NOT NULL,
+  `creators_id` bigint(20) unsigned NOT NULL,
+  `system_name` varchar(128) NOT NULL,
+  `human_name` varchar(128) NOT NULL,
+  `description` longtext,
   `updated_on_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `created_on_timestamp` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`columns_id`),
-  KEY `views_id` (`views_id`),
-  KEY `override_id` (`override_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `active` tinyint(3) unsigned DEFAULT '1',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `parent_type` (`parent_type`,`parent_id`,`system_name`,`active`),
+  UNIQUE KEY `parent_type_2` (`parent_type`,`parent_id`,`human_name`,`active`)
+) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `MCP_VIEW_DISPLAYS`
+-- Table structure for table `MCP_VD_FIELDS`
 --
 
-DROP TABLE IF EXISTS `MCP_VIEW_DISPLAYS`;
+DROP TABLE IF EXISTS `MCP_VD_FIELDS`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `MCP_VIEW_DISPLAYS` (
-  `views_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `sites_id` bigint(20) unsigned NOT NULL,
-  `parent_id` bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT '0 used in place of NULL to retain unique key constraint',
-  `creators_id` bigint(20) unsigned NOT NULL COMMENT 'Foreign key reference to user who originally created view',
-  `system_name` varchar(128) NOT NULL COMMENT 'Name that should be used when referencing view programmatically',
-  `human_name` varchar(128) NOT NULL COMMENT 'Name that will shown to user via user interface',
-  `description` longtext COMMENT 'description of views purpose',
+CREATE TABLE `MCP_VD_FIELDS` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `creators_id` bigint(20) unsigned NOT NULL,
+  `parent_id` bigint(20) unsigned DEFAULT NULL,
+  `displays_id` bigint(20) unsigned NOT NULL,
+  `path` varchar(255) NOT NULL,
+  `sortable` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `editable` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `removed` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `updated_on_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `created_on_timestamp` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`views_id`),
-  UNIQUE KEY `sites_id` (`sites_id`,`parent_id`,`system_name`),
-  UNIQUE KEY `sites_id_2` (`sites_id`,`parent_id`,`human_name`)
+  `active` tinyint(3) unsigned DEFAULT '1',
+  PRIMARY KEY (`id`),
+  KEY `displays_id` (`displays_id`,`active`)
+) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `MCP_VD_FILTERS`
+--
+
+DROP TABLE IF EXISTS `MCP_VD_FILTERS`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `MCP_VD_FILTERS` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `creators_id` bigint(20) unsigned NOT NULL,
+  `parent_id` bigint(20) unsigned DEFAULT NULL,
+  `displays_id` bigint(20) unsigned NOT NULL,
+  `path` varchar(255) NOT NULL,
+  `comparision` enum('=','<','>','<=','>=','like','between','fulltext','regex') NOT NULL,
+  `conditional` enum('one','all','none') NOT NULL,
+  `wildcard` enum('%s%','%s','s%') DEFAULT NULL,
+  `regex` varchar(255) DEFAULT NULL,
+  `removed` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `updated_on_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `created_on_timestamp` timestamp NULL DEFAULT NULL,
+  `active` tinyint(3) unsigned DEFAULT '1',
+  PRIMARY KEY (`id`),
+  KEY `displays_id` (`displays_id`,`active`)
+) ENGINE=MyISAM AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `MCP_VD_SORTING`
+--
+
+DROP TABLE IF EXISTS `MCP_VD_SORTING`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `MCP_VD_SORTING` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `creators_id` bigint(20) unsigned NOT NULL,
+  `parent_id` bigint(20) unsigned DEFAULT NULL,
+  `displays_id` bigint(20) unsigned NOT NULL,
+  `path` varchar(255) NOT NULL,
+  `ordering` enum('asc','desc','rand') NOT NULL,
+  `priority` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `removed` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `updated_on_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `created_on_timestamp` timestamp NULL DEFAULT NULL,
+  `active` tinyint(3) unsigned DEFAULT '1',
+  PRIMARY KEY (`id`),
+  KEY `displays_id` (`displays_id`,`active`)
 ) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `MCP_VIEW_FILTERS`
+-- Table structure for table `MCP_VD_SORTING_PRIORITY`
 --
 
-DROP TABLE IF EXISTS `MCP_VIEW_FILTERS`;
+DROP TABLE IF EXISTS `MCP_VD_SORTING_PRIORITY`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `MCP_VIEW_FILTERS` (
-  `filters_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `views_id` bigint(20) unsigned NOT NULL COMMENT 'view filter belongs to foreign key',
-  `override_id` bigint(20) unsigned DEFAULT NULL COMMENT 'self foreign key reference to filter id being overriden',
-  `object` varchar(128) NOT NULL COMMENT 'object of column being used in view',
-  `property` varchar(128) NOT NULL COMMENT 'objects property being used as the column',
-  `datatype` enum('varchar','text','int','time','price','bool','id','sql') NOT NULL COMMENT 'properties datatype - determines field to use in filter values',
-  `comparision` enum('=','<','>','<=','>=','like','between','fulltext','regex') NOT NULL COMMENT 'filter comparision type',
-  `conditional` enum('one','all','none','except') NOT NULL COMMENT 'condion type, determines usage of IN, series of or/and or NOT',
-  `regular_expression` varchar(128) DEFAULT NULL COMMENT 'when using REGEX comparision specifies the regular expression to use',
-  `like_wc` enum('%x','x%','%x%') DEFAULT NULL COMMENT 'when using LIKE specifies the wildcard orientation',
-  `description` longtext COMMENT 'description of filters purpose from a business goal/end-user stand-point',
+CREATE TABLE `MCP_VD_SORTING_PRIORITY` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `creators_id` bigint(20) unsigned NOT NULL,
+  `sorting_id` bigint(20) unsigned NOT NULL,
+  `value_static` text,
+  `value_argument_id` bigint(20) unsigned DEFAULT NULL,
+  `value_field_id` bigint(20) unsigned DEFAULT NULL,
+  `weight` tinyint(4) NOT NULL DEFAULT '0',
   `updated_on_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `created_on_timestamp` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`filters_id`),
-  KEY `views_id` (`views_id`),
-  KEY `override_id` (`override_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `MCP_VIEW_FILTER_VALUES`
---
-
-DROP TABLE IF EXISTS `MCP_VIEW_FILTER_VALUES`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `MCP_VIEW_FILTER_VALUES` (
-  `filter_values_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `filters_id` bigint(20) unsigned NOT NULL COMMENT 'filter value belongs to foreign key reference',
-  `db_varchar` varchar(255) DEFAULT NULL COMMENT 'Variable length string under 256 characters',
-  `db_text` longtext COMMENT 'Text entry longer than 255 characters',
-  `db_int` bigint(20) DEFAULT NULL COMMENT 'Neg/Pos integer value - id should be used for foreign key reference',
-  `db_time` timestamp NULL DEFAULT NULL COMMENT 'timestamp value',
-  `db_price` decimal(20,2) DEFAULT NULL COMMENT 'Price value',
-  `db_bool` tinyint(3) unsigned DEFAULT NULL COMMENT 'Boolean binary 0 or 1 representation',
-  `db_id` bigint(20) unsigned DEFAULT NULL COMMENT 'auto increment foreign key reference - use this instead of int',
-  `db_view` bigint(20) unsigned DEFAULT NULL COMMENT 'special value used to support nested views ie. subqueries',
-  `db_view_col` varchar(48) DEFAULT NULL COMMENT 'when using nested view the column to use of the nested view for comparision purposes',
-  `db_sql` longtext COMMENT 'actual SQL subquery vs. nested view - this should not be available to none-developers',
-  `comparision` enum('=','<','>','<=','>=','like','between','fulltext','regex') DEFAULT NULL COMMENT 'when not null overrides the default for specified value',
-  `regular_expression` varchar(128) DEFAULT NULL COMMENT 'when using regex comparision may be used to override the default filter regex for single field value',
-  `like_wc` enum('%x','x%','%x%') DEFAULT NULL COMMENT 'when using like comparision may be used to override the default like orientation for single field value',
-  `updated_on_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `created_on_timestamp` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`filter_values_id`),
-  KEY `filters_id` (`filters_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `MCP_VIEW_SORTING`
---
-
-DROP TABLE IF EXISTS `MCP_VIEW_SORTING`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `MCP_VIEW_SORTING` (
-  `sorting_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `views_id` bigint(20) unsigned NOT NULL COMMENT 'view sorting column belongs to foreign key reference',
-  `override_id` bigint(20) unsigned DEFAULT NULL COMMENT 'self foreign key reference to sort id being overriden',
-  `object` varchar(128) NOT NULL COMMENT 'object of column sorting being used in view',
-  `property` varchar(128) NOT NULL COMMENT 'objects property being used as the column sorting',
-  `ordering` enum('asc','desc') NOT NULL DEFAULT 'desc' COMMENT 'sorting specification',
-  `is_fields` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT 'triggers useage of field() sorting',
-  `updated_on_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `created_on_timestamp` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`sorting_id`),
-  KEY `views_id` (`views_id`),
-  KEY `override_id` (`override_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `active` tinyint(3) unsigned DEFAULT '1',
+  PRIMARY KEY (`id`),
+  KEY `sorting_id` (`sorting_id`,`active`)
+) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -647,21 +663,69 @@ DROP TABLE IF EXISTS `MCP_VOCABULARY`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `MCP_VOCABULARY` (
   `vocabulary_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `sites_id` bigint(20) unsigned DEFAULT NULL COMMENT 'The system will created some global vocabularies like countries that are shared between all sites.',
+  `sites_id` bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT '0 specifies vocabulary globally available such as states or something.',
   `creators_id` bigint(20) unsigned DEFAULT NULL,
-  `pkg` varchar(128) DEFAULT NULL,
+  `pkg` varchar(128) NOT NULL DEFAULT '',
   `system_name` varchar(128) NOT NULL,
   `human_name` varchar(128) NOT NULL,
   `description` longtext,
   `weight` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `updated_on_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `created_on_timestamp` timestamp NULL DEFAULT NULL,
-  `deleted` timestamp NULL DEFAULT NULL,
+  `deleted_on_timestamp` timestamp NULL DEFAULT NULL,
+  `deleted` tinyint(3) unsigned DEFAULT '0',
   PRIMARY KEY (`vocabulary_id`),
-  UNIQUE KEY `sites_id` (`sites_id`,`pkg`,`system_name`),
-  UNIQUE KEY `sites_id_2` (`sites_id`,`pkg`,`human_name`),
+  UNIQUE KEY `sites_id` (`sites_id`,`pkg`,`system_name`,`deleted`),
+  UNIQUE KEY `sites_id_2` (`sites_id`,`pkg`,`human_name`,`deleted`),
   KEY `creators_id` (`creators_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=8 DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `mcp_vd_field_options`
+--
+
+DROP TABLE IF EXISTS `mcp_vd_field_options`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `mcp_vd_field_options` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `creators_id` bigint(20) unsigned NOT NULL,
+  `fields_id` bigint(20) unsigned NOT NULL,
+  `option_name` varchar(128) NOT NULL,
+  `value_static` text,
+  `value_argument_id` bigint(20) unsigned DEFAULT NULL,
+  `value_field_id` bigint(20) unsigned DEFAULT NULL,
+  `updated_on_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `created_on_timestamp` timestamp NULL DEFAULT NULL,
+  `active` tinyint(3) unsigned DEFAULT '1',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `fields_id` (`fields_id`,`option_name`,`active`)
+) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `mcp_vd_filter_values`
+--
+
+DROP TABLE IF EXISTS `mcp_vd_filter_values`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `mcp_vd_filter_values` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `creators_id` bigint(20) unsigned NOT NULL,
+  `filters_id` bigint(20) unsigned NOT NULL,
+  `value_static` text,
+  `value_argument_id` bigint(20) unsigned DEFAULT NULL,
+  `value_field_id` bigint(20) unsigned DEFAULT NULL,
+  `wildcard` enum('%s%','%s','s%') DEFAULT NULL,
+  `regex` varchar(255) DEFAULT NULL,
+  `updated_on_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `created_on_timestamp` timestamp NULL DEFAULT NULL,
+  `active` tinyint(3) unsigned DEFAULT '1',
+  PRIMARY KEY (`id`),
+  KEY `filters_id` (`filters_id`,`active`)
+) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -672,4 +736,4 @@ CREATE TABLE `MCP_VOCABULARY` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2010-11-29  0:48:14
+-- Dump completed on 2011-01-09 23:31:16
