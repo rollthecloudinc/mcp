@@ -294,7 +294,10 @@ class MCPDAOTaxonomy extends MCPDAO {
 		/*
 		* Get terms hierarchy
 		*/
-		$arrTerms = $this->fetchTerms($intTermsId,'term');
+		$arrTerms = $this->fetchTerms($intTermsId,'term',true,array(
+			// properly ommits items that have been soft deleted
+			'filter'=>'t.deleted = 0'
+		));
 		
 		/*
 		* Recursive function used to flatten hierarchy
@@ -354,7 +357,11 @@ class MCPDAOTaxonomy extends MCPDAO {
 			,'MCP_VOCABULARY'
 			,'vocabulary_id'
 			,array('system_name','human_name','pkg','description')
-			,'created_on_timestamp'
+			,'created_on_timestamp'	
+			,null
+			
+			// Special argument to ignore casting empty string to NULL
+			,array('pkg')
 		);	
 		
 		/*
@@ -414,6 +421,187 @@ class MCPDAOTaxonomy extends MCPDAO {
 		$this->_objMCP->saveFieldValues($dynamic,$pk,'MCP_VOCABULARY',$entity_id);
 		
 		return $intId;
+		
+	}
+	
+	/*
+	* Delete a vocabulary
+	* 
+	* @param mix single integer value or array of integer values ( MCP_VOCABULARY primary key )
+	*/
+	public function deleteVocabulary($mixVocabularyId) {
+		
+		$strSQL = sprintf(
+			'UPDATE
+			      MCP_VOCABULARY
+			    SET
+			      MCP_VOCABULARY.deleted = NULL
+			  WHERE
+			      MCP_VOCABULARY.vocabulary_id IN (%s)'
+			      
+			,is_array($mixVocabularyId) ? $this->_objMCP->escapeString(implode(',',$mixVocabularyId)) : $this->_objMCP->escapeString($mixVocabularyId)
+		);
+		
+		// echo "<p>$strSQL</p>";
+		return $this->_objMCP->query($strSQL);
+		
+	}
+	
+	/*
+	* Delete a term and all its children
+	* 
+	* NOTE: This code is pretty much swipped from the removeLink method
+	* inside the navigation DAO. It is pretty much the same process considering
+	* the tree structure is the takes on a same form and similar dpenedent methods exist.
+	* 
+	* @param int terms id
+	*/
+	public function deleteTerm($intTermsId) {
+		
+		/*
+		* Get terms data 
+		*/
+		$arrTarget = $this->fetchTermById($intTermsId);
+		
+		/*
+		* Get all child terms 
+		*/
+		$arrTerms = $this->fetchTerms($arrTarget['terms_id'],'term',true,array(
+			'filter'=>'t.deleted = 0'
+		));
+		
+		$objIds = new ArrayObject(array($arrTarget['terms_id']));
+		
+		/*
+		* recursive function to collect all child term ids 
+		*/
+		$func = create_function('$value,$index,$ids','if(strcmp(\'terms_id\',$index) == 0) $ids[] = $value;');
+		
+		/*
+		* Collect all child ids 
+		*/
+		array_walk_recursive($arrTerms,$func,$objIds);
+		
+		/*
+		* Collect ids into normal array to use implode 
+		*/
+		$arrIds = array();
+		foreach($objIds as $intId) {
+			$arrIds[] = $intId;
+		}
+		
+		/*
+		* Create SQL 
+		*/
+		$strSQL = sprintf(
+			'UPDATE
+			       MCP_TERMS
+			    SET
+			       MCP_TERMS.deleted = NULL
+			  WHERE
+			       MCP_TERMS.terms_id IN (%s)'
+			,$this->_objMCP->escapeString(implode(',',$arrIds))
+		);
+		
+		// echo "<p>$strSQL<p>";
+		return $this->_objMCP->query($strSQL);
+		
+	}
+	
+	/*
+	* Delete single term and move its children up one level
+	* 
+	* NOTE: This code is pretty much swipped from the removeLink method
+	* inside the navigation DAO. It is pretty much the same process considering
+	* the tree structure is the takes on a same form and similar dpenedent methods exist.
+	* 
+	* @param int terms id
+	*/
+	public function removeTerm($intTermsId) {
+		
+		/*
+		* Get terms data 
+		*/
+		$arrTarget = $this->fetchTermById($intTermsId);
+		
+		/*
+		* Get targets children
+		*/
+		$arrChildren = $this->fetchTerms($arrTarget['terms_id'],'term',false,array(
+			'filter'=>'t.deleted = 0'
+		));
+		
+		/*
+		* Get targets siblings
+		*/
+		$arrTerms = $this->fetchTerms($arrTarget['parent_id'],$arrTarget['parent_type'],false,array(
+			'filter'=>'t.deleted = 0'
+		));
+		
+		/*
+		* reorder array 
+		*/
+		$arrIds = array();
+		
+		foreach($arrTerms as $arrTerm) {
+			
+			/*
+			* Replace links position with children 
+			*/
+			if($arrTerm['terms_id'] == $arrTarget['terms_id']) {
+				foreach($arrChildren as $arrChild) {
+					$arrIds[] = $arrChild['terms_id'];
+				}
+				continue;	
+			}
+			
+			$arrIds[] = $arrTerm['terms_id'];
+		}
+		
+		/*
+		* Build update 
+		*/
+		$arrUpdate = array();
+		foreach($arrIds as $intIndex=>$intId) {
+			$arrUpdate[] = sprintf(
+				"(%s,%s,'%s',%s)"
+				,$this->_objMCP->escapeString($intId)
+				,$this->_objMCP->escapeString($arrTarget['parent_id'])
+				,$this->_objMCP->escapeString($arrTarget['parent_type'])
+				,$this->_objMCP->escapeString($intIndex)
+			);
+		}
+		
+		/*
+		* Build update query 
+		*/
+		$strSQL = sprintf(
+			'INSERT IGNORE INTO MCP_TERMS (terms_id,parent_id,parent_type,weight) VALUES %s ON DUPLICATE KEY UPDATE parent_id=VALUES(parent_id),parent_type=VALUES(parent_type),weight=VALUES(weight)'
+			,implode(',',$arrUpdate)
+		);
+		
+		/*
+		* Create delete query (soft-delete)
+		*/
+		$strSQLDelete = sprintf(
+			'UPDATE 
+			      MCP_TERMS
+			    SET 
+			      MCP_TERMS.deleted = NULL 
+			  WHERE 
+			      MCP_TERMS.terms_id = %s'
+			,$this->_objMCP->escapeString($arrTarget['terms_id'])
+		);
+		
+		/*
+		* Delete link and update children 
+		*/
+		$this->_objMCP->query($strSQLDelete);
+		$this->_objMCP->query($strSQL);
+		// echo "<p>$strSQLDelete</p>";
+		// echo "<p>$strSQL</p>";
+		
+		return 1;
 		
 	}
 	

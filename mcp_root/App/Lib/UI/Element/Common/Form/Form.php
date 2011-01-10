@@ -80,6 +80,11 @@ class Form implements \UI\Element {
 			$out.= '<ul>';
 				
 			foreach($config as $field=>$data) {
+				
+				/*
+				* Dynamic field reference 
+				*/
+				$dynamic_field = isset($data['dynamic_field']);
 					
 				/*
 				* Skip static fields 
@@ -137,10 +142,13 @@ class Form implements \UI\Element {
 					if(isset($data['values'])) {
 							
 						$out.= $ui->draw('Common.Form.Select',array(
-							'name'=>sprintf('%s[%s]%s',$name,$field,(isset($data['multi'])?"[$i]":''))
+						
+							// Elements that are dynamic fields and contain multiple values are placed in value key
+							'name'=>sprintf('%s[%s]%s',$name,$field,(isset($data['multi'])?$dynamic_field?"[$i][value]":"[$i]":''))
+						
 							,'id'=>$idbase.strtolower(str_replace('_','-',$field)).( isset($data['multi'])?'-'.($i+1):'' )
 							,'data'=>$data
-							,'value'=>$values[$field]
+							,'value'=>isset($data['multi'])?isset($values[$field][$i])?$values[$field][$i]:'':$values[$field]
 							,'size'=>isset($data['size'])?$data['size']:null
 							,'disabled'=>$strDisabled?true:false
 						));
@@ -149,7 +157,7 @@ class Form implements \UI\Element {
 						} else if(isset($data['textarea'])) {	
 
 							$out.= $ui->draw('Common.Form.TextArea',array(
-								'name'=>sprintf('%s[%s]%s',$name,$field,(isset($data['multi'])?"[$i]":''))
+								'name'=>sprintf('%s[%s]%s',$name,$field,(isset($data['multi'])?$dynamic_field?"[$i][value]":"[$i]":''))
 								,'id'=>$idbase.strtolower(str_replace('_','-',$field)).( isset($data['multi'])?'-'.($i+1):'' )
 								,'disabled'=>$strDisabled?true:false
 								,'value'=>isset($data['multi'])?isset($values[$field][$i])?$values[$field][$i]:'':$values[$field]								
@@ -180,7 +188,7 @@ class Form implements \UI\Element {
 							
 							$out.= $ui->draw('Common.Form.Input',array(
 								'type'=>$input_type
-								,'name'=>sprintf('%s[%s]%s',$name,$field,(isset($data['multi'])?"[$i]":''))
+								,'name'=>sprintf('%s[%s]%s',$name,$field,(isset($data['multi'])?$dynamic_field && $input_type !== 'file'?"[$i][value]":"[$i]":''))
 								,'value'=>strcmp($input_type,'checkbox') == 0?'1':$val
 								,'max'=>isset($data['max'])?$data['max']:null
 								,'id'=>$idbase.strtolower(str_replace('_','-',$field)).( isset($data['multi'])?'-'.($i+1):'')
@@ -192,9 +200,16 @@ class Form implements \UI\Element {
 							* For images show thumbnail 
 							*/
 							if(isset($data['media']) && $val) {
+								
+								/*
+								* Images will now show after form is submitted 
+								*/
+								$intImagesId = is_array($val) && isset($val['id'])?$val['id']:$val;
+								
 								$out.= $ui->draw('Common.Field.Thumbnail',array(
-									'src'=>( $image_path !== null?sprintf($image_path,(string) $val):$val )
+									'src'=>( $image_path !== null?sprintf($image_path,(string) $intImagesId):$intImagesId )
 								));
+								
 							}
 					
 						}
@@ -206,7 +221,7 @@ class Form implements \UI\Element {
 							* IMPORTANT: For dynamic fields the field values primary key is needed
 							* to update any scalar dynamic field. 
 							*/
-							if($val instanceof \MCPField) {
+							if($values[$field][$i] instanceof \MCPField) {
 								$out.= $ui->draw('Common.Form.Input',array(
 									'type'=>'hidden'
 									,'name'=>"{$name}[$field][$i][id]"

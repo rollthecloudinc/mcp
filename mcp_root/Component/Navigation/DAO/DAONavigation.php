@@ -106,6 +106,7 @@ class MCPDAONavigation extends MCPDAO {
 				)
 				,$args
 			);
+			
 		}
 		
 		/*
@@ -154,7 +155,7 @@ class MCPDAONavigation extends MCPDAO {
 	*/
 	public function fetchRoute($strSitesInternalUrl,$intSitesId) {
 		$strSQL = sprintf(
-			"SELECT * FROM MCP_NAVIGATION_LINKS WHERE sites_internal_url = '%s' AND sites_id = %s"
+			"SELECT * FROM MCP_NAVIGATION_LINKS WHERE sites_internal_url = '%s' AND sites_id = %s AND deleted = 0"
 			,$this->_objMCP->escapeString($strSitesInternalUrl)
 			,$this->_objMCP->escapeString($intSitesId)
 		);
@@ -193,7 +194,7 @@ class MCPDAONavigation extends MCPDAO {
 	*/
 	public function fetchNavBySiteLocation($strLocation,$intSitesId=null) {
 		$strSQL = sprintf(
-			"SELECT * FROM MCP_NAVIGATION WHERE menu_location = '%s' AND sites_id %s"
+			"SELECT * FROM MCP_NAVIGATION WHERE menu_location = '%s' AND sites_id %s AND deleted = 0"
 			,$this->_objMCP->escapeString($strLocation)
 			,$intSitesId == null?' IS NULL':"= {$this->_objMCP->escapeString($intSitesId)}"
 		);
@@ -214,7 +215,7 @@ class MCPDAONavigation extends MCPDAO {
 		* Locate all real navigation links 
 		*/
 		$strSQL = sprintf(
-			"SELECT * FROM MCP_NAVIGATION_LINKS WHERE parent_type = '%s' AND parent_id = %s AND deleted IS NULL ORDER BY sort_order ASC"
+			"SELECT * FROM MCP_NAVIGATION_LINKS WHERE parent_type = '%s' AND parent_id = %s AND deleted = 0 ORDER BY sort_order ASC"
 			,$this->_objMCP->escapeString($strParentType)
 			,$this->_objMCP->escapeString($intParentId)
 		);
@@ -405,7 +406,7 @@ class MCPDAONavigation extends MCPDAO {
 			$arrNav
 			,'MCP_NAVIGATION'
 			,'navigation_id'
-			,array('menu_title','menu_location')
+			,array('menu_title','menu_location','system_name')
 			,'created_on_timestamp'
 		);	
 	}
@@ -636,7 +637,13 @@ class MCPDAONavigation extends MCPDAO {
 		* Create SQL 
 		*/
 		$strSQL = sprintf(
-			'DELETE FROM MCP_NAVIGATION_LINKS WHERE navigation_links_id IN (%s)'
+			//'DELETE FROM MCP_NAVIGATION_LINKS WHERE navigation_links_id IN (%s)'
+			'UPDATE
+			       MCP_NAVIGATION_LINKS
+			    SET
+			       MCP_NAVIGATION_LINKS.deleted = NULL
+			  WHERE
+			       MCP_NAVIGATION_LINKS.navigation_links_id IN (%s)'
 			,$this->_objMCP->escapeString(implode(',',$arrIds))
 		);
 		
@@ -693,7 +700,7 @@ class MCPDAONavigation extends MCPDAO {
 		$arrUpdate = array();
 		foreach($arrIds as $intIndex=>$intId) {
 			$arrUpdate[] = sprintf(
-				"(%u,%s,'%s',%s)"
+				"(%s,%s,'%s',%s)"
 				,$this->_objMCP->escapeString($intId)
 				,$this->_objMCP->escapeString($arrTarget['parent_id'])
 				,$this->_objMCP->escapeString($arrTarget['parent_type'])
@@ -710,10 +717,16 @@ class MCPDAONavigation extends MCPDAO {
 		);
 		
 		/*
-		* Create delete query 
+		* Create delete query (soft-delete)
 		*/
 		$strSQLDelete = sprintf(
-			'DELETE FROM MCP_NAVIGATION_LINKS WHERE navigation_links_id = %s'
+			//'DELETE FROM MCP_NAVIGATION_LINKS WHERE navigation_links_id = %s'
+			'UPDATE 
+			      MCP_NAVIGATION_LINKS
+			    SET 
+			      MCP_NAVIGATION_LINKS.deleted = NULL 
+			  WHERE 
+			      MCP_NAVIGATION_LINKS.navigation_links_id = %s'
 			,$this->_objMCP->escapeString($arrTarget['navigation_links_id'])
 		);
 		
@@ -725,6 +738,28 @@ class MCPDAONavigation extends MCPDAO {
 		
 		return 1;
 		
+		
+	}
+	
+	/*
+	* Delete navigation menu(s)
+	* 
+	* @param mix single integer value or array of integers ( MCP_NAVIGATION primary key )
+	*/
+	public function deleteNavs($mixNavigationId) {
+		
+		$strSQL = sprintf(
+			'UPDATE
+			      MCP_NAVIGATION
+			    SET
+			      MCP_NAVIGATION.deleted = NULL
+			  WHERE
+			      MCP_NAVIGATION.navigation_id IN (%s)'
+			      
+			,is_array($mixNavigationId) ? $this->_objMCP->escapeString(implode(',',$mixNavigationId)) : $this->_objMCP->escapeString($mixNavigationId)
+		);
+		
+		echo "<p>$strSQL</p>";
 		
 	}
 	

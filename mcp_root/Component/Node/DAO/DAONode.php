@@ -117,7 +117,7 @@ class MCPDAONode extends MCPDAO {
 			,$strLimit === null?'':'SQL_CALC_FOUND_ROWS'
 			,$strSelect
 			,$this->_objMCP->escapeString($intId)
-			,$strWhere === null?'':" WHERE $strWhere"
+			,$strWhere === null?'':"AND $strWhere"
 			,$strSort === null?'':" ORDER BY $strSort"
 			,$strLimit === null?'':" LIMIT $strLimit"
 		);
@@ -287,7 +287,7 @@ class MCPDAONode extends MCPDAO {
 		$strSQL = sprintf(
 			'SELECT %s FROM MCP_NODE_TYPES WHERE system_name = ? AND pkg %s AND sites_id = ?'
 			,$strSelect
-			,$pkg === null?' IS NULL ':' = ?'
+			,$pkg === null?" = '' ":' = ?'
 		);
 		
 		// run query
@@ -304,7 +304,7 @@ class MCPDAONode extends MCPDAO {
 		$name = $arrNodeType['system_name'];
 		
 		// node types with a package get it pre-pended
-		if($arrNodeType['pkg'] !== null) {
+		if( !empty($arrNodeType['pkg']) ) {
 			$name = "{$arrNodeType['pkg']}::$name";
 		}
 		
@@ -361,7 +361,7 @@ class MCPDAONode extends MCPDAO {
 	*/
 	public function fetchNodeByUrl($strNodeUrl,$intSitesId,$nodeTypesId) {
 		
-		$strSQL = "SELECT * FROM MCP_NODES WHERE BINARY node_url = ? AND sites_id = ? AND deleted IS NULL AND node_types_id = ?";
+		$strSQL = "SELECT * FROM MCP_NODES WHERE BINARY node_url = ? AND sites_id = ? AND deleted = 0 AND node_types_id = ?";
 		
 		return array_pop($this->_objMCP->query($strSQL,array((string) $strNodeUrl,(int) $intSitesId,(int) $nodeTypesId )));
 	}
@@ -389,7 +389,7 @@ class MCPDAONode extends MCPDAO {
 			   FROM
 			      MCP_NODES n
 			  WHERE
-			      n.deleted IS NULL
+			      n.deleted = 0
 			    AND
 			      n.blog_published = ?
 			      %s
@@ -512,51 +512,105 @@ class MCPDAONode extends MCPDAO {
 	/*
 	* Insert or update node type
 	*/
-	public function saveNodeType($arrNodeType) {	
+	public function saveNodeType($arrNodeType) {
+		
 		return $this->_save(
 			$arrNodeType
 			,'MCP_NODE_TYPES'
 			,'node_types_id'
 			,array('system_name','human_name','pkg','description','theme_tpl')
 			,'created_on_timestamp'
+			,null
+			
+			// Special argument to ignore casting empty string to NULL
+			,array('pkg')
 		);		
 	}
 	
 	/*
-	* Delete a node type
+	* Delete a node type(s)
 	* 
-	* @param int node types id
+	* NOTE: All deletes in system are carried out as soft-deletes to be safe. Any item
+	* with a deleted column value of NULL is considered "deleted" and 0 not deleted. To truly remove items
+	* completely from the database or any other storage mechanism "purge" will be used such as;
+	* purgeNodeType. However, for safety reasons any item MUST be deleted before purged.
+	* 
+	* @param mix sinle integer values or array of integer values ( MCP_NODE_TYPES primary key )
 	*/
-	public function deleteNodeType($intNodeTypesId) {
-		
-		// NOTE: node type, nodes, permissions, fields and field values need to be cleaned-up
-		// purge and delete - delete merely hides data from user interface purge removed from db
-		
-		echo "<p>Deleting node type {$intNodeTypesId}</p>";
-		
-		$strSQLType = sprintf(
-			'DELETE FROM MCP_NODE_TYPES WHERE node_types_id = %s'
-			,$this->_objMCP->escapeString($intNodeTypesId)
+	public function deleteNodeTypes($mixNodeTypesId) {
+
+		/*
+		* Node types and nodes will be deleted. Fields and field
+		* values will be kept in tact for now considering they can't
+		* be accessed without the node entry, so it isn't hurting anything
+		* and makes it easier to revert or undelete something that may
+		* have been accidently deleted. The same will hold true for comments.
+		*/
+		$strSQL = sprintf(
+		   'UPDATE 
+			      MCP_NODE_TYPES
+			  LEFT OUTER
+			  JOIN
+			      MCP_NODES
+			    ON
+			      MCP_NODE_TYPES.node_types_id = MCP_NODES.node_types_id
+			   SET
+			      MCP_NODE_TYPES.deleted = NULL
+			     ,MCP_NODES.deleted = NULL
+			 WHERE
+			     MCP_NODE_TYPES.node_types_id IN (%s)'
+			     
+			,is_array($mixNodeTypesId) ? $this->_objMCP->escapeString(implode(',',$mixNodeTypesId)) : $this->_objMCP->escapeString($mixNodeTypesId)
 		);
 		
-		$strSQLNode = sprintf(
-			'DELETE FROM MCP_NODES WHERE node_types_id = %s'
-			,$this->_objMCP->escapeString($intNodeTypesId)
+		// echo "<p>$strSQL</p>";
+		return $this->_objMCP->query($strSQL);
+		
+	}
+	
+	/*
+	* Delete node(s)
+	* 
+	* @param mix single interger value or array of integers ( MCP_NODES primary key )
+	*/
+	public function deleteNodes($mixNodeId) {
+
+		/*
+		* nodes will be deleted. Fields and field
+		* values will be kept in tact for now considering they can't
+		* be accessed without the node entry, so it isn't hurting anything
+		* and makes it easier to revert or undelete something that may
+		* have been accidently deleted. The same will hold true for comments.
+		*/
+		$strSQL = sprintf(
+			'UPDATE
+			      MCP_NODES
+			    SET
+			      MCP_NODES.deleted = NULL
+			  WHERE
+			      MCP_NODES.nodes_id IN (%s)'
+			      
+			,is_array($mixNodeId) ? $this->_objMCP->escapeString(implode(',',$mixNodeId)) : $this->_objMCP->escapeString($mixNodeId)
 		);
 		
-		$strSQLFields = sprintf(
-			"DELETE FROM MCP_FIELDS WHERE entity_type = 'MCP_NODE_TYPES' AND entity_id = %s"
-			,$this->_objMCP->escapeString($intNodeTypesId)
-		);
+		// echo "<p>$strSQL</p>";
+		return $this->_objMCP->query($strSQL);
+	
+	}
+	
+	/*
+	* Delete node comment(s)
+	* 
+	* @param mix single integer value or array of integer values ( MCP_COMMENTS primary key )
+	*/
+	public function deleteNodesComments($mixNodeCommentId) {
 		
-		/*$strSQLFieldValues = sprintf(
-			'DELETE FROM MCP_NODES WHERE node_types_id = %s'
-			,$this->_objMCP->escapeString($intNodeTypesId)
-		);*/
-		
-		echo "<p>$strSQLType</p>";
-		echo "<p>$strSQLNode</p>";
-		echo "<p>$strSQLFields</p>";
+		/*
+		* @TODO: This is a little trickly considering the tree structure of the comment
+		* data. What will most likely happen here is select all the nodes. Than recall this
+		* function for any children until the leaf is meet. This should delete all branches. A single
+		* query is not practical here. 
+		*/
 		
 	}
 	

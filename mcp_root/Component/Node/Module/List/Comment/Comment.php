@@ -37,7 +37,7 @@ class MCPNodeListComment extends MCPModule {
 		* Fetch nodes comments 
 		*/
 		if($this->_intNodesId !== null) {
-			$arrComments = $this->_objDAONode->fetchNodesComments($this->_intNodesId,'c.*,u.username',null,'c.created_on_timestamp ASC');
+			$arrComments = $this->_objDAONode->fetchNodesComments($this->_intNodesId,'c.*,u.username','c.deleted = 0','c.created_on_timestamp ASC');
 		} else {
 			$arrComments = array();
 		}

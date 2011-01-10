@@ -20,7 +20,7 @@ class MCPDAODataCache extends MCPDAO {
 		return $this->_objMCP->query(sprintf(
 			"INSERT INTO MCP_CACHED_DATA (sites_id,pkg,cache_name,cache_value,flush_cache,serialized,created_on_timestamp) VALUES (%s,%s,'%s','%s',0,%s,NOW()) ON DUPLICATE KEY UPDATE cache_value = VALUES(cache_value),flush_cache = VALUES(flush_cache)"
 			,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
-			,empty($strPkg)?'NULL':"'{$this->_objMCP->escapeString($strPkg)}'"
+			,empty($strPkg)?"''":"'{$this->_objMCP->escapeString($strPkg)}'"
 			,$this->_objMCP->escapeString($strName)
 			,is_array($mixValue)?base64_encode(serialize($mixValue)):$this->_objMCP->escapeString($mixValue)
 			,is_array($mixValue)?'1':'0'
@@ -43,7 +43,7 @@ class MCPDAODataCache extends MCPDAO {
 			"SELECT * FROM MCP_CACHED_DATA WHERE sites_id = %s AND cache_name = '%s' AND pkg %s AND flush_cache = 0"
 			,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
 			,$this->_objMCP->escapeString($strName)
-			,empty($strPkg)?'IS NULL':"= '{$this->_objMCP->escapeString($strPkg)}'"
+			,empty($strPkg)?"= ''":"= '{$this->_objMCP->escapeString($strPkg)}'"
 		)));
 		
 		/*
@@ -69,7 +69,7 @@ class MCPDAODataCache extends MCPDAO {
 			"UPDATE MCP_CACHED_DATA SET flush_cache = 1 WHERE sites_id = %s AND cache_name = '%s' AND pkg %s"
 			,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
 			,$this->_objMCP->escapeString($strName)
-			,empty($strPkg)?'IS NULL':"= '{$this->_objMCP->escapeString($strPkg)}'"
+			,empty($strPkg)?"= ''":"= '{$this->_objMCP->escapeString($strPkg)}'"
 		);
 	}
 	

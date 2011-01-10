@@ -73,7 +73,7 @@ class MCPSiteForm extends MCPModule {
 		$this->_objValidator->addRule('site_name',function($value,$label) use (&$site,$dao,$mcp) {
 				
 			$filter = sprintf(
-				"s.site_name = '%s' %s"
+				"s.deleted = 0 AND s.site_name = '%s' %s"
 				,$mcp->escapeString($value)
 				,$site === null?'':"AND s.sites_id <> {$mcp->escapeString($site['sites_id'])}"
 			);
@@ -93,7 +93,7 @@ class MCPSiteForm extends MCPModule {
 			}
 				
 			$filter = sprintf(
-				"s.site_directory = '%s' %s"
+				"s.deleted = 0 AND s.site_directory = '%s' %s"
 				,$mcp->escapeString($value)
 				,$site === null?'':"AND s.sites_id <> {$mcp->escapeString($site['sites_id'])}"
 			);
@@ -114,7 +114,7 @@ class MCPSiteForm extends MCPModule {
 			}
 				
 			$filter = sprintf(
-				"s.site_module_prefix = '%s' %s"
+				"s.deleted = 0 AND s.site_module_prefix = '%s' %s"
 				,$mcp->escapeString($value)
 				,$site === null?'':"AND s.sites_id <> {$mcp->escapeString($site['sites_id'])}"
 			);

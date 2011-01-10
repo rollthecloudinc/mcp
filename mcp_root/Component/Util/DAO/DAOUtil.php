@@ -44,7 +44,7 @@ class MCPDAOUtil extends MCPDAO {
 			   AND
 			     v.system_name = 'countries'
 			   AND
-			     v.sites_id IS NULL
+			     v.sites_id = 0
 			     %s
 	             %s
 	             %s"

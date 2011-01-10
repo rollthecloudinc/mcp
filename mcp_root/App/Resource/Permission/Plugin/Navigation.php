@@ -270,6 +270,8 @@ class MCPPermissionNavigation extends MCPDAO implements MCPPermission {
 			,$this->_objMCP->escapeString(implode(',',$arrMenuIds))
 		);
 		
+		// echo "<p>$strSQL</p>";
+		
 		$arrPerms = $this->_objMCP->query($strSQL);
 		
 		return $arrPerms;

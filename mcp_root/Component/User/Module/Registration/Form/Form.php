@@ -303,7 +303,7 @@ class MCPUserRegistrationForm extends MCPModule {
 		}
 		
 		$strFilter = sprintf(
-			"sites_id = %s AND username = '%s' %s"
+			"deleted = 0 AND sites_id = %s AND username = '%s' %s"
 			,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
 			,$this->_objMCP->escapeString($strValue)
 			,$arrUser !== null?" AND users_id <> {$this->_objMCP->escapeString($arrUser['users_id'])}":''
@@ -341,7 +341,7 @@ class MCPUserRegistrationForm extends MCPModule {
 		$strValidEmail = isset($strValidEmail['email_address'])?$strValidEmail['email_address']:'';
 		
 		$strFilter = sprintf(
-			"sites_id = %s AND email_address = '%s' %s"
+			"deleted = 0 AND sites_id = %s AND email_address = '%s' %s"
 			,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
 			,$this->_objMCP->escapeString($strValue)
 			,$arrUser !== null?" AND users_id <> {$this->_objMCP->escapeString($arrUser['users_id'])}":''

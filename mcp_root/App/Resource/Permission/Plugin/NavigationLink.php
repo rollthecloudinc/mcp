@@ -160,6 +160,15 @@ class MCPPermissionNavigationLink extends MCPDAO implements MCPPermission {
 	*/
 	private function _rud($intLink,$intUser=null) {
 		
+		/*
+		* Dynamic links that have not been converted to hard links
+		* may not have permissions assigned directly to them at this
+		* time.
+		*/
+		if(!is_numeric("$intLink")) {
+			return null;
+		}
+		
 		$link = $this->_objDAONavigation->fetchLinkById($intLink);
 		
 		if($link === null) {

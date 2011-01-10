@@ -10,12 +10,13 @@
 */
 class MCP {
 	
-	// permission contsants copy - easier to access from hear, less code
+	// permission contsants copy - easier to access from here, less code
 	const
 	 READ 		= 1
 	,ADD 		= 2
 	,DELETE 	= 3
-	,EDIT 		= 4;
+	,EDIT 		= 4
+	,PURGE		= 5;
 
 	private
 	
@@ -426,6 +427,11 @@ class MCP {
 		
 		// Base template path location 
 		$strTplBasePath = str_replace(array('*','.'),array($this->getSite(),DS),$strTplPkg);
+		
+		// Site component template override - Not ready for prime time just yet...
+		/*if( strpos($strTplBasePath,'Component/') === 0 && file_exists(ROOT."/Site/{$this->getSite()}/$strTplBasePath/$strDisplayTemplate") ) {
+			return $this->fetch(ROOT."/Site/{$this->getSite()}/$strTplBasePath/$strDisplayTemplate",$objComponent);
+		}*/
 		
 		// Get contents for components template
 		return $this->fetch(ROOT."/$strTplBasePath/$strDisplayTemplate",$objComponent);
@@ -1383,12 +1389,10 @@ class MCP {
 	* Captures string to dumped at end of request. Can be used to debug
 	* without interupting the rest of the application. 
 	* 
-	* @param str capture content
-	* @param str file name
-	* @param int line number
+	* @param function callback
 	*/
-	public function capture($strCapture,$strFile=null,$intLine=null) {
-		$this->_arrCapture[] = array('content'=>$strCapture,'file'=>$strFile,'line'=>$intLine);
+	public function capture($func) {
+		$this->_arrCapture[] = $func;
 	}
 	
 	/*

@@ -61,7 +61,7 @@ class MCPUserList extends MCPModule {
 	*/
 	protected function _getFilter() {
 		return sprintf(
-			"sites_id = %s"
+			"sites_id = %s AND deleted = 0"
 			
 			// Users that belong to the current site
 			,$this->_objMCP->escapeString($this->_objMCP->getSitesId())

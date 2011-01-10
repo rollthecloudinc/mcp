@@ -321,13 +321,13 @@ class MCPTaxonomyFormVocabulary extends MCPModule {
 		* Build filter to see if vocabulary already exists 
 		*/
 		$strFilter = sprintf(
-			"v.sites_id = %s AND v.system_name = '%s' AND v.pkg %s %s"
+			"v.deleted = 0 AND v.sites_id = %s AND v.system_name = '%s' AND v.pkg %s %s"
 			,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
 			,$this->_objMCP->escapeString($mixValue)
 			
 			// edit edge case
 			,$arrVocabulary !== null?" AND v.vocabulary_id <> {$this->_objMCP->escapeString($arrVocabulary['vocabulary_id'])}":''
-			,empty($this->_arrFrmValues['pkg'])?'IS NULL':"= '{$this->_objMCP->escapeString($this->_arrFrmValues['pkg'])}'"
+			,empty($this->_arrFrmValues['pkg'])?"= ''":"= '{$this->_objMCP->escapeString($this->_arrFrmValues['pkg'])}'"
 		);
 		
 		/*
@@ -355,13 +355,13 @@ class MCPTaxonomyFormVocabulary extends MCPModule {
 		* Build filter to see if vocabulary already exists 
 		*/
 		$strFilter = sprintf(
-			"v.sites_id = %s AND v.human_name = '%s' AND v.pkg %s"
+			"v.deleted = 0 AND v.sites_id = %s AND v.human_name = '%s' AND v.pkg %s"
 			,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
 			,$this->_objMCP->escapeString($mixValue)
 			
 			// edit edge case
 			,$arrVocabulary !== null?" AND v.vocabulary_id <> {$this->_objMCP->escapeString($arrVocabulary['vocabulary_id'])}":''
-			,empty($this->_arrFrmValues['pkg'])?'IS NULL':"= '{$this->_objMCP->escapeString($this->_arrFrmValues['pkg'])}'"
+			,empty($this->_arrFrmValues['pkg'])?"= ''":"= '{$this->_objMCP->escapeString($this->_arrFrmValues['pkg'])}'"
 		);
 		
 		/*

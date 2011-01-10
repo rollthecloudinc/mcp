@@ -108,7 +108,7 @@ class MCPSiteList extends MCPModule {
 		* List all sites when no redirect not present
 		*/
 		if($this->_strRequest === null) {
-			$this->_arrTemplateData['sites'] = $this->_objDAOSite->listAll('s.*',null,'s.site_name ASC');
+			$this->_arrTemplateData['sites'] = $this->_objDAOSite->listAll('s.*','s.deleted = 0','s.site_name ASC');
 			
 			// Get delete and edit permissions (may also want to add in read)
 			$ids = array();

@@ -25,9 +25,12 @@ abstract class MCPDAO extends MCPResource {
 	* @param array list of fields that are stored as strings IE. need '' placed around them.
 	* @param str created on timestamp field. Use null or '' for table without this field.
 	* @param array fields that are serialized
+	* @param array fields that should ignore casting empty strings to NULL (default behavior)
 	* @return mix insert: insert id | update: affected rows
 	*/
-	protected function _save($arrData,$strTable,$strPrimaryKey,$arrStrings,$strCreated='created_on_timestamp',$arrSerialized=null) {
+	protected function _save($arrData,$strTable,$strPrimaryKey,$arrStrings,$strCreated='created_on_timestamp',$arrSerialized=null,$ignoreNullCast=null) {
+		
+		$ignoreNullCast = $ignoreNullCast === null?array():$ignoreNullCast;
 		
 		$boolUpdate = false;
 		$arrUpdate = array();
@@ -45,7 +48,7 @@ abstract class MCPDAO extends MCPResource {
 				$arrUpdate[] = "$strField = VALUES($strField)";
 			}
 			
-			if(!is_array($mixValue) && strlen($mixValue) == 0) {
+			if(!is_array($mixValue) && strlen($mixValue) == 0 && !in_array($strField,$ignoreNullCast)) {
 				$mixValue = 'NULL';
 			} else if(in_array($strField,$arrStrings)) {
 				$mixValue = "'".$this->_objMCP->escapeString($mixValue)."'";

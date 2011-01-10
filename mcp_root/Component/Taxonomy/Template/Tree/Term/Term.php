@@ -7,5 +7,8 @@ echo $this->ui('Common.Listing.Tree',array(
 	,'mutation'=>$mutation
 	,'form'=>true
 	,'form_legend'=>$vocabulary?$vocabulary['human_name']:''
+	,'form_action'=>$frm_action
+	,'form_method'=>$frm_method
+	,'form_name'=>$frm_name
 )); 
 ?>

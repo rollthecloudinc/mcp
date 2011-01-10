@@ -374,10 +374,16 @@
 	</mod>
 	<mod pkg="Component.Navigation.Module.Form.Menu">
 		<frm>
+			<system_name>
+				<label>System Name</label>
+				<required>Y</required>
+				<max>128</max>
+				<type>navigation_system_name</type>
+			</system_name>
 			<menu_title>
 				<label>Title</label>
 				<required>Y</required>
-				<max>96</max>
+				<max>128</max>
 				<type>text</type>
 			</menu_title>
 			<menu_location>
@@ -414,7 +420,7 @@
 					<pkg>Component.Node.DAO.DAONode</pkg>
 					<method>fetchNodeTypes</method>
 					<args>
-						<arg>IF(t.pkg IS NULL,t.system_name,CONCAT(t.system_name,'::',t.pkg)) value,IF(t.pkg IS NULL,t.system_name,CONCAT(t.pkg,'::',t.system_name)) label</arg>
+						<arg>IF(t.pkg = '',t.system_name,CONCAT(t.system_name,'::',t.pkg)) value,IF(t.pkg = '',t.system_name,CONCAT(t.pkg,'::',t.system_name)) label</arg>
 						<arg>t.sites_id = SITES_ID</arg>
 						<arg>label ASC</arg>
 					</args>

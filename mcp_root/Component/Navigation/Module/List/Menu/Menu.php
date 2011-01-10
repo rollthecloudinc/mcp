@@ -14,7 +14,12 @@ class MCPNavigationListMenu extends MCPModule {
 	/*
 	* Internal redirect flag 
 	*/
-	,$_strRedirect;
+	,$_strRedirect
+	
+	/*
+	* Navigation id to perform action on 
+	*/
+	,$_intActionsId;
 	
 	public function __construct(MCP $objMCP,MCPModule $objParentModule=null,$arrConfig=null) {
 		parent::__construct($objMCP,$objParentModule,$arrConfig);
@@ -24,6 +29,49 @@ class MCPNavigationListMenu extends MCPModule {
 	private function _init() {
 		// Get navigation DAO
 		$this->_objDAONavigation = $this->_objMCP->getInstance('Component.Navigation.DAO.DAONavigation',array($this->_objMCP));
+	
+		// set-up delete event handler
+		$id =& $this->_intActionsId;
+		$dao = $this->_objDAONavigation;
+		
+		$this->_objMCP->subscribe($this,'NAVIGATION_MENU_DELETE',function() use(&$id,$dao)  {
+			// delete the menu
+			$dao->deleteNavs($id);
+		});
+	
+	}
+	
+	/*
+	* Handle form submit 
+	*/
+	private function _handleFrm() {
+		
+		/*
+		* Get posted form data 
+		*/
+		$arrPost = $this->_objMCP->getPost('frmNavigationMenuList');
+		
+		/*
+		* Route action 
+		*/
+		if($arrPost && isset($arrPost['action']) && !empty($arrPost['action'])) {
+			
+			/*
+			* Get action 
+			*/
+			$strAction = array_pop(array_keys($arrPost['action']));
+			
+			/*
+			* Get node types id 
+			*/
+			$this->_intActionsId = array_pop(array_keys(array_pop($arrPost['action'])));
+			
+			/*
+			* Fire event 
+			*/
+			$this->_objMCP->fire($this,"NAVIGATION_MENU_".strtoupper($strAction));
+		}
+		
 	}
 	
 	/*
@@ -40,7 +88,7 @@ class MCPNavigationListMenu extends MCPModule {
 			return array();
 		}
 		
-		$arrRows = $this->_objDAONavigation->listAllNavs('n.*,u.username creator,s.site_name',"n.sites_id = {$this->_objMCP->escapeString($this->_objMCP->getSitesId())}",null);
+		$arrRows = $this->_objDAONavigation->listAllNavs('n.*,u.username creator,s.site_name',"n.deleted = 0 AND n.sites_id = {$this->_objMCP->escapeString($this->_objMCP->getSitesId())}",null);
 		$arrMenus = array();
 		
 		/*
@@ -54,8 +102,11 @@ class MCPNavigationListMenu extends MCPModule {
 		/*
 		* Get menu edit and add link permissions
 		*/
-		$perms = $this->_objMCP->getPermission(MCP::EDIT,'Navigation',$ids);
-		$addPerms = $this->_objMCP->getPermission(MCP::ADD,'NavigationLink',$ids);
+		if( !empty($arrRows) ) {
+			$perms = $this->_objMCP->getPermission(MCP::EDIT,'Navigation',$ids);
+			$addPerms = $this->_objMCP->getPermission(MCP::ADD,'NavigationLink',$ids);
+			$deletePerms = $this->_objMCP->getPermission(MCP::DELETE,'Navigation',$ids);
+		}
 		
 		/*
 		* Add edit permission flag 
@@ -63,6 +114,7 @@ class MCPNavigationListMenu extends MCPModule {
 		foreach($arrRows as &$arrRow) {
 			$arrRow['allow_edit'] = $perms[$arrRow['navigation_id']]['allow'];
 			$arrRow['allow_add'] = $addPerms[$arrRow['navigation_id']]['allow'];
+			$arrRow['allow_delete'] = $deletePerms[$arrRow['navigation_id']]['allow'];
 		}
 		
 		/*
@@ -183,6 +235,18 @@ class MCPNavigationListMenu extends MCPModule {
 				}
 			)
 			
+			,array(
+				'label'=>'&nbsp;'
+				,'column'=>'navigation_id'
+				,'mutation'=>function($value,$row) use ($mcp) {
+					return $mcp->ui('Common.Form.Submit',array(
+						'label'=>'Delete'
+						,'name'=>"frmNavigationMenuList[action][delete][$value]"
+						,'disabled'=>!$row['allow_delete']
+					));
+				}
+			)
+			
 		);
 		
 	}
@@ -233,7 +297,27 @@ class MCPNavigationListMenu extends MCPModule {
 			// change the template
 			$strTpl = 'Redirect';
 			
-		}	
+		}
+		
+		/*
+		* Handle form submit  
+		*/
+		$this->_handleFrm();
+
+		/*
+		* Form action
+		*/
+		$this->_arrTemplateData['frm_action'] = $this->getBasePath();
+		
+		/*
+		* Form name 
+		*/
+		$this->_arrTemplateData['frm_name'] = 'frmNavigationMenuList';
+		
+		/*
+		* Form method 
+		*/
+		$this->_arrTemplateData['frm_method'] = 'POST';
 		
 		return "Menu/$strTpl.php";
 		

@@ -203,6 +203,8 @@ class MCPNavigationListLink extends MCPModule {
 				
 				foreach($this->_arrTemplateData['links'] as &$link) {
 					$link['allow_edit'] = $editPerms[$link['navigation_links_id']]['allow'];
+					
+					// @TODO: resolve this properly
 					$link['allow_add'] = true; //$addPerms[$link['navigation_links_id']]['allow'];
 				}
 			

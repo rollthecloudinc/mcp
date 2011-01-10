@@ -19,7 +19,12 @@ class MCPTaxonomyListVocabulary extends MCPModule {
 	/*
 	* Internal nested redirect
 	*/
-	,$_strRedirect = false;
+	,$_strRedirect = false
+	
+	/*
+	* Vocabulary id to perform action on 
+	*/
+	,$_intActionsId;
 	
 	public function __construct(MCP $objMCP,MCPModule $objParentModule=null,$arrConfig=null) {
 		
@@ -31,6 +36,49 @@ class MCPTaxonomyListVocabulary extends MCPModule {
 	protected function _init() {
 		// Get taxonomy data access layer
 		$this->_objDAOTaxonomy = $this->_objMCP->getInstance('Component.Taxonomy.DAO.DAOTaxonomy',array($this->_objMCP));
+	
+		// set-up delete event handler
+		$id =& $this->_intActionsId;
+		$dao = $this->_objDAOTaxonomy;
+		
+		$this->_objMCP->subscribe($this,'VOCABULARY_DELETE',function() use(&$id,$dao)  {
+			// delete the vocabulary
+			$dao->deleteVocabulary($id);
+		});
+	
+	}
+	
+	/*
+	* Handle form submit 
+	*/
+	private function _handleFrm() {
+		
+		/*
+		* Get posted form data 
+		*/
+		$arrPost = $this->_objMCP->getPost('frmVocabularyList');
+		
+		/*
+		* Route action 
+		*/
+		if($arrPost && isset($arrPost['action']) && !empty($arrPost['action'])) {
+			
+			/*
+			* Get action 
+			*/
+			$strAction = array_pop(array_keys($arrPost['action']));
+			
+			/*
+			* Get vocabulary id 
+			*/
+			$this->_intActionsId = array_pop(array_keys(array_pop($arrPost['action'])));
+			
+			/*
+			* Fire event 
+			*/
+			$this->_objMCP->fire($this,"VOCABULARY_".strtoupper($strAction));
+		}
+		
 	}
 	
 	/*
@@ -59,10 +107,12 @@ class MCPTaxonomyListVocabulary extends MCPModule {
 		if(!empty($ids)) {
 			$perms = $this->_objMCP->getPermission(MCP::EDIT,'Vocabulary',$ids);
 			$permsAddTerm = $this->_objMCP->getPermission(MCP::ADD,'Term',$ids);
+			$deletePerms = $this->_objMCP->getPermission(MCP::DELETE,'Vocabulary',$ids);
 		}
 		foreach($this->_arrTemplateData['vocabularies'] as &$vocab) {
 			$vocab['allow_edit'] = $perms[$vocab['vocabulary_id']]['allow'];
 			$vocab['allow_add_term'] = $permsAddTerm[$vocab['vocabulary_id']]['allow'];
+			$vocab['allow_delete'] = $deletePerms[$vocab['vocabulary_id']]['allow'];
 		}
 		
 		// return number of found rows
@@ -76,7 +126,7 @@ class MCPTaxonomyListVocabulary extends MCPModule {
 	* @return str SQL where clause
 	*/
 	protected function _getFilter() {
-		return "v.sites_id = {$this->_objMCP->escapeString($this->_objMCP->getSitesId())} AND v.deleted IS NULL";
+		return "v.sites_id = {$this->_objMCP->escapeString($this->_objMCP->getSitesId())} AND v.deleted = 0";
 	}
 	
 	/*
@@ -94,6 +144,9 @@ class MCPTaxonomyListVocabulary extends MCPModule {
 	* @return array table headers
 	*/
 	protected function _getHeaders() {
+		
+		$mcp = $this->_objMCP;
+		
 		return array(
 			array(
 				'label'=>'Vocabulary'
@@ -115,6 +168,17 @@ class MCPTaxonomyListVocabulary extends MCPModule {
 				,'column'=>'vocabulary_id'
 				,'mutation'=>array($this,'displayAddTermToVocabLink')
 			)
+			,array(
+				'label'=>'&nbsp;'
+				,'column'=>'vocabulary_id'
+				,'mutation'=>function($value,$row) use ($mcp) {
+					return $mcp->ui('Common.Form.Submit',array(
+						'label'=>'Delete'
+						,'name'=>"frmVocabularyList[action][delete][$value]"
+						,'disabled'=>!$row['allow_delete']
+					));
+				}
+			)
 		);
 	}
 	
@@ -129,6 +193,9 @@ class MCPTaxonomyListVocabulary extends MCPModule {
 		// Number of items per page
 		$intLimit = 10;
 		
+		// Handle form submit
+		$this->_handleFrm();
+		
 		// Paginate module
 		$this->_arrTemplateData['PAGINATION_TPL'] = $this->_objMCP->executeComponent('Component.Util.Module.Pagination',array($intLimit,$this->_intPage),'Component.Util.Template',array($this));
 		
@@ -140,6 +207,15 @@ class MCPTaxonomyListVocabulary extends MCPModule {
 		
 		// Create new vocabulary link
 		$this->_arrTemplateData['create_link'] = "{$this->getBasePath(false)}/Create";
+		
+		// Form action
+		$this->_arrTemplateData['frm_action'] = $this->getBasePath();
+		
+		// Form name 
+		$this->_arrTemplateData['frm_name'] = 'frmVocabularyList';
+		
+		// Form method 
+		$this->_arrTemplateData['frm_method'] = 'POST';
 		
 		// Determine whether use is allowed to create vocabulary
 		$perm = $this->_objMCP->getPermission(MCP::ADD,'Vocabulary');
@@ -236,7 +312,7 @@ class MCPTaxonomyListVocabulary extends MCPModule {
 		
 		$name = '';
 		
-		if($row['pkg'] === null) {
+		if( empty($row['pkg']) ) {
 			$name = $row['system_name'];
 		} else {
 			$name = "{$row['pkg']}::{$row['system_name']}";
@@ -286,7 +362,7 @@ class MCPTaxonomyListVocabulary extends MCPModule {
 		
 		$name = '';
 		
-		if($row['pkg'] === null) {
+		if( empty($row['pkg']) ) {
 			$name = $row['system_name'];
 		} else {
 			$name = "{$row['pkg']}::{$row['system_name']}";

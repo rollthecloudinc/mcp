@@ -91,6 +91,7 @@ class MCPDAOUser extends MCPDAO {
 	* @return array user data
 	*/
 	public function fetchUserByLoginCredentials($strUsername,$strPassword,$intSitesId) {
+		
 		$strSQL = 
 			sprintf(
 		          "SELECT 
@@ -102,10 +103,13 @@ class MCPDAOUser extends MCPDAO {
 		              AND
 		                username = '%s'
 		              AND
-		                pwd = SHA1('%s')"
+		                pwd = SHA1( CONCAT('%s','%s',created_on_timestamp) )
+		              AND
+		                deleted = 0"
 		           ,$this->_objMCP->escapeString($intSitesId)
 		           ,$this->_objMCP->escapeString($strUsername)
 		           ,$this->_objMCP->escapeString($strPassword)
+		           ,$this->_objMCP->escapeString($this->_objMCP->getSalt())
 		 	);
 
 		 return array_pop($this->_objMCP->query($strSQL));

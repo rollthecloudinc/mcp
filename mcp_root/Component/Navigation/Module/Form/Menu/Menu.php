@@ -54,6 +54,53 @@ class MCPNavigationFormMenu extends MCPModule {
 		
 		// fetch form post data
 		$this->_arrFrmPost = $this->_objMCP->getPost($this->_getFrmName());
+		
+		// Add custom validation routines to validator
+		$this->_addCustomValidationRules();
+	}
+	
+	/*
+	* Add custom validation callbacks to validator
+	* 
+	*/
+	private function _addCustomValidationRules() {
+		
+		$mcp = $this->_objMCP;
+		$dao = $this->_objDAONavigation;
+		$menu =& $this->_arrMenu;
+		
+		$this->_objValidator->addRule('navigation_system_name',function($value,$label) use (&$menu,$mcp,$dao) {
+			
+			/*
+			* Check system name conforms to standard convention 
+			*/
+			if(!preg_match('/^[a-z0-9_]*?$/',$value)) {
+				return "$label may only contain numbers, underscores and lower alphabetic characters.";
+			}
+			
+			/*
+			* Build filter to see if navigation menu already exists 
+			*/
+			$strFilter = sprintf(
+				"n.deleted = 0 AND n.sites_id = %s AND n.system_name = '%s' %s"
+				
+				,$mcp->escapeString( $mcp->getSitesId() )
+				,$mcp->escapeString( $value )
+				
+				// edit edge case
+				,$menu !== null ? " AND n.system_name <> '{$mcp->escapeString($menu['system_name'])}'": ''
+			);
+			
+			/*
+			* Check to see if another menu exists with given name within site
+			*/
+			if(array_pop($dao->listAllNavs('n.navigation_id',$strFilter)) !== null) {
+				return "$label $value already exists please use another name";
+			}
+			
+			return '';
+		});
+		
 	}
 	
 	/*
@@ -215,7 +262,7 @@ class MCPNavigationFormMenu extends MCPModule {
 	* @return array fields
 	*/
 	private function _getFrmFields() {
-		return array('menu_title','menu_location','display_title');
+		return array_keys( $this->_getFrmConfig() );
 	}
 	
 	/*
@@ -258,6 +305,7 @@ class MCPNavigationFormMenu extends MCPModule {
 			if($arrMenu !== null) {
 				$this->_setMenu($arrMenu);
 			}
+			
 		}
 		
 		/*

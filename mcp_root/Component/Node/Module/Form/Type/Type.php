@@ -306,10 +306,10 @@ class MCPNodeFormType extends MCPModule {
 		* Build filter for unique site, system name and package combination 
 		*/
 		$strFilter = sprintf(
-			"t.sites_id = %s AND t.system_name = '%s' AND t.pkg %s %s"
+			"t.deleted = 0 AND t.sites_id = %s AND t.system_name = '%s' AND t.pkg %s %s"
 			,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
 			,$this->_objMCP->escapeString($mixValue)
-			,empty($this->_arrFrmValues['pkg'])?'IS NULL':"= '{$this->_objMCP->escapeString($this->_arrFrmValues['pkg'])}'"
+			,empty($this->_arrFrmValues['pkg'])?"= ''":"= '{$this->_objMCP->escapeString($this->_arrFrmValues['pkg'])}'"
 			,$arrNodeType !== null?" AND t.node_types_id <> {$this->_objMCP->escapeString($arrNodeType['node_types_id'])}":''
 		);
 		
@@ -342,10 +342,10 @@ class MCPNodeFormType extends MCPModule {
 		* Build filter for unique site, human name and package combination 
 		*/
 		$strFilter = sprintf(
-			"t.sites_id = %s AND t.human_name = '%s' AND t.pkg %s %s"
+			"t.deleted = 0 AND t.sites_id = %s AND t.human_name = '%s' AND t.pkg %s %s"
 			,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
 			,$this->_objMCP->escapeString($mixValue)
-			,empty($this->_arrFrmValues['pkg'])?'IS NULL':"= '{$this->_objMCP->escapeString($this->_arrFrmValues['pkg'])}'"
+			,empty($this->_arrFrmValues['pkg'])?"= ''":"= '{$this->_objMCP->escapeString($this->_arrFrmValues['pkg'])}'"
 			,$arrNodeType !== null?" AND t.node_types_id <> {$this->_objMCP->escapeString($arrNodeType['node_types_id'])}":''
 		);
 		

@@ -334,7 +334,13 @@ class MCPDAOField extends MCPDAO {
 				
 			}
 			
+			/*
+			* Special flag for a "field" - used to change behavior 
+			*/
+			$values.= '<dynamic_field>1</dynamic_field>';
+			
 			$strXML.= "<$name>$values</$name>";
+			
 		}
 		
 		// Wrap XML include indirect mixin
@@ -650,6 +656,27 @@ class MCPDAOField extends MCPDAO {
 	}
 	
 	/*
+	* Move field value that belongs to scalar field up or down based weight 
+	* 
+	* @param int field values id (MCP_FIELD_VALUES primary key)
+	*/
+	public function moveFieldValue($intFieldValuesId,$intWeight) {
+		echo "<p>Move field value</p>";
+	}
+	
+	/*
+	* Delete a field value
+	* 
+	* This will physical remove the data, not hide it but delete it right away. Normally
+	* delete hides things and purge deletes them but not here.
+	* 
+	* @param int field values id (MCP_FIELD_VALUES primary key)
+	*/
+	public function deleteFieldValue($intFieldValuesId) {
+		echo "<p>Delete field value</p>";
+	}
+	
+	/*
 	* Get node types for dynamic field selection drop down 
 	* 
 	* NOTE: This method does something that no other DAO does, that
@@ -673,9 +700,9 @@ class MCPDAOField extends MCPDAO {
 		$types = $objDAONode->fetchNodeTypes(
 			"t.node_types_id
 			 ,t.pkg
-			 ,IF(t.pkg IS NOT NULL,t.pkg,t.system_name) sort
+			 ,IF(t.pkg <> '',t.pkg,t.system_name) sort
 			 ,t.system_name"
-			,"t.sites_id = {$this->_objMCP->escapeString($this->_objMCP->getSitesId())}"
+			,"t.deleted = 0 AND t.sites_id = {$this->_objMCP->escapeString($this->_objMCP->getSitesId())}"
 			,'pkg,sort ASC'
 		);
 		
@@ -686,7 +713,7 @@ class MCPDAOField extends MCPDAO {
 		foreach($types as $type) {
 			
 			// Get the option group to use
-			$key = $type['pkg'] === null?'Core':$type['pkg'];
+			$key = empty($type['pkg'])?'Core':$type['pkg'];
 			
 			// create package array / "optiongroup"
 			if(!isset($arrTypes[$key])) {
@@ -734,7 +761,7 @@ class MCPDAOField extends MCPDAO {
 		$vocabs = $objDAOTaxonomy->listVocabulary(
 			"v.vocabulary_id
 			 ,v.pkg
-			 ,IF(v.pkg IS NOT NULL,v.pkg,v.system_name) sort
+			 ,IF(v.pkg <> '',v.pkg,v.system_name) sort
 			 ,v.system_name"
 			,"v.sites_id = {$this->_objMCP->escapeString($this->_objMCP->getSitesId())} AND v.deleted IS NULL"
 			,'pkg,sort ASC'
@@ -747,7 +774,7 @@ class MCPDAOField extends MCPDAO {
 		foreach($vocabs as $vocab) {
 			
 			// Get the option group to use
-			$key = $vocab['pkg'] === null?'Core':$vocab['pkg'];
+			$key = empty($vocab['pkg'])?'Core':$vocab['pkg'];
 			
 			// create package array / "optiongroup"
 			if(!isset($arrVocabs[$key])) {
@@ -794,7 +821,7 @@ class MCPDAOField extends MCPDAO {
 		return $objDAOSite->listAll(
 			" CONCAT('MCP_SITES-',s.sites_id) value
 			 ,s.site_name label"
-			, null
+			, 's.deleted = 0'
 			,'label ASC'
 		);
 		
@@ -853,14 +880,13 @@ class MCPDAOField extends MCPDAO {
 		foreach($arrValues as $arrValue) {
 			
 			// id means the value is being changed that exists
-			if( isset($arrValue['id']) ) {
+			if( isset($arrValue['id']) && !empty($arrValue['id']) ) {
 				
 				// update	
 				$this->_updateFieldValue($arrValue['id'],$arrValue['value']);
 				
 			} else {
-				
-				// insert				
+							
 				$this->_insertFieldValue($intFieldsId,$intRowsId,$arrValue['value']);
 				
 			}
@@ -874,6 +900,13 @@ class MCPDAOField extends MCPDAO {
 	* @param mix value
 	*/
 	private function _updateFieldValue($intFieldValuesId,$mixValue) {
+		
+		/*
+		* When the value contains nothing delete it 
+		*/
+		if(strlen($mixValue) === 0) {
+			return $this->_objMCP->query("DELETE FROM MCP_FIELD_VALUES WHERE field_values_id = {$this->_objMCP->escapeString($intFieldValuesId)}");
+		}
 		
 		$serialized = base64_encode(serialize($mixValue));
 		
@@ -941,6 +974,13 @@ class MCPDAOField extends MCPDAO {
 	* @param mix value
 	*/
 	private function _insertFieldValue($intFieldsId,$intRowsId,$mixValue) {
+		
+		/*
+		* When value is empty don't do anything 
+		*/
+		if(strlen($mixValue) === 0) {
+			return true;
+		}
 		
 		$serialized = base64_encode(serialize($mixValue));
 		

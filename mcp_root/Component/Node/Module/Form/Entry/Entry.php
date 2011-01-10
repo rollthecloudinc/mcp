@@ -70,6 +70,27 @@ class MCPNodeFormEntry extends MCPModule {
 	*/
 	protected function _process() {
 		
+		if($this->_arrFrmPost !== null && isset($this->_arrFrmPost['action'])) {
+			
+			$func = function($value,$func,$action=array()) {
+				$item = is_array($value) ? array_pop($value) : $value;
+				
+				if( is_array($item) ) {
+					$action[] = array_pop( array_keys($item) );
+				}
+				
+				if( !is_array($item) ) {
+					$action[] = $item;
+				}				
+				
+				return is_array($item) ? $func($item,$func,$action) : $action	;	
+			};
+			
+			$item = $func($this->_arrFrmPost['action'],$func);
+			//echo '<pre>',print_r($item),'</pre>';
+			
+		}
+		
 		/*
 		* Set form values 
 		*/
@@ -163,7 +184,7 @@ class MCPNodeFormEntry extends MCPModule {
 					$arrNodeType = $this->_objDAONode->fetchNodeTypeById($arrNode['node_types_id']);
 					
 					// construct the expected value
-					if($arrNodeType['pkg'] !== null) {
+					if( !empty($arrNodeType['pkg']) ) {
 						$this->_arrFrmValues[$strField] = "{$arrNodeType['system_name']}::{$arrNodeType['pkg']}";
 					} else {
 						$this->_arrFrmValues[$strField] = $arrNodeType['system_name'];
@@ -282,6 +303,9 @@ class MCPNodeFormEntry extends MCPModule {
 		
 		//echo '<pre>',print_r($arrValues),'</pre>';
 		
+		//echo '<pre>',print_r($this->_arrFrmPost),'</pre>';
+		// return;
+		
 		/*
 		* Get current node 
 		*/
@@ -318,7 +342,7 @@ class MCPNodeFormEntry extends MCPModule {
 			"t.sites_id = %s AND t.system_name = '%s' AND t.pkg %s"
 			,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
 			,$this->_objMCP->escapeString($nodeTypeName)
-			,empty($nodeTypePkg)?'IS NULL':"= '{$this->_objMCP->escapeString($nodeTypePkg)}'"
+			,empty($nodeTypePkg)?"= ''":"= '{$this->_objMCP->escapeString($nodeTypePkg)}'"
 		);
 		
 		/*
@@ -403,8 +427,12 @@ class MCPNodeFormEntry extends MCPModule {
 		*/
 		$this->_process();
 		
+		
+		// echo '<pre>',print_r($this->_getFrmConfig()),'</pre>';
+		
 		// echo '<pre>',print_r( $this->_getFrmConfig() ),'</pre>';
-		// echo '<pre>',print_r($this->_getNode()),'</pre>';
+		//echo '<pre>',print_r($this->_getNode()),'</pre>';
+		//exit;
 		
 		$this->_arrTemplateData['name'] = $this->_getFrmName();
 		$this->_arrTemplateData['action'] = $this->getBasePath();

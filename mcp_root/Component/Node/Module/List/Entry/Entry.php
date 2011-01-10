@@ -29,7 +29,12 @@ class MCPNodeListEntry extends MCPModule {
 	/*
 	* Internal redirect
 	*/
-	,$_strRequest;
+	,$_strRequest
+	
+	/*
+	* Node id to perform action on 
+	*/
+	,$_intActionsId;
 	
 	public function __construct(MCP $objMCP,MCPModule $objParentModule=null,$arrConfig=null) {
 		parent::__construct($objMCP,$objParentModule,$arrConfig);
@@ -39,6 +44,49 @@ class MCPNodeListEntry extends MCPModule {
 	protected function _init() {
 		// Fetch node DAO
 		$this->_objDAONode = $this->_objMCP->getInstance('Component.Node.DAO.DAONode',array($this->_objMCP));
+	
+		// set-up delete event handler
+		$id =& $this->_intActionsId;
+		$dao = $this->_objDAONode;
+		
+		$this->_objMCP->subscribe($this,'NODE_DELETE',function() use(&$id,$dao)  {
+			// delete the node type
+			$dao->deleteNodes($id);
+		});
+		
+	}
+	
+	/*
+	* Handle form submit 
+	*/
+	private function _handleFrm() {
+		
+		/*
+		* Get posted form data 
+		*/
+		$arrPost = $this->_objMCP->getPost('frmNodeList');
+		
+		/*
+		* Route action 
+		*/
+		if($arrPost && isset($arrPost['action']) && !empty($arrPost['action'])) {
+			
+			/*
+			* Get action 
+			*/
+			$strAction = array_pop(array_keys($arrPost['action']));
+			
+			/*
+			* Get node types id 
+			*/
+			$this->_intActionsId = array_pop(array_keys(array_pop($arrPost['action'])));
+			
+			/*
+			* Fire event 
+			*/
+			$this->_objMCP->fire($this,"NODE_".strtoupper($strAction));
+		}
+		
 	}
 	
 	/*
@@ -65,9 +113,16 @@ class MCPNodeListEntry extends MCPModule {
 		*/
 		$ids = array();
 		foreach($this->_arrTemplateData['nodes'] as $node) $ids[] = $node['nodes_id'];
-		if(!empty($ids)) $perms = $this->_objMCP->getPermission(MCP::EDIT,'Node',$ids);
+		
+		if(!empty($ids)) {
+			$editPerms = $this->_objMCP->getPermission(MCP::EDIT,'Node',$ids);
+			$deletePerms = $this->_objMCP->getPermission(MCP::DELETE,'Node',$ids);
+		}
+		
+		
 		foreach($this->_arrTemplateData['nodes'] as &$node) {
-			$node['allow_edit'] = $perms[$node['nodes_id']]['allow'];
+			$node['allow_edit'] = $editPerms[$node['nodes_id']]['allow'];
+			$node['allow_delete'] = $deletePerms[$node['nodes_id']]['allow'];
 		}
 		
 		/*
@@ -89,7 +144,7 @@ class MCPNodeListEntry extends MCPModule {
 		$arrNodeType = $this->_getNodeType();
 		
 		$filter = sprintf(
-			"%s n.node_published = 1 AND n.deleted IS NULL"
+			"%s n.deleted = 0"
 			
 			// view node of the specified type
 			,$arrNodeType !== null?"t.node_types_id = {$this->_objMCP->escapeString($arrNodeType['node_types_id'])} AND ":''
@@ -156,6 +211,17 @@ class MCPNodeListEntry extends MCPModule {
 				,'column'=>'nodes_id'
 				,'mutation'=>array($this,'displayNodeEditLink')
 			)
+			,array(
+				'label'=>'&nbsp;'
+				,'column'=>'nodes_id'
+				,'mutation'=>function($value,$row) use ($mcp) {
+					return $mcp->ui('Common.Form.Submit',array(
+						'label'=>'Delete'
+						,'name'=>"frmNodeList[action][delete][$value]"
+						,'disabled'=>!$row['allow_delete']
+					));
+				}
+			)
 		);
 	}
 	
@@ -180,6 +246,11 @@ class MCPNodeListEntry extends MCPModule {
 		* Get redirect
 		*/
 		$this->_strRequest = !empty($arrArgs) && in_array($arrArgs[0],array('Create','Edit','View'))?array_shift($arrArgs):null;
+		
+		/*
+		* Handle form submit  
+		*/
+		$this->_handleFrm();
 		
 		/*
 		* Number of nodes per page 
@@ -230,7 +301,7 @@ class MCPNodeListEntry extends MCPModule {
 		$this->_arrTemplateData['create_label'] = $arrNodeType !== null?$arrNodeType['human_name']:'Content';
 		
 		// Create a new node of specified type link 
-		$this->_arrTemplateData['create_link'] = "{$this->getBasePath(false)}/{$this->_intPage}/Create/".($arrNodeType !== null?($arrNodeType['pkg'] !== null?"{$arrNodeType['system_name']}::{$arrNodeType['pkg']}":$arrNodeType['system_name']):'');
+		$this->_arrTemplateData['create_link'] = "{$this->getBasePath(false)}/{$this->_intPage}/Create/".($arrNodeType !== null?( !empty($arrNodeType['pkg']) ?"{$arrNodeType['system_name']}::{$arrNodeType['pkg']}":$arrNodeType['system_name']):'');
 		
 		// Back label 
 		$this->_arrTemplateData['back_label'] = $arrNodeType !== null?$arrNodeType['human_name']:'Content';
@@ -245,6 +316,21 @@ class MCPNodeListEntry extends MCPModule {
 		} else {
 			$this->_arrTemplateData['allow_node_create'] = false;
 		}
+		
+		/*
+		* Form action
+		*/
+		$this->_arrTemplateData['frm_action'] = $this->getBasePath();
+		
+		/*
+		* Form name 
+		*/
+		$this->_arrTemplateData['frm_name'] = 'frmNodeList';
+		
+		/*
+		* Form method 
+		*/
+		$this->_arrTemplateData['frm_method'] = 'POST';
 		
 		// Execute pagination module
 		$this->_arrTemplateData['PAGINATION_TPL'] = $this->_objMCP->executeComponent('Component.Util.Module.Pagination',array($intLimit,$this->_intPage),'Component.Util.Template',array($this));

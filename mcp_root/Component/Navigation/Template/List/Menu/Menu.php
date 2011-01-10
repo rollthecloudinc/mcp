@@ -17,6 +17,9 @@ foreach($menus as $site) {
 		,'headers'=>$headers
 		,'form'=>true
 		,'form_legend'=>$site['site_name']
+		,'form_action'=>$frm_action
+		,'form_method'=>$frm_method
+		,'form_name'=>$frm_name
 	));
 
 }

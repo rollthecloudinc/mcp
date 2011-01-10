@@ -41,7 +41,7 @@ class MCPNodeListType extends MCPModule {
 		
 		$this->_objMCP->subscribe($this,'NODE_TYPE_DELETE',function() use(&$id,$dao)  {
 			// delete the node type
-			$dao->deleteNodeType($id);
+			$dao->deleteNodeTypes($id);
 		});
 	}
 	
@@ -122,7 +122,7 @@ class MCPNodeListType extends MCPModule {
 		
 		// Get node types that belong to current site
 		return sprintf(
-			't.sites_id = %s %s'
+			't.deleted = 0 AND t.sites_id = %s %s'
 			,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
 			,$strLetter !== null?" AND t.system_name LIKE '{$this->_objMCP->escapeString($strLetter)}%'":''
 		);
@@ -316,7 +316,7 @@ class MCPNodeListType extends MCPModule {
 		$name = $row['system_name'];
 		
 		// node types with a package get it pre-pended
-		if($row['pkg'] !== null) {
+		if( !empty($row['pkg']) ) {
 			$name = "{$row['pkg']}::$name";
 		}
 		
@@ -345,7 +345,7 @@ class MCPNodeListType extends MCPModule {
 		$name = $row['system_name'];
 		
 		// node types with a package get it pre-pended
-		if($row['pkg'] !== null) {
+		if( !empty($row['pkg']) ) {
 			$name = "{$row['pkg']}::$name";
 		}
 		
