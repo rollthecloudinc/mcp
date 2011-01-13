@@ -112,12 +112,6 @@ abstract class MCPModule extends MCPResource {
 	}
 	
 	/*
-	* Centeralized method to check permissions before vital proceeding with vital processes 
-	*/
-	public function checkPermissions() {
-	}
-	
-	/*
 	* Get module config value
 	* 
 	* @param str config name

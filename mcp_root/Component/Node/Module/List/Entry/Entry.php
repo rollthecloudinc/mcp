@@ -207,6 +207,13 @@ class MCPNodeListEntry extends MCPModule {
 				}
 			)
 			,array(
+				'label'=>'Published'
+				,'column'=>'node_published'
+				,'mutation'=>function($value,$row) {
+					return $value?'Y':'N';
+				}
+			)
+			,array(
 				'label'=>'&nbsp;'
 				,'column'=>'nodes_id'
 				,'mutation'=>array($this,'displayNodeEditLink')

@@ -188,6 +188,27 @@ class MCPPDO extends MCPResource implements MCPDB {
 	}
 	
 	/*
+	* Begin a transaction 
+	*/
+	public function beginTransaction() {
+		
+	}
+	
+	/*
+	* Rollback a transaction 
+	*/
+	public function rollback() {
+		
+	}
+	
+	/*
+	* Commit a transaction 
+	*/
+	public function commit() {
+		
+	}
+	
+	/*
 	* Determine whether connection to database has been established
 	* 
 	* @return bool yes/no

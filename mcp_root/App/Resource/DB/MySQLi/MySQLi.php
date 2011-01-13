@@ -65,6 +65,27 @@ class MCPMySQLi extends MCPResource implements MCPDB {
 	}
 	
 	/*
+	* Begin a transaction 
+	*/
+	public function beginTransaction() {
+		
+	}
+	
+	/*
+	* Rollback a transaction 
+	*/
+	public function rollback() {
+		
+	}
+	
+	/*
+	* Commit a transaction 
+	*/
+	public function commit() {
+		
+	}
+	
+	/*
 	* Determine whether database connection has been estalished
 	* 
 	* @return bool yes/no

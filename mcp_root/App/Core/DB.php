@@ -7,5 +7,8 @@ interface MCPDB {
 	public function lastInsertId();
 	public function escapeString($strValue);
 	public function isConnected();
+	public function beginTransaction();
+	public function rollback();
+	public function commit();
 }
 ?>

@@ -1,0 +1,18 @@
+- Move dynamically generated navigation items without first editing and saving to concrete link
+- Restrict access to view admin menu and perhaps separate links within admin menu itself
+- Apply permissions to navigation links
+- Integrate role based permissions into permission layer.
+- Make it possible to sort dynamic fields that are arrays.
+- Make it possible to add more dynamic fields to arrays preferable without reliance on JavaScript
+- Implement configuration permission plugin
+- Create UI to manage permissions
+- Add validation handling to dynamic fields
+- Create global diaolog, system messages for providing feedback to users when carrying out actions regarding
+  success, failure or warnings that occurred or prevented something from happening.
+- Develop algoritm to generate views and associated UI
+- Rename VD to View
+- Create cache layer for expensive, repetitive and recursive data access tasks such as; building
+  vocabulary, menu, getting entity dybamic fields, etc.
+- Create term management area similiar to navigation area for managing tree structure.
+- Re-design navigation area breadcrumb system, its a bit awkward
+  

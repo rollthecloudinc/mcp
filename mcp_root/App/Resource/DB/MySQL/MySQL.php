@@ -119,6 +119,27 @@ class MCPMySQL extends MCPResource implements MCPDB {
 	}
 	
 	/*
+	* Begin a transaction 
+	*/
+	public function beginTransaction() {
+		
+	}
+	
+	/*
+	* Rollback a transaction 
+	*/
+	public function rollback() {
+		
+	}
+	
+	/*
+	* Commit a transaction 
+	*/
+	public function commit() {
+		
+	}
+	
+	/*
 	* Has database connection been established?
 	* @return bool
 	*/
