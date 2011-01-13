@@ -68,7 +68,7 @@ $this->import('App.Core.VDItem');
 				,'binding'=>null
 			)
 			,'terms'=>array(
-				'column'=>'parent_id'
+				'column'=>'vocabulary_id'
 				,'binding'=>'Term'
 			)
 		);

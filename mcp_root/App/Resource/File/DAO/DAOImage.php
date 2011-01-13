@@ -273,8 +273,8 @@ class MCPDAOImage extends MCPDAO {
 	* Insert new image 
 	* 
 	* @param arr image data
-	* @param bool write image to file image directory
-	* @retrun int images id
+	* @param bool write image file to image directory
+	* @return int images id
 	*/
 	public function insert($arrImage,$boolWrite=false) {
 		

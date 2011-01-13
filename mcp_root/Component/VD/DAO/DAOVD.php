@@ -26,20 +26,20 @@ class MCPDAOVD extends MCPDAO {
 		/*
 		* Selected fields
 		*/
-		$fields = array(
+		//$fields = array(
 		
 			//'Node/classification/system_name'
 			
 			/*"Node/classification/filter:{this.alias}.system_name = 'product' AND {this.alias}.pkg IS NULL AND {this.alias}.sites_id = {#SITES_ID#}"
 			,"Node/sort:{this.alias}.node_title ASC"*/
 			
-			'User/username'
-			,'User/field/profile'
-			,'User/field/avatar/image_size'
-			,'User/site/creator/id'
-			,'User/site/id'
-			,'User/site/filter:{this.alias}.sites_id IN (1,4)'
-			,'User/site/sort:{this.alias}.site_name ASC'
+			//'User/username'
+			//,'User/field/profile'
+			//,'User/field/avatar/image_size'
+			//,'User/site/creator/id'
+			//,'User/site/id'
+			//,'User/site/filter:{this.alias}.sites_id IN (1,4)'
+			//,'User/site/sort:{this.alias}.site_name ASC'
 		
 			/*'Node/title'
 			,'Node/classification/system_name'
@@ -58,11 +58,25 @@ class MCPDAOVD extends MCPDAO {
 			,'Node/classification/filter:{this.alias}.node_types_id = 89'
 			,'Node/sort:{this.alias}.node_title ASC'*/
 		
+			/*'Node/id'
+			,'Node/title'
+			,'Node/filter: {this.alias}.deleted = 0'
+			,"Node/classification/filter: {this.alias}.system_name = 'project'"
+			,"Node/classification/filter: {this.alias}.pkg = ''"
+			,'Node/classification/site/filter: {this.alias}.sites_id = 9'
+			,'Node/classification/filter: {this.alias}.deleted = 0'
+			,'Node/sort: {this.alias}.node_title ASC'
+			,'Node/field/images/image_label'
+			,'Node/teaser'*/
+		
+			/*'Term/system_name'
+			,'Term/vocabulary/filter: {this.alias}.vocabulary_id = 90'*/
+		
 			//'NodeType/nodes/id'
 			//,'NodeType/nodes/title'
 			
 			//'Vocabulary/terms/id'
-		);
+		//);
 
 		/*
 		* Convert paths to hierarchical tree representation
@@ -75,7 +89,7 @@ class MCPDAOVD extends MCPDAO {
 			}
 		}
 		
-		//echo '<pre>',print_r($tree),'</pre>';
+		// echo '<pre>',print_r($tree),'</pre>';
 
 		/*
 		* Walk the tree to build sql
@@ -140,7 +154,44 @@ class MCPDAOVD extends MCPDAO {
 				
 				// bug: not selecting atomic fields
 				foreach($walked as $index=>$item) {
-					if( (empty($item['from']) && $item['name'] !== 'field')) {
+					
+					$dynamic_field = null;
+					$dynamic_field_tb_alias = null;
+					$proceeed = false;
+					
+					if( (empty($item['from']) && $item['name'] !== 'field') || $dynamic_field !== null) {
+						$proceeed = true;
+						
+					// EDGE CASE: Atomic dynamic field value
+					} else if( isset($ancestory[0]) ) {
+						
+						$entity = $dao->get_entity($ancestory);
+						$fields = $entity->getFields();
+						
+						// At this point its a known dynamic field not part of concrete entity schema
+						if( !isset($fields[$item['name']]) ) {
+							
+							// Look field data definition to resolve to correct column - db_int, db_price, db_text, ect
+							$fieldRow = $dao->get_field_info( $entity->getFieldEntityType(),$item['name'] );
+							
+							if($fieldRow['column'] != '--') {
+								$dynamic_field = $fieldRow['column'];
+								$dynamic_field_tb_alias = $item['alias'];
+							
+								$proceeed = true;
+							}
+							
+							// echo "<div style=\"border: 1px solid blue;\"><p>$index,{$item['name']}</p><pre>",print_r($ancestory),"</pre></div>";
+							
+						}
+						
+					}
+					
+					/*
+					* --------------------------------------------------------------------- 
+					*/
+						
+					if($proceeed === true) {
 
 						// determine whether item is a filter, sort or normal column selection
 						if(strpos($item['name'],'filter:') === 0) {
@@ -159,6 +210,8 @@ class MCPDAOVD extends MCPDAO {
 							
 						} else {
 							
+							$alias = $dynamic_field_tb_alias === null?$alias:$dynamic_field_tb_alias;
+							
 							$copy2 = $copy;
 							array_shift($copy2,array('name'=>$item['name']));
 							
@@ -171,6 +224,10 @@ class MCPDAOVD extends MCPDAO {
 							
 							$field = isset($fields[$item['name']],$fields[$item['name']]['column'])?$fields[$item['name']]['column']:$item['name'];
 							
+							if($dynamic_field !== null) {
+								$field = $dynamic_field;
+							}
+							
 							$branchData['select']["{$alias}_{$item['name']}"] = array(
 								'name'=>$item['name']
 								,'sql'=>"$alias.$field {$alias}_{$item['name']}"
@@ -180,7 +237,11 @@ class MCPDAOVD extends MCPDAO {
 							
 						}
 						
-						$remove[] = $index;
+						// for dynamic fields the item needs to be kept in tact
+						if($dynamic_field === null) {
+							$remove[] = $index;
+						}
+						
 					}
 				}
 				
@@ -198,8 +259,9 @@ class MCPDAOVD extends MCPDAO {
 		};
 
 		//echo '<pre>',print_r($walk($tree,array(),$walk)),'</pre>';
-		$walk($tree,array(),$walk);
+		$tree = $walk($tree,array(),$walk);
 		
+		// echo '<pre>',print_r($tree),'</pre>';
 		//echo '<pre>',print_r($query),'</pre>';
 		
 		$sql = sprintf(
@@ -210,7 +272,7 @@ class MCPDAOVD extends MCPDAO {
 			,!empty($query['orderby'])?'ORDER BY '.implode(',',$query['orderby']):''
 		);
 		
-		echo "<p>$sql</p>";
+		echo "<p style=\"border: 1px solid red; padding: .5em;\">$sql</p>";
 		
 	
 	}
@@ -252,8 +314,14 @@ class MCPDAOVD extends MCPDAO {
 	/*
 	* Get info for a field to resolve foreign key references to other tables for
 	* a fielded calue such as; image or term.
+	* 
+	* WARNING / @TODO: This has an inherit flaw considering the nature of what needs to be done. The enity id
+	* is TRULY needed t resolve the actual field corrdctly. Right this will pick up a single field with the name
+	* for an enity within a site. So if there are two fields named main_image this may not return the correct one.
+	* Though if the fields share the same definition in thoery everything will still work.
+	* 
 	*/
-	private function get_field_info($entity_type,$cfg_name) {
+	public function get_field_info($entity_type,$cfg_name) {
 		
 		$sql = sprintf(
 			"SELECT
@@ -687,7 +755,7 @@ class MCPDAOVD extends MCPDAO {
 	private function _parseDisplay($display) {
 		
 		$paths = array();
-		//echo '<pre>',print_r($display),'</pre>';
+		// echo '<pre>',print_r($display),'</pre>';
 		
 		foreach($display['fields'] as &$field) {
 			$paths[] = $field['path'];
@@ -738,7 +806,7 @@ class MCPDAOVD extends MCPDAO {
 							// negation edge case ie. LIKE and NOT LIKE
 							$operator = strcmp($filter['conditional'],'none') === 0?' NOT LIKE ':' LIKE ';
 							
-							$parts[] = '{this.alias}.'.$filter.$operator."'".sprintf($wildcard,$value['value'])."'";
+							$parts[] = '{this.alias}.'.$field.$operator."'".str_replace('s',$value['value'],$wildcard)."'";
 							break;
 						
 						case 'regex':
@@ -754,11 +822,14 @@ class MCPDAOVD extends MCPDAO {
 							// negation edge case ie. NOT REGEXP and REGEXP
 							$operator = strcmp($filter['conditional'],'none') === 0?' NOT REGEXP ':' REGEXP ';
 							
-							$parts[] = '{this.alias}.'.$filter.$operator."'".$regex."'";
+							$parts[] = '{this.alias}.'.$field.$operator."'".$regex."'";
 							break;
 							
 						case 'fulltext':
-							// @todo build in fulltext searching capabilities
+							
+							// escape value for security reasons
+							$parts[] = "FULLTEXT({this.alias}.$field,'{$this->_objMCP->escapeString($value[$value])}')";
+							
 							break;
 						
 						default:
@@ -844,11 +915,13 @@ class MCPDAOVD extends MCPDAO {
 			
 		}
 		
+		// echo '<pre>',print_r($paths),'</pre>';
+		
 		$this->fetchViewById($paths);
 		
-		//echo '<pre>',print_r($paths),'</pre>';
-		
 	}
+	
+	
 
 }
 ?>

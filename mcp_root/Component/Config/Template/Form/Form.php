@@ -17,4 +17,5 @@ if($success === true) {
 	,'errors'=>$errors
 	,'legend'=>$legend
 	,'idbase'=>'site-config-'
+	,'image_path'=>$this->_objMCP->getBaseUrl(false).'/img.php/%s/w/75'
 )); ?>

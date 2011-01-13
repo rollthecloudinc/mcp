@@ -39,11 +39,11 @@ class MCPVDItemNode extends MCPDAO implements VDItem {
 				,'binding'=>'NodeType'
 			)
 			,'published'=>array(
-				'column'=>'published'
+				'column'=>'node_published'
 				,'binding'=>null
 			)
 			,'title'=>array(
-				'column'=>'title'
+				'column'=>'node_title'
 				,'binding'=>null
 			)
 			,'subtitle'=>array(

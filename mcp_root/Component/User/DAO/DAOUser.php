@@ -221,5 +221,31 @@ class MCPDAOUser extends MCPDAO {
 		
 	}
 	
+	/*
+	* Delete a user 
+	* 
+	* @param mix single integer value or array of integers (MCP_USERS primary key)
+	*/
+	public function deleteUsers($mixUsersId) {
+		
+		/*
+		* Build SQL to soft-delete user
+		*/
+		$strSQL = sprintf(
+			"UPDATE
+			      MCP_USERS
+			    SET
+			       MCP_USERS.deleted = NULL
+			      ,MCP_USERS.deleted_on_timestamp = NOW()
+			  WHERE
+			      MCP_USERS.users_id IN (%s)"
+			,is_array($mixUsersId)?$this->_objMCP->escapeString(implode(',',$mixUsersId)):$this->_objMCP->escapeString($mixUsersId)
+		);
+		
+		echo "<p>$strSQL</p>";
+		// return $this->_objMCP->query($strSQL);
+		
+	}
+	
 }
 ?>

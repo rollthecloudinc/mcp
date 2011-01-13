@@ -6,40 +6,47 @@ if(isset($_POST['frmView'])) echo '<pre>',print_r($_POST['frmView']),'</pre>';
 		<legend>View</legend>
 		
 		<fieldset>
+			<legend>Type</legend>
+			
+			<select>
+				<option>--</option>
+				<option>Node Type 1</option>
+				<option>Node Type 2</option>
+				<option>Node Type 3</option>
+				<option>Node Type 4</option>
+				<option>Members</option>
+				<option>Vocabulary 1</option>
+				<option>Vocabulary 3</option>
+				<option>Vocabulary 4</option>
+				<option>Sites</option>
+			</select>
+			
+		</fieldset>
+		
+		<fieldset>
+			<legend>Naming</legend>
+			<ul>
+				<li>
+					<label for="">System Name</label>
+					<input type="text" value="products">
+				</li>
+				<li>
+					<label for="">Human Name</label>
+					<input type="text" value="Products List">
+				</li>
+			</ul>	
+		</fieldset>
+		
+		<fieldset>
 			<legend>General</legend>
 
 				<ul>
 					<li>
-						<label for="">Base</label>
-						<select>
-							<option>--</option>
-							<option>Members</option>
-							<option selected="selected">Nodes</option>
-							<option>Terms</option>
-							<option>Vocabularies</option>
-						</select>
-					</li>
-					<li>
-						<label for="">System Name</label>
-						<input type="text" value="products">
-					</li>
-					<li>
-						<label for="">Human Name</label>
-						<input type="text" value="Products List">
-					</li>
-					<li>
-						<label for="">Type</label>
-						<select>
-							<option selected="selected">Aggregate</option>
-							<option>Individual</option>
-						</select>
-					</li>
-					<li>
-						<label for="">Rows</label>
+						<label for="">Items Per Page</label>
 						<input type="text" value="20">
 					</li>
 					<li>
-						<label for="">Heading</label>
+						<label for="">Page Heading</label>
 						<input type="text" value="Products {Search String 2}">
 					</li>
 				</ul>

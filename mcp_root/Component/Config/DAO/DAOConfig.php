@@ -10,7 +10,12 @@ class MCPDAOConfig extends MCPDAO {
 	/*
 	* Global XML config 
 	*/
-	$_arrConfig;
+	$_arrConfig
+	
+	/*
+	* Dynamic field values 
+	*/
+	,$_arrDynamic;
 	
 	public function __construct(MCP $objMCP) {
 		parent::__construct($objMCP);
@@ -25,6 +30,68 @@ class MCPDAOConfig extends MCPDAO {
 		foreach($objXML as $strName=>$strValue) {
 			$this->_arrConfig[$strName] = (string) $strValue->value;
 		}
+
+		/*
+		* Assign dynamic config values 
+		* 
+		* Dynamic config values are for internal use only. As far as the application
+		* is concerned these values are part of the concrete config.
+		*/
+		$this->_arrDynamic = $this->_objMCP->addFields(array(),0,'MCP_CONFIG');
+		
+	}
+	
+	/*
+	* Pull down a fresh copy of the dynamic config values
+	*/
+	private function _reloadDynamicConfigValues() {
+		$this->_arrDynamic = $this->_objMCP->addFields(array(),0,'MCP_CONFIG');
+	}
+	
+	/*
+	* Determine whether a config value is dynamic
+	* 
+	* @param str name
+	* @return bool
+	*/
+	private function _isDynamicConfigValue($strName) {
+		return isset($this->_arrDynamic[$strName]);
+	}
+	
+	/*
+	* Get a dynamic config value 
+	* 
+	* @param str name
+	* @return mix config value
+	*/
+	private function _getDynamicConfigValue($strName) {
+		return $this->_arrDynamic[$strName];
+	}
+	
+	/*
+	* Determines whether a config name is part of config - concrete or dynamic
+	* 
+	* @param str name
+	* @return bool
+	*/
+	private function _isConfigValue($strName) {
+		return !isset($this->_arrConfig[$strName]) && !$this->_isDynamicConfigValue($strName)?false:true;
+	}
+	
+	/*
+	* Save dynamic field values
+	* 
+	* @param array key/value pairs
+	*/
+	private function _saveDynamicFieldValues($arrValues) {
+		
+		// save the values
+		$return = $this->_objMCP->saveFieldValues($arrValues,0,'MCP_CONFIG');
+		
+		// reload the dynamic values
+		$this->_reloadDynamicConfigValues();
+		
+		return $return;
 	}
 	
 	/*
@@ -38,7 +105,14 @@ class MCPDAOConfig extends MCPDAO {
 		/*
 		* Check for valid configuration setting name
 		*/
-		if(!isset($this->_arrConfig[$strName])) return null;
+		if(!$this->_isConfigValue($strName)) return null;
+		
+		/*
+		* Check dynamic config first 
+		*/
+		if( $this->_isDynamicConfigValue($strName) ) {
+			return $this->_getDynamicConfigValue($strName);
+		}
 		
 		/*
 		* Fetch site specific config value but default to global setting
@@ -65,7 +139,15 @@ class MCPDAOConfig extends MCPDAO {
 		/*
 		* Check for valid configuration setting name
 		*/
-		if(!isset($this->_arrConfig[$strName])) return false;
+		if(!$this->_isConfigValue($strName)) return false;
+		
+		/*
+		* Check dynamic config first 
+		*/
+		if( $this->_isDynamicConfigValue($strName) ) {
+			$this->_saveDynamicFieldValues(array($strName=>$strValue));
+			return true;
+		}
 		
 		$strSQL = sprintf(
 			"INSERT IGNORE INTO MCP_CONFIG (sites_id,config_name,config_value) VALUES (%s,'%s','%s') ON DUPLICATE KEY UPDATE config_value = VALUES(config_value)"
@@ -86,13 +168,24 @@ class MCPDAOConfig extends MCPDAO {
 		
 		if(empty($arrConfig)) return;
 		
+		// dynamic fields to save
+		$fields = array();
+		
 		// insert statements
 		$arrInsert = array();
 		
 		foreach($arrConfig as $strName=>$strValue) {
 			
 			// prevent non-config based data from being placed in db on accident
-			if(!isset($this->_arrConfig[$strName])) continue;
+			if(!$this->_isConfigValue($strName)) {
+				continue;
+			}
+			
+			// See if its a dynamic field
+			if( $this->_isDynamicConfigValue($strName) ) {
+				$fields[$strName] = $strValue;
+				continue;
+			}
 			
 			// build separate insert statements
 			$arrInsert[] = sprintf(
@@ -108,6 +201,11 @@ class MCPDAOConfig extends MCPDAO {
 			'INSERT IGNORE INTO MCP_CONFIG (sites_id,config_name,config_value) VALUES %s ON DUPLICATE KEY UPDATE config_value = VALUES(config_value)'
 			,implode(',',$arrInsert)
 		);
+		
+		// save dynamic field values
+		if(!empty($fields)) {
+			$this->_saveDynamicFieldValues($fields);
+		}
 		
 		// run query
 		return $this->_objMCP->query($strSQL);
@@ -139,6 +237,13 @@ class MCPDAOConfig extends MCPDAO {
 		*/
 		foreach($arrRows as $arrRow) {
 			$arrConfig[$arrRow['config_name']] = $arrRow['config_value'];
+		}
+		
+		/*
+		* Add dynamic config values 
+		*/
+		foreach($this->_arrDynamic as $name=>$value) {
+			$arrConfig[$name] = $value;
 		}
 		
 		return $arrConfig;
@@ -178,6 +283,13 @@ class MCPDAOConfig extends MCPDAO {
 					}
 				}
 			}
+		}
+		
+		// Add dynamic config value definitions
+		$fields = $this->_objMCP->getFrmConfig('','frm',true,array('entity_type'=>'MCP_CONFIG'));
+		
+		foreach($fields as $name=>$field) {
+			$arrSchema[$name] = $field;
 		}
 		
 		return $arrSchema;

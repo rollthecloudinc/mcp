@@ -19,7 +19,7 @@ class MCPUtilAdmin extends MCPModule {
 		,'Navigation'			=>'Component.Navigation.Module.List.Menu'
 		
 		// Manage global configuaration
-		,'Settings'				=>'Component.Config.Module.Form'
+		,'Config'				=>'Component.Config.Module.Form'
 		
 		// Manage content / nodes
 		,'Content'				=>'Component.Node.Module.List.Type'

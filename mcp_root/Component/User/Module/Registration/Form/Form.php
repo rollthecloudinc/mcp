@@ -164,6 +164,13 @@ class MCPUserRegistrationForm extends MCPModule {
 			$arrSave['sites_id'] = $this->_objMCP->getSitesId();
 		}
 		
+		/*
+		* @TODO: upon successful registration send email confirmation
+		* 
+		* Perhaps require email confirmation to activate acount. Could
+		* make this a config variable - configure per site.
+		*/
+		
 		return $this->_objDAOUser->saveUser($arrSave);
 		
 	}
@@ -241,12 +248,12 @@ class MCPUserRegistrationForm extends MCPModule {
 		
 		/*
 		* Check permissions 
-		* Can person register or edit user?
+		* Can person edit or register user?
 		*/
-		/*$perm = $this->_objMCP->getPermission('MCP_USER',$intUser);
-		if(!$perm->allowed()) {
+		$perm = $this->_objMCP->getPermission(($intUser === null?MCP::ADD:MCP::EDIT),'User',($intUser === null?$this->_objMCP->getSitesId():$intUser) );
+		if(!$perm['allow']) {
 			throw new MCPPermissionException($perm);
-		}*/
+		}
 		
 		$this->_frmHandle();
 		

@@ -20,5 +20,8 @@ echo $this->ui('Common.Listing.Table',array(
 	,'headers'=>$headers
 	,'form'=>true
 	,'form_legend'=>'Members'
+	,'form_action'=>$frm_action
+	,'form_method'=>$frm_method
+	,'form_name'=>$frm_name
 ));
 ?>

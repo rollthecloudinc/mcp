@@ -55,8 +55,8 @@ class MCPVDItemTerm extends MCPDAO implements VDItem {
 				,'binding'=>null
 			)
 			,'vocabulary'=>array(
-				'column'=>null
-				,'binding'=>null
+				'column'=>'parent_id'
+				,'binding'=>'Vocabulary'
 			)
 			,'parent'=>array(
 				'column'=>null

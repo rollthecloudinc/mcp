@@ -19,7 +19,12 @@ class MCPUserList extends MCPModule {
 	/*
 	* Internal redirect 
 	*/
-	,$_strRequest;
+	,$_strRequest
+	
+	/*
+	* User id to perform action on 
+	*/
+	,$_intActionsId;
 	
 	public function __construct(MCP $objMCP,MCPModule $objParentModule=null,$arrConfig=null) {
 		parent::__construct($objMCP,$objParentModule,$arrConfig);
@@ -29,6 +34,48 @@ class MCPUserList extends MCPModule {
 	protected function _init() {
 		// Fetch user data access layer
 		$this->_objDAOUser = $this->_objMCP->getInstance('Component.User.DAO.DAOUser',array($this->_objMCP)); 
+		
+		// set-up delete event handler
+		$id =& $this->_intActionsId;
+		$dao = $this->_objDAOUser;
+		
+		$this->_objMCP->subscribe($this,'USER_DELETE',function() use(&$id,$dao)  {
+			// delete the user
+			$dao->deleteUsers($id);
+		});
+	}
+	
+	/*
+	* Handle form submit 
+	*/
+	private function _handleFrm() {
+		
+		/*
+		* Get posted form data 
+		*/
+		$arrPost = $this->_objMCP->getPost('frmUserList');
+		
+		/*
+		* Route action 
+		*/
+		if($arrPost && isset($arrPost['action']) && !empty($arrPost['action'])) {
+			
+			/*
+			* Get action 
+			*/
+			$strAction = array_pop(array_keys($arrPost['action']));
+			
+			/*
+			* Get users id 
+			*/
+			$this->_intActionsId = array_pop(array_keys(array_pop($arrPost['action'])));
+			
+			/*
+			* Fire event 
+			*/
+			$this->_objMCP->fire($this,"USER_".strtoupper($strAction));
+		}
+		
 	}
 	
 	/*
@@ -48,6 +95,25 @@ class MCPUserList extends MCPModule {
 		
 		// Assign users to template variable
 		$this->_arrTemplateData['users'] = array_shift($data);
+		
+		// Assign delete, edit and read permissions
+		$ids = array();
+		foreach($this->_arrTemplateData['users'] as $user) {
+			$ids[] = $user['users_id'];
+		}
+		
+		if( !empty($ids) ) {
+			$deletePerms = $this->_objMCP->getPermission(MCP::DELETE,'User',$ids);
+			$editPerms = $this->_objMCP->getPermission(MCP::EDIT,'User',$ids);
+			$readPerms = $this->_objMCP->getPermission(MCP::READ,'User',$ids);
+		}
+		
+		// mixin permissions with normal user data
+		foreach($this->_arrTemplateData['users'] as &$user) {
+			$user['allow_delete'] = $deletePerms[$user['users_id']]['allow'];
+			$user['allow_edit'] = $editPerms[$user['users_id']]['allow'];
+			$user['allow_read'] = $readPerms[$user['users_id']]['allow'];
+		}
 		
 		// Send back totalnumber of found users to pagination module
 		return array_shift($data);
@@ -83,6 +149,9 @@ class MCPUserList extends MCPModule {
 	* @return array table headers
 	*/
 	protected function _getHeaders() {
+		
+		$mcp = $this->_objMCP;
+		
 		return array(
 			array(
 				'label'=>'Username'
@@ -99,6 +168,17 @@ class MCPUserList extends MCPModule {
 				,'column'=>'users_id'
 				,'mutation'=>array($this,'displayEditLink')
 			)
+			,array(
+				'label'=>'&nbsp;'
+				,'column'=>'users_id'
+				,'mutation'=>function($value,$row) use ($mcp) {
+					return $mcp->ui('Common.Form.Submit',array(
+						'label'=>'Delete'
+						,'name'=>"frmUserList[action][delete][$value]"
+						,'disabled'=>!$row['allow_delete']
+					));
+				}
+			)
 		);
 	}
 	
@@ -109,6 +189,9 @@ class MCPUserList extends MCPModule {
 		
 		// Resolve possible internal redirect
 		$this->_strRequest = !empty($arrArgs) && in_array($arrArgs[0],array('Edit','Fields'))?array_shift($arrArgs):null;
+		
+		// Handle form submit  
+		$this->_handleFrm();
 		
 		// Set the number of users per page
 		$intLimit = 10;
@@ -153,6 +236,15 @@ class MCPUserList extends MCPModule {
 			$strTpl = 'Redirect';
 		}
 		
+		// Form action
+		$this->_arrTemplateData['frm_action'] = $this->getBasePath();
+		
+		// Form name 
+		$this->_arrTemplateData['frm_name'] = 'frmUserList';
+		
+		// Form method 
+		$this->_arrTemplateData['frm_method'] = 'POST';
+		
 		return "List/$strTpl.php";
 	}
 	
@@ -186,6 +278,10 @@ class MCPUserList extends MCPModule {
 	* @return str output
 	*/
 	public function displayEditLink($value,$row) {
+		
+		if(!$row['allow_edit']) {
+			return 'Edit';
+		}
 		
 		return sprintf(
 			'<a href="%s/Edit/%u">Edit</>'

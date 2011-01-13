@@ -128,7 +128,7 @@ class MCPConfigForm extends MCPModule {
 		foreach($this->_getFrmFields() as $strField) {
 			switch($strField) {
 				default:
-					$this->_arrFrmValues[$strField] = isset($this->_arrFrmPost[$strField]) && strlen($this->_arrFrmPost[$strField]) != 0?$this->_arrFrmPost[$strField]:$arrSchema[$strField]['value'];
+					$this->_arrFrmValues[$strField] = isset($this->_arrFrmPost[$strField]) && (!is_string($this->_arrFrmPost[$strField]) || strlen($this->_arrFrmPost[$strField]) != 0)?$this->_arrFrmPost[$strField]:$arrSchema[$strField]['value'];
 			}
 		}
 		
@@ -225,6 +225,8 @@ class MCPConfigForm extends MCPModule {
 		$this->_arrTemplateData['errors'] = $this->_arrFrmErrors;
 		$this->_arrTemplateData['success'] = $this->_boolSuccess;
 		$this->_arrTemplateData['legend'] = 'Site Config';
+		
+		// echo '<pre>',print_r($this->_arrFrmValues),'</pre>';
 		
 		/*
 		* Return control to MCP w/ template 
