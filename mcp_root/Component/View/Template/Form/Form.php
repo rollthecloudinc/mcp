@@ -129,17 +129,17 @@ column selection will be required.</p>*/ ?>
 							echo $this->ui('Common.Form.Submit',array(
 								'name'=>''
 								,'label'=>'-'
-								,'disabled'=>true
+								,'disabled'=>!$field['override']
 							));
 							echo $this->ui('Common.Form.Submit',array(
 								'name'=>''
-								,'label'=>'Override'
-								,'disabled'=>true
+								,'label'=>$field['override']?'Use Default':'Override'
+								,'disabled'=>false
 							));
 						?>
 						
 						<ul>
-							<?php foreach($field as $path) { ?>
+							<?php foreach($field['paths'] as $path) { ?>
 								<?php if(empty($path['values'])) break; ?>
 							
 								<li style="display: inline-block">
@@ -162,10 +162,173 @@ column selection will be required.</p>*/ ?>
 							<li style="display: inline-block">
 								<input type="checkbox" checked="checked" disabled="disabled" value="1" name="<?php echo "frmView[fields][$index][editable]"; ?>">
 								<label for="">Editable</label>
-							</li>*/ ?>
+							</li> */ 
+							?>
+							<?php 
+							// extra field controls - sortable and editable at this time
+							// need a way to control checking for items that have not been overriden but are sortable
+							// and editable via parent display field.
+							if(strcmp('fields',$type) === 0) {
+								
+								// sortable checkbox
+								echo '<li style="display: inline-block">';
+								echo $this->ui('Common.Form.Checkbox',array(
+									'name'=>''
+									,'id'=>''
+									,'disabled'=>!$field['sortable']
+								));	
+								echo $this->ui('Common.Form.Label',array(
+									'for'=>''
+									,'label'=>'Sortable'
+								));
+								echo '</li>';
+								
+								// --------------------------------------------------------
+								
+								// editable checkbox
+								echo '<li style="display: inline-block">';
+								echo $this->ui('Common.Form.Checkbox',array(
+									'name'=>''
+									,'id'=>''
+									,'disabled'=>!$field['editable']
+								));	
+								echo $this->ui('Common.Form.Label',array(
+									'for'=>''
+									,'label'=>'Editable'
+								));
+								echo '</li>';
+							} ?>
+							
+							
+							<?php /*
+							<li style="display: inline-block;">
+								<select>
+									<option>=</option>
+									<option selected="selected">Contains</option> <!-- like alias -->
+									<option>RegExp</option>
+								</select>
+							</li>
+							<li style="display: inline-block;">
+								<select>
+									<option selected="selected">%s%</option>
+									<option>s%</option>
+									<option>%s</option>
+								</select>
+							</li> */ ?>
+							<?php 
+							// filter comparision and possible wildcard (contains) or regexp
+							if(strcmp('filters',$type) === 0) {
+								
+								// comparisions available based on data type
+								// for example a ful text search can only happen
+								// on a field compatiable. A regex or like can only
+								// happen on a field that is text or varchar type.
+								echo '<li style="display: inline-block;">';
+								echo $this->ui('Common.Form.Select',array(
+									'name'=>''
+									,'id'=>''
+									,'data'=>array('values'=>$field['comparisions']['values'])
+									,'value'=>$field['comparision']
+								)); 
+								echo '</li>';
+								
+								// wildcard selection for contains comparision
+								// This will determine how to handle the like comparision
+								// The values will be %s, s% or %s% - s indicates where
+								// the string will be placed.
+								if(isset($field['wildcards'])) {
+									echo '<li style="display: inline-block;">';
+									echo $this->ui('Common.Form.Select',array(
+										'name'=>''
+										,'id'=>''
+										,'data'=>array('values'=>$field['wildcards']['values'])
+										,'value'=>$field['wildcard']
+									)); 
+									echo '</li>';									
+								}
+								
+								// regex definition - only compatible with regular expression
+								// comparision.
+								if(isset($field['regex'])) {
+									echo '<li style="display: inline-block;">';
+									echo $this->ui('Common.Form.Input',array(
+										'value'=>$field['regex']
+										,'name'=>''
+										,'type'=>'text'
+									));
+									echo '</li>';
+								}
+								
+							} ?>
+							
+							<?php /*
+								<li style="display: inline-block;">
+									<select disabled="disabled">
+										<option>Increase</option>
+										<option selected="selected">Decrease</option>
+									</select>
+								</li>
+							*/ ?>
+							<?php if(strcmp('sorting',$type) === 0) {
+								
+								// ascending, descending and random ordering selecting for sorting field
+								if(isset($field['orderings'])) {
+									echo '<li style="display: inline-block;">';
+									echo $this->ui('Common.Form.Select',array(
+										'name'=>''
+										,'id'=>''
+										,'data'=>array('values'=>$field['orderings']['values'])
+										,'value'=>$field['ordering']
+									)); 
+									echo '</li>';
+								}
+								
+							} ?>
 							
 							
 						</ul>
+						
+						<?php 
+						/*
+							<ul>
+								<li style="display: inline-block;">
+									<input type="radio" name="frmView[filter][1][delimiter]" checked="checked">
+									<label for="">One Of</label>
+								</li>
+								<li style="display: inline-block;">
+									<input type="radio" name="frmView[filter][1][delimiter]">
+									<label for="">None Of</label>
+								</li>
+								<li style="display: inline-block;">
+									<input type="radio" name="frmView[filter][1][delimiter]">
+									<label for="">All Of</label>
+								</li>
+							</ul>
+						*/
+						// Filter operators - will exist as a radio group as per the design
+						if(strcmp('filters',$type) === 0) {
+							if(isset($field['operators'])) {
+								echo '<ul>';
+								foreach($field['operators']['values'] as $operator) {
+									echo '<li style="display: inline-block;">';
+									// the radio button
+									echo $this->ui('Common.Form.Radio',array(
+										'name'=>''
+										,'id'=>''
+										,'value'=>$operator['value']
+									));
+									// the label for the radio button
+									echo $this->ui('Common.Form.Label',array(
+										'for'=>''
+										,'label'=>$operator['label']
+									));
+									echo '</li>';
+								}
+								echo '</ul>';
+							}
+						} ?>
+						
+						
 					</fieldset>
 				<?php } ?>
 			<?php } ?>
