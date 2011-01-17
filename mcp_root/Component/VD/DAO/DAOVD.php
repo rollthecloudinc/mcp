@@ -77,6 +77,14 @@ class MCPDAOVD extends MCPDAO {
 			
 			//'Vocabulary/terms/id'
 		//);
+		
+		
+		
+		
+		
+		
+		
+		//----------------------------------------------------------------
 
 		/*
 		* Convert paths to hierarchical tree representation
@@ -89,7 +97,21 @@ class MCPDAOVD extends MCPDAO {
 			}
 		}
 		
-		// echo '<pre>',print_r($tree),'</pre>';
+		//echo '<pre>',print_r($tree),'</pre>';
+		//exit;
+		
+		// --------------------------------------------------------------
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		// ------------------------------------------------------------
 
 		/*
 		* Walk the tree to build sql
@@ -113,6 +135,12 @@ class MCPDAOVD extends MCPDAO {
 			$return = array();
 			foreach($branches as $branch=>$children) {
 				
+				
+				
+				
+				
+				// ------------------------------------------------------
+				
 				$branchData = array();
 	
 				$data = array(
@@ -122,12 +150,26 @@ class MCPDAOVD extends MCPDAO {
 				
 				$branchData['name'] = $data['name'];
 				$branchData['alias'] = $data['alias'];
+				$branchData['relation'] = null;
 				
 				$branchData['select'] = array();
 				$branchData['filter'] = array();
 				$branchData['sort'] = array();
+				
+				// ------------------------------------------------------
+				
+				
+				
+				
+				
+				
+				
+				
+				// ------------------------------------------------------
 		
 				$join = array('sql'=>'');
+				
+				// field will always be skipped - the child is used to determine the exact relation
 				if($branch !== 'field') {	
 					$join = $dao->views_join($data,$ancestory,$children,$counter);
 					/*$sql.= $join['sql'];*/ $query['from'].= $join['sql'];
@@ -139,12 +181,26 @@ class MCPDAOVD extends MCPDAO {
 				
 				$alias = $data['alias'];
 				
+				// relation may require addional tables. This the case with a dynamic field that is a foreign key or m:n
 				if(isset($join['add']) && !empty($join['add'])) {
 					foreach($join['add'] as $add) {
 						$alias = $add['alias']; // override the base with the left most alias for added tables
 						array_unshift($copy,$add);
 					}
 				}
+				
+				// ---------------------------------------------------------
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				// --------------------------------------------------------
 		
 				//$sql.= $walk($children,$copy,$walk);
 				$walked = $walk($children,$copy,$walk);
@@ -152,8 +208,26 @@ class MCPDAOVD extends MCPDAO {
 				// bind any columns without SQL to this entity for selection (atomic field) - ommit special value field
 				$remove = array();
 				
+				// --------------------------------------------------------
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				// ----------------------------------------------------------------------------------------
+				
 				// bug: not selecting atomic fields
 				foreach($walked as $index=>$item) {
+					
+					
+					
+					
+					
+					// ---------------------------------------------------------------------------
 					
 					$dynamic_field = null;
 					$dynamic_field_tb_alias = null;
@@ -168,7 +242,7 @@ class MCPDAOVD extends MCPDAO {
 						$entity = $dao->get_entity($ancestory);
 						$fields = $entity->getFields();
 						
-						// At this point its a known dynamic field not part of concrete entity schema
+						// At this point its probably a dynamic field not part of concrete entity schema
 						if( !isset($fields[$item['name']]) ) {
 							
 							// Look field data definition to resolve to correct column - db_int, db_price, db_text, ect
@@ -179,6 +253,8 @@ class MCPDAOVD extends MCPDAO {
 								$dynamic_field_tb_alias = $item['alias'];
 							
 								$proceeed = true;
+								
+								// $branchData['relation'] = 'single';
 							}
 							
 							// echo "<div style=\"border: 1px solid blue;\"><p>$index,{$item['name']}</p><pre>",print_r($ancestory),"</pre></div>";
@@ -186,6 +262,12 @@ class MCPDAOVD extends MCPDAO {
 						}
 						
 					}
+					
+					// -------------------------------------------------------------------------
+					
+					
+					
+					
 					
 					/*
 					* --------------------------------------------------------------------- 
@@ -245,6 +327,13 @@ class MCPDAOVD extends MCPDAO {
 					}
 				}
 				
+				
+				// -----------------------------------------------------------------------------------
+				
+				
+				
+				
+				
 				// remove the atomic columns that will be selected in the query
 				foreach($remove as $index) unset($walked[$index]);
 				
@@ -272,8 +361,70 @@ class MCPDAOVD extends MCPDAO {
 			,!empty($query['orderby'])?'ORDER BY '.implode(',',$query['orderby']):''
 		);
 		
-		echo "<p style=\"border: 1px solid red; padding: .5em;\">$sql</p>";
 		
+		/*
+		* ----------------------------------------------------------------------------------
+		* Run the query... 
+		*/
+		
+		//echo '<pre>',print_r($tree),'</pre>';
+		//echo "<p style=\"border: 1px solid red; padding: .5em;\">$sql</p>";
+		
+		$rows = $this->_objMCP->query($sql);
+		
+		echo '<pre>',print_r($tree),'</pre>';
+		echo '<pre>',print_r($rows),'</pre>';
+		
+		/*
+		* ---------------------------------------------------------------------------------
+		* Parse result set into tree structure
+		*/
+		
+		$func = function($branches,$func) use ($rows) {
+			
+			if(!$branches) return;
+			$collected = array();
+			
+			foreach($rows as $row) {
+				
+				$item = array();
+				
+				foreach($branches as $branch) {
+					
+					if(isset($branch['select']) && !empty($branch['select'])) {
+						
+						foreach($branch['select'] as $column=>$info) {
+							$item[$info['name']] = $row[$column];
+						}
+						
+					}
+					
+					if(isset($branch['children'])) {
+						//$item['children'][] = $func($branch['children'],$func);
+						
+						$children = $func($branch['children'],$func);
+						
+						foreach($children as $child_row) {
+							foreach($child_row as $child_name=>$child_value) {
+								$item[$child_name] = $child_value;
+							}
+						}
+						
+					}
+					
+				}
+				
+				$collected[] = $item;
+				
+			}
+			
+			return $collected;
+			
+		};
+		
+		$data = $func($tree,$func);
+		
+		echo '<pre>',print_r($data),'</pre>';
 	
 	}
 
@@ -625,55 +776,55 @@ class MCPDAOVD extends MCPDAO {
 			      ,sp.weight sorting_priority_weight
 			      
 			  FROM
-			      MCP_VD_DISPLAYS d
+			      MCP_VIEW_DISPLAYS d
 			  LEFT OUTER
 			  JOIN
-			      MCP_VD_FIELDS c
+			      MCP_VIEW_FIELDS c
 			    ON
 			      d.id = c.displays_id
 			   AND
-			      c.active = 1
+			      c.deleted = 0
 			  LEFT OUTER
 			  JOIN
-			      MCP_VD_FIELD_OPTIONS co
+			      MCP_VIEW_FIELD_OPTIONS co
 			    ON
 			      c.id = co.fields_id
 			   AND
-			      co.active = 1
+			      co.deleted = 0
 			  LEFT OUTER
 			  JOIN
-			      MCP_VD_FILTERS f
+			      MCP_VIEW_FILTERS f
 			    ON
 			      d.id = f.displays_id
 			   AND
-			      f.active = 1
+			      f.deleted = 0
 			  LEFT OUTER
 			  JOIN
-			     MCP_VD_FILTER_VALUES fv
+			     MCP_VIEW_FILTER_VALUES fv
 			    ON
 			     f.id = fv.filters_id
 			   AND
-			     fv.active = 1
+			     fv.deleted = 0
 			  LEFT OUTER
 			  JOIN
-			     MCP_VD_SORTING s 
+			     MCP_VIEW_SORTING s 
 			    ON
 			     d.id = s.displays_id
 			   AND
-			     s.active = 1
+			     s.deleted = 0
 			  LEFT OUTER
 			  JOIN
-			     MCP_VD_SORTING_PRIORITY sp
+			     MCP_VIEW_SORTING_PRIORITY sp
 			    ON
 			     s.id = sp.sorting_id
 			   AND
-			     sp.active = 1 
+			     sp.deleted = 0 
 			 WHERE
 			     d.id = %s"
 			,$this->_objMCP->escapeString($intDisplaysId)
 		);
 		
-		//echo "<p>$strSQL</p>";
+		// echo "<p>$strSQL</p>";
 		
 		$rows = $this->_objMCP->query($strSQL);
 

@@ -230,6 +230,7 @@ class MCPDAOField extends MCPDAO {
 			if($relation !== null) {
 				foreach($relation as $prop=>$val) {
 					$field->{$prop} = $val;
+					//$field[$prop] = $val;
 				}
 			}
 			

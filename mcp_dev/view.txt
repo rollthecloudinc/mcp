@@ -1,0 +1,153 @@
+This document will outline thoughts and approaches regarding the developmet
+of the view module inspired directly by Drupal Views.
+
+It has been determined that the primary concrete entities of the system are:
+
+- Node
+- Site
+- Node Type
+- Vocabulary
+- Term
+- User
+
+When completed views should be capable of building queries to not only list
+data for each entity but provide relational capabilities that extend to dynamic
+field filtering, sorting, and relational dynamic fields.
+
+Two separate tables make up the fields layer:
+
+- MCP_FIELDS
+- MCP_FIELD_VALUES
+
+The MCP_FIELDS table host the configuration for a field.
+The MCP_FIELD_VALUES table stores value of a field for a given concrete node, user, ect
+
+For effeciency purposes the field_values table value column is dividied accross several
+columns based on the value of the field (integer, text, price, ect).
+
+- varchar (255 char limit)
+- text (long text)
+- int (integer)
+- price (decimal)
+- bool (0 or 1)
+
+Both the varchar and text columns are fulltext compatible. The int column is indexed to
+make joins much more efficent.
+
+--------------------------------------------------------------------------------------------
+
+Term issues: (handling trees)
+
+In most cases relating one entity to another is a matter of a single column comparision. Take
+nodes for example. To get the creator information of a user for a node require a simple, straight-forward
+join:
+
+MCP_NODES INNER JOIN MCP_USERS ON MCP_NODES.creators_id = MCP_USERS.users_id
+
+This becomes much more complex and involved when dealing with trees and dynamic fields.
+
+Take for example Vocabulary and its terms. Terms of a vocabulary are stored as tree. That is terms can have
+child terms to an infinite depth. MCP trees in most cases use two separate columns: parent_type and
+parent_id to create a relation. The parent_type is the context for the parent id. When a term is at the root
+of its given vocabulary the parent_type will be vocabulary and parent_id with be the vocabularies id. However,
+when a term is a child of a term its parent type is term allowing the system to resolve the parent_id
+to a term rather than vocabulary. 
+
+This creates a bit of an issue. Will moving a term is simple within the tree, getting the vocabulary of a term
+is not as a simple. If the term is 5 levels down than to actually figure out the vocabulary it relates to requires
+joins all the way up to the root.
+
+So to relate a term to its vocabulary will require some "magical" logic or a work-around. 
+
+/term/vocabulary/name
+
+Resolving given look-up path would require knowing the depth of the term and making all the juncion tables
+invisible to actually get to terms vocabulary.
+
+--------------------------------------------------------------------------------------------------
+
+Fields (all)
+
+Within the system users, terms, nodes, term and the config may have dynamic field added to them.
+
+Inspired by the Drupal fields module fields make it possible to alter the definition of an item
+without any programming. For example, it is possible to add a manufacturer field for a node that is
+product. So when a node of type product is being created a manufacturer may be assigned to
+it without the need to write the code to do so. Instead the field concept allows the concrete
+definition of any entity to be modified through a UI. 
+
+This creates a bit of an issue and complexity regarding building queries that reference fields
+specifically for the where or order by clause.
+
+Fields themself belong to either a vocabulary, node type, site or config.
+
+Within the MCP_FIELDS table there are three vitally important columns:
+
+- sites_id
+- entity_type
+- enitities_id
+- cfg_name
+
+The site is the site which the field belongs to.
+
+The enity type is the name of the entity such as; MCP_VOCABULRY, MCP_NODE_TYPES, MCP_CONFIG, MCP_SITES
+
+The entities_id is the ID of the entity.
+
+cfg_name is the name of field
+
+The combination of those fields make up the unique signature for a field with the context of enitity they
+belong to and site.
+
+This is the issue. To determine the fields that should be present/available on a node requires knowing
+the node type. Without a node type it is not possible to resolve the fields that belong to the node.
+
+The same can be said for terms. Without knowing the terms vocabulary it is not possible to know the fields
+for the term.
+
+I think the best way to get around this issue is to make the CONTEXT of a node and term required. In that
+case if someone says they would like to display all nodes of type 9 than its possible to grab all dynamic
+fields for that node type being displays. The same can be said for terms. If someone would like to display
+all the terms oin vocabulary 89 than its non-trivel to get the fields for terms available.
+
+This isn't really an issue with users (at this time). The site determines the fields for a user. All sites
+exist in isolation so when viewing site 78 the fields for a user are those where the sites_id is 78,
+entity_type is MCP_SITES and entitities_id is {sites_id}.
+
+-----------------------------------------------------------------------------------------------------------
+
+node/field/manufacturer/id
+
+The keyword [field] will be used to determine whether a field is being dealt with. When the parent of
+an item is field the item is treated as a field. This will activate the special relational
+join conditions to relate an enitity to its appropriate fields.
+
+
+If the field is a relational column than an additional join will be added to get relational
+item, whether an image, vocabulary, site, etc. This will be based on the fields configuration
+columns: db_ref_table and db_ref_column. The first being the table for the relation and second
+the column. In the case of the previous example likely values for each column are MCP_TERMS and terms_id.
+
+
+In some cases a m:n relationship may be dealy with vs. 1:1. For example, a common one would be images. A node
+may have several images defined as multi dynamic field. When a MCP_FIELDS cfg_multi is 1 that means the field
+supports multiple vaues creating a m:n relationship between the base item and its fields.
+
+node/field/images/label
+
+In that case its going to be necessary to collect all images for single node, so that the node isn't
+replicated for the amount of images it has. This will likely require the need to ALWAYS include the
+items primary key. The primary key will make it possible to remove all duplicates from the query and
+collect all images in an array under the single node they belong to.
+
+Also, special values may exist. In the case of image the special value image represents the display of the
+enture image I'm thinking.
+
+node/field/images/image
+
+The image column doesn't exist, instead its a magical keyword to display an image and also represents
+a leaf/end of the look-up query path.
+
+
+
+ 

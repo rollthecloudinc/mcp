@@ -755,6 +755,42 @@
 			</description>
 		</frm>
 	</mod>
+	<mod pkg="Component.View.Module.Form">
+		<frm>
+			<type>
+				<label>Display Items</label>
+				<required>Y</required>
+				<description>The type of items view will display</description>
+				<dao>
+					<pkg>Component.View.DAO.DAOView</pkg>
+					<method>fetchViewTypes</method>
+				</dao>
+			</type>
+			<paginate>
+				<label>Use Pager</label>
+				<required>N</required>
+				<max>1</max>
+				<type>bool</type>
+			</paginate>
+			<limit>
+				<label>Items To Display</label>
+				<required>N</required>
+				<type>numeric</type>
+			</limit>
+			<system_name>
+				<label>Name</label>
+				<required>Y</required>
+				<max>128</max>
+				<type>system_name</type>
+			</system_name>
+			<human_name>
+				<label>Title</label>
+				<required>N</required>
+				<max>128</max>
+				<type>human_name</type>
+			</human_name>
+		</frm>
+	</mod>
 	<mod pkg="Component.Auth.Module.Role.Form">
 		<frm>
 			<role_name>

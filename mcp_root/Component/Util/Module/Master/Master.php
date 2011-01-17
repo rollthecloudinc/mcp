@@ -96,7 +96,7 @@ class MCPUtilMaster extends MCPModule {
 		/*
 		* Get dao post info 
 		*/
-		$arrDAO = $this->_objMCP->getPost('dao');
+		$arrDAO = $this->_objMCP->getGet('dao');
 		
 		$strPkg = isset($arrDAO['pkg'])?$arrDAO['pkg']:null;
 		$strMethod = isset($arrDAO['method'])?$arrDAO['method']:null;
