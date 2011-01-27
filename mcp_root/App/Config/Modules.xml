@@ -49,15 +49,15 @@
 	</mod>
 	<mod pkg="Component.Field.Module.Form">
 		<frm>
-			<entity>
-				<label>Entity</label>
+			<db_value>
+				<label>Type</label>
 				<required>Y</required>
-				<size>10</size>
 				<dao>
 					<pkg>Component.Field.DAO.DAOField</pkg>
-					<method>fetchEntities</method>
+					<method>fetchDBValueTypes</method>
 				</dao>
-			</entity>
+				<default>varchar</default>
+			</db_value>
 			<cfg_name>
 				<label>Name</label>
 				<required>Y</required>
@@ -72,6 +72,15 @@
 				<max>128</max>
 				<type>text</type>
 			</cfg_label>
+			<entity>
+				<label>Entity</label>
+				<required>Y</required>
+				<size>10</size>
+				<dao>
+					<pkg>Component.Field.DAO.DAOField</pkg>
+					<method>fetchEntities</method>
+				</dao>
+			</entity>
 			<cfg_description>
 				<label>Help Text</label>
 				<required>N</required>
@@ -177,15 +186,6 @@
 				<max>2</max>
 				<type>numeric</type>
 			</cfg_size>
-			<db_value>
-				<label>Value Type</label>
-				<required>Y</required>
-				<dao>
-					<pkg>Component.Field.DAO.DAOField</pkg>
-					<method>fetchDBValueTypes</method>
-				</dao>
-				<default>varchar</default>
-			</db_value>
 			<cfg_multi>
 				<label>Multiple Values</label>
 				<required>Y</required>

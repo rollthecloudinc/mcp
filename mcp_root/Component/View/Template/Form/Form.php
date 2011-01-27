@@ -329,9 +329,33 @@ column selection will be required.</p>*/ ?>
 						} ?>
 						
 						
+						<?php /*------- options, values and priorities -------------- */ ?>
+						
+						
+						<?php 
+						if(strcmp('fields',$type) === 0) {
+						
+							if(isset($field['options']) && !empty($field['options'])) {
+								echo '<ul>';
+								echo '<li>';
+								echo $this->ui('Common.Form.Select',array(
+									'name'=>''
+									,'id'=>''
+									,'data'=>array('values'=>$field['options']['values'])
+									,'value'=>''
+								)); 
+								echo '</li>';
+								echo '</ul>';
+							}
+							
+						} ?>
+						
+						
 					</fieldset>
 				<?php } ?>
 			<?php } ?>
+			
+			<p><input type="submit" value="+"></p>
 			
 	</fieldset>
 	<?php } ?>

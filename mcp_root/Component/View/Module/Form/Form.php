@@ -147,6 +147,10 @@ class MCPViewForm extends MCPModule {
 					// ---------------------------------------------------------------------------------
 					
 					// Add values - including static, view nesting and argument binding drop downs
+					// NOTE: even though it is named values these ARE MOT drop down values
+					// but the values for comparision. For now just do it statically to get an idea
+					// how it should actually be handled.
+					// $arrConfig[$type][$index]['value']['values'] = array();
 					
 				} else if(strcmp('sorting',$type) === 0) {
 					
@@ -163,10 +167,38 @@ class MCPViewForm extends MCPModule {
 						,array('label'=>'Random','value'=>'rand')
 					);
 					
+					// --------------------------------------------------------------------------------------
+					
+					// Add priorities - priority may be checked to order items in a specific order
+					// using FIELD(). 
+					
+					// TODO
+					
 				} else {
 					
 					$arrConfig[$type][$index]['sortable'] = 0;
 					$arrConfig[$type][$index]['editable'] = 0;
+					
+					// add possible options for the field. For example an image will
+					// have options to make it greyscale or change its size. Could
+					// also add a way to apply a SQL translation or after translation
+					// in php. Need to think on this though.
+					// NOTE: these are not options to be rendered as a select menu
+					// but options for the field selection that exist as separate
+					// groupings.
+					
+					// Kinda sucks it takes another call but for now it will work fine
+					$field = $this->_objDAOView->fetchFieldByViewPath($path);				
+					if($field && $field['options']) {
+						
+						foreach($field['options'] as $option) {
+							$arrConfig[$type][$index]['options']['values'][] = array(
+								'label'=>$option['name']
+								,'value'=>$option['name']
+							);
+						}
+						
+					}
 					
 				}
 				

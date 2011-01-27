@@ -372,8 +372,8 @@ class MCPDAOVD extends MCPDAO {
 		
 		$rows = $this->_objMCP->query($sql);
 		
-		echo '<pre>',print_r($tree),'</pre>';
-		echo '<pre>',print_r($rows),'</pre>';
+		// echo '<pre>',print_r($tree),'</pre>';
+		// echo '<pre>',print_r($rows),'</pre>';
 		
 		/*
 		* ---------------------------------------------------------------------------------
@@ -424,7 +424,7 @@ class MCPDAOVD extends MCPDAO {
 		
 		$data = $func($tree,$func);
 		
-		echo '<pre>',print_r($data),'</pre>';
+		// echo '<pre>',print_r($data),'</pre>';
 	
 	}
 

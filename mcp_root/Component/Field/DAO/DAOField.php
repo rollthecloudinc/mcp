@@ -53,6 +53,9 @@ class MCPDAOField extends MCPDAO {
 	/*
 	* Get field values
 	* 
+	* @TODO: Modify to fetch values for multiple rows using a single query. The one restraint
+	* will be all rows are of the same entity, entity and entity id combo.
+	* 
 	* @param int row id
 	* @param str entity type
 	* @param int entities id

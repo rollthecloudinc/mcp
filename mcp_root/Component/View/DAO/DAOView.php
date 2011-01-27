@@ -445,6 +445,7 @@ class MCPDAOView extends MCPDAO {
 			$view->id = $row['display_id'];
 			$view->base = $row['base'];
 			$view->base_id = $row['base_id'];
+			$view->base_path = $row['base'].($row['base_id']?":{$row['base_id']}":'');
 			$view->system_name = $row['system_name'];
 			$view->human_name = $row['human_name'];
 			
@@ -502,6 +503,300 @@ class MCPDAOView extends MCPDAO {
 	}
 	
 	/*
+	* Build view SQL data structure/tree
+	* 
+	* @param array view data
+	* @return ?
+	*/
+	public function buildView($objView) {
+		
+		$arrReturn = array();
+		
+		/*
+		* Select handler -------------------------------------------------------------- 
+		*/
+		
+		foreach($objView->fields as $arrField) {
+			$arrReturn[ $arrField['path'] ]['select'] = true;
+		}
+		
+		/*
+		* Filter Handler --------------------------------------------------------------- 
+		*/
+		
+		foreach($objView->filters as $arrFilter) {
+			
+			$arrParts = array();
+			
+			// @todo: handle special IN and NOT IN case
+			
+			// Get all the values
+			if(isset($arrFilter['values']) && !empty($arrFilter['values'])) {
+				
+				foreach($arrFilter['values'] as $arrValue) {
+					
+					// @todo determine whether value needs to enclosed in quotes or use placehodlers w/ binding
+					
+					// like, regex and fulltext edge case handling w/ default
+					switch($arrFilter['comparision']) {
+						
+						case 'like':
+							
+							// like format ie. %s,%s%,s%
+							$strWildcard = $arrFilter['wildcard'];
+							
+							// value may change the default wildcard for the entire filter
+							if($arrValue['wildcard'] !== null) {
+								$strWildcard = $arrValue['wildcard'];
+							}
+							
+							// negation edge case ie. LIKE and NOT LIKE
+							$strOperator = strcmp($arrFilter['conditional'],'none') === 0?' NOT LIKE ':' LIKE ';
+							
+							$arrParts[] = '{#column#}.'.$strOperator."'".str_replace('s',$arrValue['value'],$strWildcard)."'";
+							break;
+						
+						case 'regex':
+							
+							// regular expression
+							$strRegex = $arrFilter['regex'];
+							
+							// value may override regex
+							if($arrValue['regex'] !== null) {
+								$strRegex = $arrValue['regex'];
+							}
+							
+							// negation edge case ie. NOT REGEXP and REGEXP
+							$strOperator = strcmp($arrFilter['conditional'],'none') === 0?' NOT REGEXP ':' REGEXP ';
+							
+							$arrParts[] = '{#column#}.'.$strOperator."'".$strRegex."'";
+							break;
+							
+						case 'fulltext':
+							
+							// escape value for security reasons
+							$arrParts[] = "FULLTEXT({#column#},'{$this->_objMCP->escapeString($arrValue['value'])}')";
+							
+							break;
+						
+						default:
+							
+							$strOperator = $arrFilter['comparision'];
+							
+							// negation edge case for = and !=
+							if(strcmp($strOperator,'=') === 0 && strcmp($arrFilter['conditional'],'none') === 0) {
+								$strOperator = '<>';
+							}
+							
+							$arrParts[] = '{#column#}'.' '.$strOperator.' '.(is_numeric($arrValue['value'])?$arrValue['value']:"'{$arrValue['value']}'");
+					}
+				}
+			}
+			
+			// The conditional will determine the format of the values and separator ie. and | or
+			switch($arrFilter['conditional']) {
+				
+				case 'all':	
+					$arrReturn[ $arrFilter['path'] ]['filters'][] = implode(' AND ',$arrParts);
+					break;
+				
+				case 'none':
+					$arrReturn[ $arrFilter['path'] ]['filters'][] = implode(' AND ',$arrParts);
+					break;
+					
+				case 'one':
+					$arrReturn[ $arrFilter['path'] ]['filters'][] = implode(' OR ',$arrParts);
+					break;
+					
+				default: // when none of them are met, there is a problem - error
+				
+			}
+			
+			
+		}
+		
+		/*
+		* Sorting handler ------------------------------------------------------------- 
+		*/
+		
+		// build sorting field format for query builder
+		foreach($objView->sorting as $arrSorting) {
+			
+			// handling basic and field() based sorting
+			// @todo add RAND() support handler
+			if(isset($arrSorting['priorities']) && !empty($arrSorting['priorities'])) {
+				
+				$arrValues = array();
+				foreach($arrSorting['priorities'] as $arrPriority) {
+					// @todo: determine whether value needs to be enclosed in quotes
+					$arrValues[] = is_numeric($arrPriority['value'])?$arrPriority['value']:"'{$arrPriority['value']}'";
+				}
+				
+				// place values in correct order without incurring query costs
+				usort($arrValues,function($a,$b) {
+    				return $a['weight'] != $b['weight']?($a['weight'] < $b['weight']) ? -1 : 1 : 0;
+				});
+				
+				$arrReturn[ $arrSorting['path'] ]['sorting'][] = 'FIELD({#column#} ,'.implode(',',$arrValues).')'.' '.strtoupper($arrSorting['order']);
+				unset($values);
+				
+			} else {
+				
+				$arrReturn[ $arrSorting['path'] ]['sorting'][] = '{#column#} '.strtoupper($arrSorting['order']);
+				
+			}
+			
+		}
+		
+		
+		// echo '<pre>',print_r($arrReturn),'</pre>';
+		//exit;
+		
+		// ----------------------------------------------------------------------------
+		// convert to hierarical structure
+		// ----------------------------------------------------------------------------
+		
+		$tree = array();
+		foreach($arrReturn as $field=>$data) {
+			
+			$current =& $tree;
+			$pieces = explode('/',$field);
+			array_shift($pieces); // remove the the base sonce its not a field
+			$last = count($pieces) - 1;
+			
+			foreach($pieces as $index => $piece) {
+				$current =& $current[$piece];
+				
+				if($index == $last) {
+					$current = $data;
+					$current['leaf'] = true;
+				}
+				
+			}
+		}
+		
+		// echo '<pre>',print_r($tree),'</pre>';
+		// exit;
+		
+		
+		// ---------------------------------------------------------------------------
+		// begin building SQL
+		// ---------------------------------------------------------------------------
+		
+
+		// Counter is used build unique table aliases (1 is the base table)
+		$intCounter = 0;
+		
+		// View is used to build join SQL
+		$objDAOView = $this;
+		
+		// Query data
+		$objQuery = new StdClass();
+		$objQuery->select = array();
+		$objQuery->from = array();
+		$objQuery->where = array();
+		$objQuery->orderby = array();
+		$objQuery->limit = null;
+		$objQuery->offset = null;
+		
+		// Build out base
+		$objBase = new StdClass();
+		$objBase->path = $objView->base_path;
+		$objBase->alias = 't'.(++$intCounter);
+		
+		// Add base table to query
+		$objQuery->from[] = "{$this->_fetchTableByViewType($objBase->path)} {$objBase->alias}";
+		
+		$toSQL = function($arrBranches,$objParent,$toSQL) use (&$intCounter,$objDAOView,$objQuery) {
+	
+			foreach($arrBranches as $strPiece => $arrChildren) {
+				
+				$objBranch = new StdClass();
+				
+				// Full view path of the branch
+				$objBranch->path = "{$objParent->path}/$strPiece";
+				
+				// Alias placeholder for the branch (alias will be declared within join method)
+				$objBranch->alias = null;	
+				
+				// Get possible join
+				$objJoin = $objDAOView->getJoin($objBranch,$objParent,$intCounter);
+				
+				if($objJoin !== false && $objJoin->sql) {
+					$objQuery->from[] = $objJoin->sql;
+				}
+				
+				
+				// Use the right most table if any tables were added
+				if( !empty($objJoin->add) ) {
+					$objBranch = array_pop($objJoin->add);
+				}
+				
+				// Recure
+				if( $arrChildren && !isset($arrChildren['leaf']) ) {				
+					$toSQL($arrChildren,$objBranch,$toSQL);
+				}
+				
+				// Handle select, where, orderby clauses for leaf nodes
+				if( isset($arrChildren['leaf']) ) {
+					
+					$arrField = $objDAOView->fetchFieldByViewPath($objBranch->path);
+					
+					/*
+					* EDGE CASE: Dynamic fields need to reference the branch rather than
+					* parent because the physical field belongs to the branch table not
+					* the parent. 
+					*/
+					$strAlias = $arrField['dynamic']?$objBranch->alias:$objParent->alias;
+					
+					// columns to select
+					if( isset($arrChildren['select']) ) {
+						$objQuery->select[] = "$strAlias.{$arrField['column']} AS {$strAlias}_{$strPiece}";
+					}
+					
+					// where clause parts
+					if( isset($arrChildren['filters']) ) {
+						foreach($arrChildren['filters'] as $strFilter) {
+							$objQuery->where[] = str_replace('{#column#}',"$strAlias.{$arrField['column']}",$strFilter);
+						}
+					}
+					
+					// orderby clause parts
+					if( isset($arrChildren['sorting']) ) {
+						foreach($arrChildren['sorting'] as $strSort) {
+							$objQuery->orderby[] = str_replace('{#column#}',"$strAlias.{$arrField['column']}",$strSort);
+						}
+					}
+					
+				}
+				
+				
+			}
+	
+		};
+		
+		$toSQL($tree,$objBase,$toSQL);	
+		//echo '<pre>',print_r($objQuery),'</pre>';
+		
+		
+		//---------------------------------------------------------------------
+		// Create final query
+		// --------------------------------------------------------------------
+		$strSQL = sprintf(
+			'SELECT %s FROM %s %s %s'
+			,implode(',',$objQuery->select)
+			,implode(' ',$objQuery->from)
+			,!empty($objQuery->where)?'WHERE '.implode(' AND ',$objQuery->where):''
+			,!empty($objQuery->orderby)?'ORDER BY '.implode(',',$objQuery->orderby):''
+		);
+		echo "<p>$strSQL</p>";
+		
+		exit;
+		
+		
+	}
+	
+	/*
 	* Get the base table for a view type
 	* 
 	* @return str full table name for view type
@@ -546,6 +841,7 @@ class MCPDAOView extends MCPDAO {
 		$dynamic 	= false;
 		$actions	= '';
 		$primary 	= false;
+		$options	= array();
 		
 		/*
 		* A bunch of translations for common column names that have the same meaning
@@ -684,6 +980,13 @@ class MCPDAOView extends MCPDAO {
 			,'dynamic'=>false
 			,'actions'=>$actions
 			,'primary'=>$primary
+			,'options'=>$options
+			
+			// These columns are only used for dynamic fields
+			,'entity_type'=>null
+			,'entities_id'=>null 
+			,'sites_id'=>null 
+			,'entities_primary_key'=>null
 		);
 		
 	}
@@ -702,7 +1005,12 @@ class MCPDAOView extends MCPDAO {
 		$strBase = null;
 		$intId = null;
 		
-		list($strBase,$intId) = explode(':',$strViewType,2);
+		if(strpos($strViewType,':') !== false) {
+			list($strBase,$intId) = explode(':',$strViewType,2);
+		} else {
+			$strBase = $strViewType;
+		}
+		
 		$entities_id = $intId;
 		
 		// Get the Field DAO
@@ -714,23 +1022,30 @@ class MCPDAOView extends MCPDAO {
 		switch($strBase) {
 			case 'Node':
 				$entity_type = 'MCP_NODE_TYPES';
+				$primaryKey = 'nodes_id';
 				break;
 				
 			case 'User':
 				$entity_type = 'MCP_SITES';
 				$entities_id = $this->_objMCP->getSitesId();
+				$primaryKey = 'sites_id';
 				break;
 				
 			case 'Term':
 				$entity_type = 'MCP_TERMS';
+				$primaryKey = 'terms_id';
 				break;
 				
 			case 'Config':
 				$entity_type = 'MCP_CONFIG';
+				$primaryKey = '';
 				$entities_id = 0;
 				break;
-				
+
+			// Image has special type with options
 			case 'Image':
+				return $this->_fetchDynamicImageFields();
+				
 			case 'Site':
 			case 'NodeType':
 			case 'Vocabulary':
@@ -775,8 +1090,14 @@ class MCPDAOView extends MCPDAO {
 			 ,IF(cfg_multi = 1,'many','one') relation_type
 			 ,1 dynamic
 			 ,'' actions
-			 ,0 `primary`"
-			,sprintf(
+			 ,0 `primary`
+			 ,0 options
+			 ,f.sites_id
+			 ,f.entity_type
+		     ,f.entities_id
+			 ,'$primaryKey' entities_primary_key
+			 ,f.db_ref_col" // NOTE: sites_id,entity_type, entities_id, entities_primary_key are necessary to build join for dynamic fields
+		   ,sprintf(
 				"f.sites_id = %s AND f.entity_type = '%s' AND f.entities_id %s"
 				,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
 				,$this->_objMCP->escapeString($entity_type)
@@ -785,6 +1106,197 @@ class MCPDAOView extends MCPDAO {
 		);
 		
 	}
+	
+	/*
+	*  Special: Extra image fields
+	* 
+	*  @return array extra image fields
+	*/
+	private function _fetchDynamicImageFields() {
+		
+		/*
+		* This "magical" field will display the image. When displaying
+		* an image there are several options available to manipulate it.
+		* 
+		* width: desired image width 
+		* height: desired image height
+		* grayscale: grayscale transformation
+		* b/w: black and white transformation
+		*/
+		return array(
+			array(
+				'label' 				=> 'Image'
+				,'path' 				=> 'image'
+				,'column'				=> 'images_id'
+				,'type'					=> null
+				,'compatible' 			=> 'select'
+				,'relation' 			=> null
+				,'relation_type' 		=> null
+				,'dynamic' 				=> false
+				,'actions'				=> ''
+				,'primary' 				=> false
+				,'options'				=> array(
+					 array('name'=>'width','type'=>'int')
+					,array('name'=>'height','type'=>'int')
+					,array('name'=>'grayscale','type'=>'bool')
+					,array('name'=>'b/w','type'=>'bool')
+				)
+				
+				// These columns are only used for dynamic fields
+				,'entity_type'=>null
+				,'entities_id'=>null 
+				,'sites_id'=>null 
+				,'entities_primary_key'=>null
+				
+			)
+		);
+		
+	}
+	
+	
+	/*
+	* Get table from a path
+	* 
+	* @param StdClass branch data
+	* - alias: unique alias name
+	* - path: full view path
+	* 
+	* @param array ancestory array - closest to farthest
+	* @param int counter (used to generate unique alias for additional tables)
+	* 
+	* @return obj StdClass w/ properties: 
+	* - sql: Join SQL
+	* - add: Additional tables used to resolve join w/ aliases
+	*/
+	public function getJoin($objBranch,$objParent,&$intCounter) {
+		
+		/*
+		* Data structure to return containing the join SQL and possible additional tables
+		* w/ alias data used to resolve full join. Additional tables will be present for dynamic fields
+		* because dynamic fields require an additional "invisible" table MCP_FIELDS. At this time
+		* dynamic fields are the only case that make use of additional tables being added at the join
+		* step though its entirely possible other cases come along in the future. 
+		*/
+		$objJoin = new StdClass();
+		$objJoin->sql = '';
+		$objJoin->add = array();
+		
+		/*
+		* Get the fields column definition including relation and dynamic flag (bool)
+		* 
+		* relation will be used to derive joins
+		* 
+		* dynamic will be used to derive joins for enitity dynamic fields which includes
+		* the addition of a "invisible" lookup table.
+		*/
+		$arrField = $this->fetchFieldByViewPath($objBranch->path);
+		// echo "<p>{$objBranch->path}<p>";
+		
+		/*
+		* @todo: If the field does not exist we can either error or attempt to continue. It
+		* is probably best to error or throw an exception. The exceptions could
+		* be collected bthe the callee so that some useful feedback in regards to fields
+		* that can not be found can be presented for debugging purposes. Valid paths
+		* is probably only going to be the case when dealing with dynamic fields that may have
+		* been deleted. In that case we can make people aware of the issue or even create a task
+		* to run all views and provide feedback of missing/invalid paths.
+		*/
+		if( !$arrField ) {
+			// perhaps throw an exception here rather than returning false? - seems like the best idea
+			return false;
+		}
+		
+		/*
+		* Handler "dynamic field". This adds the necessary middle table to properly
+		* resolve dynamic fields w/ available reference to possible default value
+		* stored in the middle (field config) table. Referencing the middle table
+		* will be important when building filters, or sorting when a row entity
+		* does not have a field value defined for a field but the field has a default
+		* value. So if the default valueo of file foo is 0 and one would like all items
+		* where foo is 0 there needs to be some logic to see if a field value exists
+		* otherwise compare against the default within the field config table. This is
+		* probably something very easy the overlook but incredibly important considering
+		* the purpose of the default value field config column which is push a value to
+		* all entities of the type regardless if they have a explicit field vale defined.
+		*/
+		if( $arrField['dynamic'] ) {
+			
+			$mid = 't'.(++$intCounter);
+			$objBranch->alias = 't'.(++$intCounter);
+			
+			// @todo: account for null entities_id
+			$objJoin->sql =      
+			          "LEFT OUTER
+		                     JOIN
+		                        MCP_FIELDS $mid 
+		                       ON 
+		                        $mid.sites_id = {$arrField['sites_id']}
+		                      AND 
+		                        $mid.entity_type = '{$arrField['entity_type']}' 
+		                      AND 
+		                        $mid.entities_id = {$arrField['entities_id']} 
+		                      AND 
+		                        $mid.cfg_name = '{$arrField['name']}' 
+		                     LEFT OUTER 
+		                     JOIN 
+		                        MCP_FIELD_VALUES {$objBranch->alias} 
+		                       ON 
+		                        $mid.fields_id = {$objBranch->alias}.fields_id 
+		                      AND 
+		                        {$objBranch->alias}.rows_id = {$objParent->alias}.{$arrField['entities_primary_key']} ";		
+			
+		
+		/*
+		* Handler "basic" join. This handles a generic concrete
+		* foreign key relationship. Examples are nodes to user, site to creator or anything
+		* that is a explicitly defined relationship within tables using foreign keys.
+		*/
+		} else if( $arrField['relation'] ) {
+			
+			// create unique alias
+			$objBranch->alias = 't'.(++$intCounter);
+			
+			// Get the primary key for the relation table
+			$col = $this->fetchFieldByViewPath("{$arrField['relation']}/id");
+			
+			// Build out SQL
+			$objJoin->sql =
+			    "LEFT OUTER 
+		               JOIN 
+		                  {$this->_fetchTableByViewType($arrField['relation'])} {$objBranch->alias} 
+		                 ON 
+		                  {$objParent->alias}.{$arrField['column']} = {$objBranch->alias}.{$col['column']} ";
+			
+		} else {
+			
+		}
+		
+		/*
+		* Dynamic field that has foreign key reference to another table such as; media
+		*/
+		if($arrField['dynamic'] && $arrField['relation']) {
+				
+			$alias = 't'.(++$intCounter);
+		
+			$objJoin->sql.= 
+			          "LEFT OUTER 
+			                 JOIN 
+			                    {$this->_fetchTableByViewType($arrField['relation'])} $alias 
+			                   ON 
+			                    {$objBranch->alias}.{$arrField['column']} = $alias.{$arrField['db_ref_col']}";
+
+			$objAdd = new StdClass();
+			$objAdd->alias = $alias;
+			$objAdd->path = $objBranch->path;
+			
+			$objJoin->add[] = $objAdd;
+			    
+		}
+		
+		return $objJoin;
+	
+	}
+	
 	
 }
 
