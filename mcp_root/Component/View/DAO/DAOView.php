@@ -838,7 +838,7 @@ class MCPDAOView extends MCPDAO {
 			,!empty($objQuery->where)?'WHERE '.implode(' AND ',$objQuery->where):''
 			,!empty($objQuery->orderby)?'ORDER BY '.implode(',',$objQuery->orderby):''
 		);
-		echo "<p>$strSQL</p>";
+		// echo "<p>$strSQL</p>";
 		
 		// ------------------------------------------------------------------
 		// fetch result set
@@ -846,20 +846,79 @@ class MCPDAOView extends MCPDAO {
 		$arrRows = $this->_objMCP->query($strSQL);
 		
 		//echo '<pre>',print_r($tree),'</pre>';
-		echo '<pre>',print_r($arrNodes),'</pre>';
-		echo '<pre>',print_r($arrRows),'</pre>';
+		//echo '<pre>',print_r($arrNodes),'</pre>';
 		
 		
 		// ----------------------------------------------------------------
 		// Build out result set as relational hierarchy
 		// -------------------------------------------------------------------
-		$toEntity = function($arrNodes) use (&$arrRows) {
+		$toEntity = function($arrNodes,$objParent,$toEntity,$checkBelongs=null) use (&$arrRows,$objDAOView) {
 			
+			$arrDomainRows = array();
 			
+			foreach($arrNodes as $arrNode) {
+				
+				// Extract the branch
+				$objBranch = $arrNode['branch'];
+				
+				// Get the field data
+				$arrField = $objDAOView->fetchFieldByViewPath($objBranch->path);
+				
+				if($arrField) {
+					
+					// When the branch doesn't have an alias define assume it is part of the parent (atomic)
+					$strAlias = $objBranch->alias?$objBranch->alias:$objParent->alias;
+					
+					// Build out the expected alais
+					$strExpectedAlias = "{$strAlias}_{$arrField['path']}";
+					
+					// Alias for the primary key column - to remove duplicates
+					$strUniqueRowAlias = "{$objParent->alias}_id";
+					
+					// Map the raw result set to the proper domain level result set
+					foreach($arrRows as &$arrRow) {
+						
+						// Make sure the row exists within the result set
+						// The second check is used is used skip over rows that don't belong to a parent for m:n,m:1 relationships
+						if( array_key_exists($strExpectedAlias,$arrRow) && ($checkBelongs === null || $checkBelongs($arrRow) )) {
+							
+							// Map the raw row column to domain row column
+							$arrDomainRows[ $arrRow[$strUniqueRowAlias] ][$arrField['path']] = $arrRow[$strExpectedAlias];
+						
+						}
+						
+						/*
+						* Just because a node is part of the result set doesn't mean anything. In most
+						* cases any relational nodes will not have concrete columns in the result set.
+						* In this case its likely that the fields for the entitities relationship
+						* are defined at the next level below the entity itself. 
+						*/
+						if( !empty( $arrNode['children'] ) ) {
+							
+							// used to check if a row is a child of this one when called recusively
+							$mixUniqueAliasValue = $arrRow[$strUniqueRowAlias];
+							
+							// The function is used to determine whether a row should be considered a child of this one for relational mapping
+							$arrDomainRows[$arrRow[$strUniqueRowAlias]][$arrField['path']] = $toEntity($arrNode['children'],$objBranch,$toEntity,function($arrRow) use ($strUniqueRowAlias,$mixUniqueAliasValue)  {
+								return $arrRow[$strUniqueRowAlias] == $mixUniqueAliasValue;
+							});
+							
+						} 
+					
+					}
+					
+				}
+				
+			}
+			
+			return $arrDomainRows;
 			
 		};
 		
-		$toEntity($arrRows,$arrNodes);
+		$arrDomainRows = $toEntity($arrNodes,$objBase,$toEntity);
+		
+		// echo '<pre>',print_r($arrRows),'</pre>';
+		echo '<pre>',print_r($arrDomainRows),'</pre>';
 		
 		
 		exit;
