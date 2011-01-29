@@ -263,6 +263,31 @@ class MCPDAOView extends MCPDAO {
 	}
 	
 	/*
+	* Get the name of the primary key for a table correspondig to
+	* a view path. 
+	* 
+	* @param str view path
+	*/
+	public function fetchTablePrimaryKeyByViewPath($strViewPath) {
+		
+		$arrFields = $this->fetchFieldsByViewPath($strViewPath);
+		
+		if(!$arrFields) {
+			return;
+		}
+		
+		/*
+		* The primary key will always be the id path
+		*/
+		foreach($arrFields as $arrField) {
+			if( strcmp('id',$arrField['path']) == 0) {
+				return $arrField['column'];
+			}
+		}
+		
+	}
+	
+	/*
 	* Fetch a single view display by its ID
 	* 
 	* NOTE: This will fully resolve a view including
@@ -707,9 +732,18 @@ class MCPDAOView extends MCPDAO {
 		// Add base table to query
 		$objQuery->from[] = "{$this->_fetchTableByViewType($objBase->path)} {$objBase->alias}";
 		
+		// Add contextual where clause - this is reposible for limiting entities to the type
+		$this->_addQueryEntityContextFilter($objQuery,$objView->base_path);
+		
 		$toSQL = function($arrBranches,$objParent,$toSQL) use (&$intCounter,$objDAOView,$objQuery) {
+			
+			// collected branches - necessary to rebuild result set as hierarchy of relations
+			$arrReturn = array();
 	
 			foreach($arrBranches as $strPiece => $arrChildren) {
+				
+				// All the branch objects as a collection to return - necessary to rebuild result set as object hierarchy from raw data
+				$arrChildBranches = array();
 				
 				$objBranch = new StdClass();
 				
@@ -734,7 +768,7 @@ class MCPDAOView extends MCPDAO {
 				
 				// Recure
 				if( $arrChildren && !isset($arrChildren['leaf']) ) {				
-					$toSQL($arrChildren,$objBranch,$toSQL);
+					$arrChildBranches = $toSQL($arrChildren,$objBranch,$toSQL);
 				}
 				
 				// Handle select, where, orderby clauses for leaf nodes
@@ -751,7 +785,7 @@ class MCPDAOView extends MCPDAO {
 					
 					// columns to select
 					if( isset($arrChildren['select']) ) {
-						$objQuery->select[] = "$strAlias.{$arrField['column']} AS {$strAlias}_{$strPiece}";
+						$objQuery->select[] = "$strAlias.{$arrField['column']} {$strAlias}_{$strPiece}";
 					}
 					
 					// where clause parts
@@ -770,12 +804,27 @@ class MCPDAOView extends MCPDAO {
 					
 				}
 				
+				// collected so that result set can be built that mimics relational hierarchy
+				$arrReturn[] = array('branch'=>$objBranch,'children'=>$arrChildBranches);
 				
 			}
+			
+			/*
+			* Get the primary key - used to remove duplicates and build relational multi-dimensional array structure
+			* This is necessary otherwise its nearly impossible to remove duplicates and build a nice relational hierarchy
+			*/
+			$strPrimaryKeyColumn = $objDAOView->fetchTablePrimaryKeyByViewPath( $objParent->path );
+			
+			if( $strPrimaryKeyColumn ) {
+				$objQuery->select[] = "{$objParent->alias}.$strPrimaryKeyColumn {$objParent->alias}_id";
+			}
+			
+			return $arrReturn;
+			
 	
 		};
 		
-		$toSQL($tree,$objBase,$toSQL);	
+		$arrNodes = $toSQL($tree,$objBase,$toSQL);	
 		//echo '<pre>',print_r($objQuery),'</pre>';
 		
 		
@@ -790,6 +839,28 @@ class MCPDAOView extends MCPDAO {
 			,!empty($objQuery->orderby)?'ORDER BY '.implode(',',$objQuery->orderby):''
 		);
 		echo "<p>$strSQL</p>";
+		
+		// ------------------------------------------------------------------
+		// fetch result set
+		// ------------------------------------------------------------------
+		$arrRows = $this->_objMCP->query($strSQL);
+		
+		//echo '<pre>',print_r($tree),'</pre>';
+		echo '<pre>',print_r($arrNodes),'</pre>';
+		echo '<pre>',print_r($arrRows),'</pre>';
+		
+		
+		// ----------------------------------------------------------------
+		// Build out result set as relational hierarchy
+		// -------------------------------------------------------------------
+		$toEntity = function($arrNodes) use (&$arrRows) {
+			
+			
+			
+		};
+		
+		$toEntity($arrRows,$arrNodes);
+		
 		
 		exit;
 		
@@ -1150,6 +1221,51 @@ class MCPDAOView extends MCPDAO {
 				
 			)
 		);
+		
+	}
+	
+	/*
+	* Add necessary filter to query for nodes, terms, etc of certain context
+	* based the view base path. 
+	* 
+	* @param obj query object
+	* @param str view type
+	*/
+	private function _addQueryEntityContextFilter($objQuery,$strViewType) {
+
+		$strBase = null;
+		$intId = null;
+		
+		if(strpos($strViewType,':') !== false) {
+			list($strBase,$intId) = explode(':',$strViewType,2);
+		} else {
+			$strBase = $strViewType;
+		}
+
+		switch($strBase) {
+			
+			case 'Node':
+				// The base table will always have an alias of t1
+				$objQuery->where[] = "t1.node_types_id = {$this->_objMCP->escapeString($intId)}";
+				break;
+				
+			case 'Term':
+				// @TODO: this requires a little more though considering the hierarchy
+				// $objQuery->where[] = "t1.vocabulary_id = {$this->_objMCP->escapeString($intId)}";
+				break;
+				
+			case 'User':
+				// @todo: need to figure out the initial intention here
+				// $objQuery->where[] = "t1.sites_id = {$this->_objMCP->escapeString($this->_getSitesId())}";
+				break;
+				
+			case 'Config':
+				// @todo: need to determine how to this
+				break;
+				
+			default:
+			
+		}
 		
 	}
 	
