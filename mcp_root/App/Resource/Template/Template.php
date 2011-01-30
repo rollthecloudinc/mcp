@@ -181,6 +181,13 @@ class MCPTemplate extends MCPResource {
 	}
 	
 	/*
+	* Short-cut to print system messages
+	*/
+	public function messages() {
+		echo $this->_objMCP->executeComponent('Component.Util.Module.SystemMessage',array());
+	}
+	
+	/*
 	* Print sites doc-type 
 	*/
 	public function doctype() {

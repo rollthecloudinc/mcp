@@ -15,4 +15,5 @@
   vocabulary, menu, getting entity dybamic fields, etc.
 - Create term management area similiar to navigation area for managing tree structure.
 - Re-design navigation area breadcrumb system, its a bit awkward
+- make sure view algorithm ignores deleted items automatically with tables supoorting soft delete
   

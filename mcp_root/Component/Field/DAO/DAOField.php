@@ -103,6 +103,12 @@ class MCPDAOField extends MCPDAO {
 			         WHEN fv.fields_id IS NOT NULL AND f.db_value = 'text'
 			         THEN fv.db_text
 			         
+			         WHEN fv.fields_id IS NOT NULL AND f.db_value = 'timestamp'
+			         THEN fv.db_timestamp
+			         
+			         WHEN fv.fields_id IS NOT NULL AND f.db_value = 'date'
+			         THEN fv.db_date
+			         
 			         ELSE NULL END field_value
 			         ,NULL field_value_relation
 			  FROM
@@ -396,6 +402,8 @@ class MCPDAOField extends MCPDAO {
 			,'text'=>'Long Text'
 			,'price'=>'Price'
 			,'bool'=>'True/False'
+			,'timestamp'=>'Timestamp'
+			,'date'=>'Date'
 		);
 		
 		foreach($arrResult as $arrColumn) {
@@ -963,7 +971,21 @@ class MCPDAOField extends MCPDAO {
 			               THEN '{$this->_objMCP->escapeString( $mixValue )}'
 			               ELSE NULL
 			           END
-			       )		      
+			       )
+			      ,MCP_FIELD_VALUES.db_timestamp = (
+			           CASE
+			               WHEN MCP_FIELDS.db_value = 'timestamp'
+			               THEN '{$this->_objMCP->escapeString( $mixValue )}'
+			               ELSE NULL
+			           END
+			       )	
+			      ,MCP_FIELD_VALUES.db_date = (
+			           CASE
+			               WHEN MCP_FIELDS.db_value = 'date'
+			               THEN '{$this->_objMCP->escapeString( $mixValue )}'
+			               ELSE NULL
+			           END
+			       )	      
 			  WHERE
 			      MCP_FIELD_VALUES.field_values_id = {$this->_objMCP->escapeString($intFieldValuesId)}";
 		
@@ -993,7 +1015,7 @@ class MCPDAOField extends MCPDAO {
 		* storage type. 
 		*/
 		$strSQL =
-			"INSERT IGNORE INTO MCP_FIELD_VALUES (fields_id,rows_id,db_varchar,db_text,db_int,db_bool,db_price)
+			"INSERT IGNORE INTO MCP_FIELD_VALUES (fields_id,rows_id,db_varchar,db_text,db_int,db_bool,db_price,db_timestamp,db_date)
 				    SELECT
 				         fields_id
 				         ,{$this->_objMCP->escapeString( $intRowsId )} rows_id
@@ -1029,6 +1051,18 @@ class MCPDAOField extends MCPDAO {
 				            THEN '{$this->_objMCP->escapeString( $mixValue )}'
 				            ELSE NULL
 				          END db_price
+				          
+				         ,CASE
+				            WHEN db_value = 'timestamp'
+				            THEN '{$this->_objMCP->escapeString( $mixValue )}'
+				            ELSE NULL
+				          END db_timestamp
+				          
+				         ,CASE
+				            WHEN db_value = 'date'
+				            THEN '{$this->_objMCP->escapeString( $mixValue )}'
+				            ELSE NULL
+				          END db_date
 				          
 				      FROM
 				         MCP_FIELDS

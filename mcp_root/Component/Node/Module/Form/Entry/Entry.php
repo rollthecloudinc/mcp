@@ -358,12 +358,28 @@ class MCPNodeFormEntry extends MCPModule {
 		/*
 		* Save node to database 
 		*/
-		$this->_objDAONode->saveNode($arrValues);
+		try {
+			
+			$this->_objDAONode->saveNode($arrValues);
+			
+			/*
+			* Fire update event using this as the target
+			*/
+			$this->_objMCP->fire($this,'NODE_UPDATE');
 		
-		/*
-		* Fire update event using this as the target
-		*/
-		$this->_objMCP->fire($this,'NODE_UPDATE');
+			/*
+			* Add success message 
+			*/
+			$this->_objMCP->addSystemStatusMessage('Content '.($arrNode !== null?'Updated':'Created' ).'!');
+			
+		} catch(MCPDAOException $e) {
+			
+			$this->_objMCP->addSystemErrorMessage(
+				'An internal issue has prevented the content from being '.($arrNode !== null?'updated':'created' )
+				,$e->getMessage()
+			);
+			
+		}
 		
 	}
 	

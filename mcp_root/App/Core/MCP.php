@@ -49,7 +49,7 @@ class MCP {
 	,$_objTemplate
 	
 	/*
-	* User interface drawing library (will eventually replace drawing API) 
+	* User interface drawing library (replaces drawing API) 
 	*/
 	,$_objUI
 	
@@ -142,7 +142,35 @@ class MCP {
 	/*
 	* Site database enrypted data salt 
 	*/
-	,$_strSalt;
+	,$_strSalt
+	
+	/*
+	* List of system messages 
+	* 
+	* There are messages that will be displayed to the user every request. Messages
+	* are useful for actions that have failure points or possibly making users
+	* aware that they have not filled out all required fields or that an action
+	* has sucessfully occured.
+	* 
+	* Use the below methods to add messages 
+	* 
+	* addSystemErrorMessage($strMessage)
+	* addSystemWarningMessage($strMessage)
+	* addSystemStatusMessage($strMessage);
+	* 
+	* System messages DO NOT persist between requests. System messages
+	* are only available for the duration of a request.
+	*/
+	,$_arrSystemMessages = array(
+		// errors
+		 'error'			=> array()
+	
+		// warnings
+		,'warning'			=> array()
+		
+		// status message
+		,'status'			=> array()
+	);
 	
 	/*
 	* Create MCP instance
@@ -1394,6 +1422,75 @@ class MCP {
 	*/
 	public function capture($func) {
 		$this->_arrCapture[] = $func;
+	}
+	
+	/*
+	* An error message should be issued when an attempted action
+	* was unsucessful. There are two types of messages. The normal
+	* message is displayed to all users, the debug is displayed 
+	* when in development/debug mode. So a generic message may be used
+	* for all users but a more concise, technical may be used for the
+	* second.
+	* 
+	* @param str error message to display to all users (non-technical)
+	* @param str error message to display for developers (smart, concise message)
+	*/
+	public function addSystemErrorMessage($strNormal,$strDev=null) {
+		
+		$this->_arrSystemMessages['error'][] = array(
+			'normal'=>$strNormal
+			,'dev'=>$strDev
+		);
+		
+	}
+	
+	/*
+	* A warning message should be issued when an attempted action
+	* was sucessful with some type of non-critical error. There are two types of messages. The normal
+	* message is displayed to all users, the debug is displayed 
+	* when in development/debug mode. So a generic message may be used
+	* for all users but a more concise, technical may be used for the
+	* second.
+	* 
+	* @param str warning message to display to all users (non-technical)
+	* @param str warning message to display for developers (smart, concise message)
+	*/
+	public function addSystemWarningMessage($strNormal,$strDev=null) {
+		
+		$this->_arrSystemMessages['warning'][] = array(
+			'normal'=>$strNormal
+			,'dev'=>$strDev
+		);
+		
+	}
+	
+	/*
+	* A status message should be issued when an attempted action
+	* was sucessful. There are two types of messages. The normal
+	* message is displayed to all users, the debug is displayed 
+	* when in development/debug mode. So a generic message may be used
+	* for all users but a more concise, technical may be used for the
+	* second.
+	* 
+	* @param str warning message to display to all users (non-technical)
+	* @param str warning message to display for developers (smart, concise message)
+	*/
+	public function addSystemStatusMessage($strNormal,$strDev=null) {
+		
+		$this->_arrSystemMessages['status'][] = array(
+			'normal'=>$strNormal
+			,'dev'=>$strDev
+		);
+		
+	}
+	
+	/*
+	* Get all system messages
+	* 
+	* @return array system messages
+	*/
+	public function getSystemMessages() {
+		return $this->_arrSystemMessages;
 	}
 	
 	/*
