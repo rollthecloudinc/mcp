@@ -321,6 +321,7 @@ class MCPDAOField extends MCPDAO {
 				
 				if(!empty($field['cfg_dao_args'])) {
 					$args = unserialize(base64_decode($field['cfg_dao_args']));
+					
 					if(is_array($args)) {
 						$values.= '<args>';
 						foreach($args as $arg) {
@@ -418,6 +419,31 @@ class MCPDAOField extends MCPDAO {
 				
 			}
 		}
+		
+		// ----------------------------------------------------------------------------------
+		// Add dynamic entity references
+		// ----------------------------------------------------------------------------------
+		
+		// DAOs needed to get node types and vocabularies
+		$objDAONode = $this->_objMCP->getInstance('Component.Node.DAO.DAONode',array($this->_objMCP));
+		$objDAOTaxonomy = $this->_objMCP->getInstance('Component.Taxonomy.DAO.DAOTaxonomy',array($this->_objMCP));
+		
+		// node type or a node of type x
+		$arrValueTypes[] = array(
+		
+			'label'=>'Classification'
+			,'value'=>'nodetype'
+			
+			,'values'=> $objDAONode->fetchNodeTypes("CONCAT('node:',t.node_types_id) value,IF(t.pkg = '',t.system_name,CONCAT(t.pkg,'::',t.system_name)) label","t.deleted = 0 AND t.sites_id = {$this->_objMCP->escapeString($this->_objMCP->getSitesId())}")
+		);
+		
+		// vocabulary of a term inside vocabulary x
+		$arrValueTypes[] = array(
+			'label'=>'Vocabulary'
+			,'value'=>'vocabulary'
+			
+			,'values'=> $objDAOTaxonomy->listVocabulary("CONCAT('term:',v.vocabulary_id) value,IF(v.pkg = '',v.system_name,CONCAT(v.pkg,'::',v.system_name)) label","v.deleted = 0 AND v.sites_id = {$this->_objMCP->escapeString($this->_objMCP->getSitesId())}")
+		);
 		
 		return $arrValueTypes;
 		
@@ -775,7 +801,7 @@ class MCPDAOField extends MCPDAO {
 			 ,v.pkg
 			 ,IF(v.pkg <> '',v.pkg,v.system_name) sort
 			 ,v.system_name"
-			,"v.sites_id = {$this->_objMCP->escapeString($this->_objMCP->getSitesId())} AND v.deleted IS NULL"
+			,"v.sites_id = {$this->_objMCP->escapeString($this->_objMCP->getSitesId())} AND v.deleted = 0"
 			,'pkg,sort ASC'
 		);
 		

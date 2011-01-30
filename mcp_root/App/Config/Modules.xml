@@ -52,6 +52,7 @@
 			<db_value>
 				<label>Type</label>
 				<required>Y</required>
+				<size>7</size>
 				<dao>
 					<pkg>Component.Field.DAO.DAOField</pkg>
 					<method>fetchDBValueTypes</method>
@@ -92,12 +93,12 @@
 				<required>Y</required>
 				<values>
 					<value>
-						<value>Y</value>
-						<label>Yes</label>
-					</value>
-					<value>
 						<value>N</value>
 						<label>No</label>
+					</value>
+					<value>
+						<value>Y</value>
+						<label>Yes</label>
 					</value>
 				</values>
 				<default>Y</default>
@@ -154,12 +155,12 @@
 				<required>Y</required>
 				<values>
 					<value>
-						<value>1</value>
-						<label>Yes</label>
-					</value>
-					<value>
 						<value>0</value>
 						<label>No</label>
+					</value>
+					<value>
+						<value>1</value>
+						<label>Yes</label>
 					</value>
 				</values>
 				<default>0</default>
@@ -169,12 +170,12 @@
 				<required>Y</required>
 				<values>
 					<value>
-						<value>1</value>
-						<label>Yes</label>
-					</value>
-					<value>
 						<value>0</value>
 						<label>No</label>
+					</value>
+					<value>
+						<value>1</value>
+						<label>Yes</label>
 					</value>
 				</values>
 				<default>0</default>
@@ -191,12 +192,12 @@
 				<required>Y</required>
 				<values>
 					<value>
-						<value>1</value>
-						<label>Yes</label>
-					</value>
-					<value>
 						<value>0</value>
 						<label>No</label>
+					</value>
+					<value>
+						<value>1</value>
+						<label>Yes</label>
 					</value>
 				</values>
 				<default>0</default>			

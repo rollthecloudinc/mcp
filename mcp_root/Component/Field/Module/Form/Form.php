@@ -218,11 +218,17 @@ class MCPFieldForm extends MCPModule {
 		if($entities_id !== null) {
 			$arrValues['entities_id'] = $entities_id;
 		}
+		
+		// ------------------------------------------------------------------------------------
+		// Relational resolution
+		// ------------------------------------------------------------------------------------
 			
 		/*
-		* Handle media type conversions
+		* Handle media type and entity reference conversions
 		*/
 		switch($arrValues['db_value']) {
+			
+			// start media references -------------------------
 				
 			case 'image':
 				$arrValues['cfg_media'] = 'image';
@@ -252,8 +258,96 @@ class MCPFieldForm extends MCPModule {
 				$arrValues['db_ref_col'] = 'files_id';
 				break;
 				
+			// end media start entity ---------------------------
+				
+			case 'vocabulary':
+				$arrValues['db_value'] = 'int';
+				$arrValues['db_ref_table'] = 'MCP_VOCABULARY';
+				$arrValues['db_ref_col'] = 'vocabulary_id';
+				
+				// values will be derived using a dao call
+				$arrValues['cfg_dao_pkg'] = 'Component.Taxonomy.DAO.DAOTaxonomy';
+				$arrValues['cfg_dao_method'] = 'listVocabulary';
+				$arrValues['cfg_dao_args'] = array(
+					 "v.vocabulary_id value,v.system_name label"
+					,"v.deleted = 0 AND v.sites_id = SITES_ID"
+					,"v.human_name ASC"
+				);
+				
+				break;
+				
+			case 'nodetype':
+				$arrValues['db_value'] = 'int';
+				$arrValues['db_ref_table'] = 'MCP_NODE_TYPES';
+				$arrValues['db_ref_col'] = 'node_types_id';
+				
+				// values will be derived using a dao call
+				$arrValues['cfg_dao_pkg'] = 'Component.Node.DAO.DAONode';
+				$arrValues['cfg_dao_method'] = 'fetchNodeTypes';
+				$arrValues['cfg_dao_args'] = array(
+					 "t.node_types_id value,t.system_name label"
+					,"t.deleted = 0 AND t.sites_id = SITES_ID"
+					,"t.human_name ASC"
+				);
+				
+				break;
+				
 			default:
+				
+				// term and node handler in format: node:2 or vocaulary:4 ie. node:{nodetype} or term:{vocabulary}
+				if(strpos($arrValues['db_value'],'term:') === 0 || strpos($arrValues['db_value'],'node:') === 0) {
+					
+					// separate the entity (node,term) from the nodetype or vocabulary id
+					list($relation,$relation_id) = explode(':',$arrValues['db_value'],2);
+					
+					// Set the proper dao, dao method and dao arguments to generate the list
+					if( strcmp('node',$relation) === 0 ) {
+						
+						$arrValues['db_value'] = 'int';
+						$arrValues['db_ref_table'] = 'MCP_NODES';
+						$arrValues['db_ref_col'] = 'nodes_id';		
+						
+						// values will be derived using a dao call
+						$arrValues['cfg_dao_pkg'] = 'Component.Node.DAO.DAONode';
+						$arrValues['cfg_dao_method'] = 'fetchNodes';
+						$arrValues['cfg_dao_args'] = array(
+							 "n.nodes_id value,n.node_title label"
+							,"n.deleted = 0 AND n.sites_id = SITES_ID AND n.node_types_id = {$this->_objMCP->escapeString($relation_id)}"
+							,"n.node_title ASC"
+						);
+						
+					} else if( strcmp('term',$relation) === 0 ) {
+						
+						$arrValues['db_value'] = 'int';
+						$arrValues['db_ref_table'] = 'MCP_TERMS';
+						$arrValues['db_ref_col'] = 'terms_id';	
+						
+						// values will be derived using a dao call
+						$arrValues['cfg_dao_pkg'] = 'Component.Taxonomy.DAO.DAOTaxonomy';
+						$arrValues['cfg_dao_method'] = 'fetchTerms';
+						$arrValues['cfg_dao_args'] = array(
+							$relation_id
+							,"vocabulary"
+							,true
+							,array(
+								 'select' => "t.terms_id value,t.human_name label"
+								,'filter' => "t.deleted = 0"
+								,'sort'   => "t.weight ASC"
+							)
+						);
+									
+					}
+					
+				}
+				
 		}
+		
+		// ----------------------------------------------------------------------------------------
+		// End relational reference resolution
+		// ----------------------------------------------------------------------------------------
+		
+		//echo '<pre>',print_r($arrValues),'</pre>';
+		//return;
 		
 		// Get the current field
 		$arrField = $this->_getField();
