@@ -355,7 +355,7 @@ class MCPDAOView extends MCPDAO {
 			          ELSE
 			          'static'
 			      END field_option_type
-			      ,NULL field_option_actual_value
+			      ,co.value_static field_option_actual_value
 			      
 			      ,f.id filter_id
 			      ,CONCAT(d.base, IF(d.base_id IS NULL,'',CONCAT(':',d.base_id) ) ,'/',f.path) filter_path
@@ -388,7 +388,7 @@ class MCPDAOView extends MCPDAO {
 			      END filter_value_type
 			      ,fv.wildcard filter_value_wildcard
 			      ,fv.regex filter_value_regex
-			      ,NULL filter_value_actual_value
+			      ,fv.value_static filter_value_actual_value
 			      
 			      ,s.id sorting_id
 			      ,CONCAT(d.base, IF(d.base_id IS NULL,'',CONCAT(':',d.base_id) ) ,'/',s.path) sorting_path
@@ -417,7 +417,7 @@ class MCPDAOView extends MCPDAO {
 			          ELSE
 			          'static'
 			      END sorting_priority_type
-			      ,NULL sorting_priority_actual_value
+			      ,sp.value_static sorting_priority_actual_value
 			      ,sp.weight sorting_priority_weight
 			      
 			  FROM
@@ -752,12 +752,13 @@ class MCPDAOView extends MCPDAO {
 				$arrValues = array();
 				foreach($arrSorting['priorities'] as $arrPriority) {
 					// @todo: determine whether value needs to be enclosed in quotes
+					// lighter values have precedence over heavier ones ie. -1 comes before 6
 					$arrValues[] = is_numeric($arrPriority['value'])?$arrPriority['value']:"'{$arrPriority['value']}'";
 				}
 				
 				// place values in correct order without incurring query costs
 				usort($arrValues,function($a,$b) {
-    				return $a['weight'] != $b['weight']?($a['weight'] < $b['weight']) ? -1 : 1 : 0;
+    				return $a['weight'] != $b['weight']?($a['weight'] < $b['weight']) ? 1 : -1 : 0;
 				});
 				
 				$arrReturn[ $arrSorting['path'] ]['sorting'][] = 'FIELD({#column#} ,'.implode(',',$arrValues).')'.' '.strtoupper($arrSorting['order']);
@@ -936,7 +937,7 @@ class MCPDAOView extends MCPDAO {
 			,!empty($objQuery->where)?'WHERE '.implode(' AND ',$objQuery->where):''
 			,!empty($objQuery->orderby)?'ORDER BY '.implode(',',$objQuery->orderby):''
 		);
-		// echo "<p>$strSQL</p>";
+		echo "<p>$strSQL</p>";
 		
 		// ------------------------------------------------------------------
 		// fetch result set
@@ -1033,6 +1034,7 @@ class MCPDAOView extends MCPDAO {
 		
 		
 		exit;
+		// return $arrDomainRows;
 		
 		
 	}
@@ -1107,6 +1109,7 @@ class MCPDAOView extends MCPDAO {
 			case 'node_types_id':
 				$label = 'Node Type';
 				$relation = 'NodeType';
+				$relation_type = 'one';
 				$path = 'nodetype';
 				break;
 				
@@ -1274,7 +1277,7 @@ class MCPDAOView extends MCPDAO {
 				break;
 				
 			case 'Term':
-				$entity_type = 'MCP_TERMS';
+				$entity_type = 'MCP_VOCABULARY';
 				$primaryKey = 'terms_id';
 				break;
 				

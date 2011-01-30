@@ -12,6 +12,7 @@
 <div id="container">
 
 <ul>
+	<li><a href="/index.php/<?php $this->_objMCP->getBaseUrl().'/' ?>Admin/DashBoard">DashBoard</a></li>
 	<li><a href="/index.php/<?php $this->_objMCP->getBaseUrl().'/' ?>Admin/Content">Content</a></li>
 	<li><a href="/index.php/<?php $this->_objMCP->getBaseUrl().'/' ?>Admin/Vocabulary">Vocabularies</a></li>
 	<!--  <li><a href="/index.php/<?php $this->_objMCP->getBaseUrl().'/' ?>Admin/VD">Displays</a></li> -->
