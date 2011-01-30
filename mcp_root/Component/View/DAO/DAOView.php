@@ -293,6 +293,13 @@ class MCPDAOView extends MCPDAO {
 	* NOTE: This will fully resolve a view including
 	* overrides. Its "final" state will be represented.
 	* 
+	* @todo: handle overrides and parent/child resolution. Views can be nested to
+	* an infinite depth. Right now though this only accounts for a single depth. Also
+	* add arguments integration IE. declare dynamic variables from user interface
+	* that reference function return value, dao, static value, or even another view
+	* that may be injected into the filter, sort and field as options, values, etc depending
+	* on the case.
+	* 
 	* @param int view displays id
 	* @param array view data
 	*/
@@ -310,6 +317,15 @@ class MCPDAOView extends MCPDAO {
 			      
 			      ,d.human_name
 			      ,d.system_name
+			      
+			      ,a.id argument_id
+			      ,a.system_name argument_system_name
+			      ,a.human_name argument_human_name
+			      ,a.type argument_type
+			      ,a.context argument_context
+			      ,a.context_routine argument_routine
+			      ,a.context_args argument_args
+			      ,a.value argument_value
 			      
 			      ,c.id field_id
 			      ,CONCAT(d.base, IF(d.base_id IS NULL,'',CONCAT(':',d.base_id) ) ,'/',c.path) field_path
@@ -339,6 +355,7 @@ class MCPDAOView extends MCPDAO {
 			          ELSE
 			          'static'
 			      END field_option_type
+			      ,NULL field_option_actual_value
 			      
 			      ,f.id filter_id
 			      ,CONCAT(d.base, IF(d.base_id IS NULL,'',CONCAT(':',d.base_id) ) ,'/',f.path) filter_path
@@ -371,6 +388,7 @@ class MCPDAOView extends MCPDAO {
 			      END filter_value_type
 			      ,fv.wildcard filter_value_wildcard
 			      ,fv.regex filter_value_regex
+			      ,NULL filter_value_actual_value
 			      
 			      ,s.id sorting_id
 			      ,CONCAT(d.base, IF(d.base_id IS NULL,'',CONCAT(':',d.base_id) ) ,'/',s.path) sorting_path
@@ -399,10 +417,18 @@ class MCPDAOView extends MCPDAO {
 			          ELSE
 			          'static'
 			      END sorting_priority_type
+			      ,NULL sorting_priority_actual_value
 			      ,sp.weight sorting_priority_weight
 			      
 			  FROM
 			      MCP_VIEW_DISPLAYS d
+			  LEFT OUTER
+			  JOIN
+			      MCP_VIEW_ARGUMENTS a
+			    ON
+			      d.id = a.displays_id
+			   AND
+			      a.deleted = 0
 			  LEFT OUTER
 			  JOIN
 			      MCP_VIEW_FIELDS c
@@ -474,6 +500,14 @@ class MCPDAOView extends MCPDAO {
 			$view->system_name = $row['system_name'];
 			$view->human_name = $row['human_name'];
 			
+			// parse arguments
+			if($row['argument_id'] !== null && !isset($view->arguments[$row['argument_id']])) {
+				foreach($row as $col=>$value) {
+					if(strpos($col,'argument_') !== 0) continue;
+					$view->arguments[$row['argument_id']][substr($col,9)] = $value;
+				}
+			}
+			
 			// parse fields
 			if($row['field_id'] !== null && !isset($view->fields[$row['field_id']])) {
 				foreach($row as $col=>$value) {
@@ -523,12 +557,76 @@ class MCPDAOView extends MCPDAO {
 			}
 		}
 		
+		// echo '<pre>',print_r($view),'</pre>';
+		
+		// ----------------------------------------------------------------------------
+		// Replace arguments with actual values for field options, filter values and sorting priorities
+		// ----------------------------------------------------------------------------
+		// Post processing
+		
+		// field options argument resolution
+		foreach($view->fields as &$fields) {
+			if( !isset($fields['options']) ) continue;
+			foreach($fields['options'] as &$option) {
+				if( strcmp('argument',$option['type']) != 0) continue;
+				
+				$option['actual_value'] = $this->_getArgumentsActualValue(
+					 $view->arguments[ $option['value'] ]['value']
+					,$view->arguments[ $option['value'] ]['context']
+					,$view->arguments[ $option['value'] ]['type']
+					,$view->arguments[ $option['value'] ]['routine']
+					,$view->arguments[ $option['value'] ]['args']
+				);
+				
+			}
+		}
+		
+		// filter values argument resolution
+		foreach($view->filters as &$filter) {
+			if( !isset($filter['values']) ) continue;
+			foreach($filter['values'] as &$value) {
+				if( strcmp('argument',$value['type']) != 0) continue;
+				
+				$value['actual_value'] = $this->_getArgumentsActualValue(
+					 $view->arguments[ $value['value'] ]['value']
+					,$view->arguments[ $value['value'] ]['context']
+					,$view->arguments[ $value['value'] ]['type']
+					,$view->arguments[ $value['value'] ]['routine']
+					,$view->arguments[ $value['value'] ]['args']
+				);
+				
+			}
+		}
+		
+		// sorting priorities argument resolution
+		foreach($view->sorting as &$sorting) {
+			if( !isset($filter['priorities']) ) continue;
+			foreach($filter['priorities'] as &$priority) {
+				if( strcmp('argument',$priority['type']) != 0) continue;
+				
+				$priority['actual_value'] = $this->_getArgumentsActualValue(
+					 $view->arguments[ $priority['value'] ]['value']
+					,$view->arguments[ $priority['value'] ]['context']
+					,$view->arguments[ $priority['value'] ]['type']
+					,$view->arguments[ $priority['value'] ]['routine']
+					,$view->arguments[ $priority['value'] ]['args']
+				);
+				
+			}
+		}
+		
+		// echo '<pre>',print_r($view),'</pre>';
+		
 		return $view;
 		
 	}
 	
 	/*
 	* Build view SQL data structure/tree
+	* 
+	* @todo: argument integration, log-points (there are to many failure points to this without logging things
+	* for making debugging less trechourous), hierarchy support - IE. build entire vocab or even nav menu
+	* with child items.
 	* 
 	* @param array view data
 	* @return ?
@@ -578,7 +676,7 @@ class MCPDAOView extends MCPDAO {
 							// negation edge case ie. LIKE and NOT LIKE
 							$strOperator = strcmp($arrFilter['conditional'],'none') === 0?' NOT LIKE ':' LIKE ';
 							
-							$arrParts[] = '{#column#}.'.$strOperator."'".str_replace('s',$arrValue['value'],$strWildcard)."'";
+							$arrParts[] = '{#column#}.'.$strOperator."'".str_replace('s',$arrValue['actual_value'],$strWildcard)."'";
 							break;
 						
 						case 'regex':
@@ -600,7 +698,7 @@ class MCPDAOView extends MCPDAO {
 						case 'fulltext':
 							
 							// escape value for security reasons
-							$arrParts[] = "FULLTEXT({#column#},'{$this->_objMCP->escapeString($arrValue['value'])}')";
+							$arrParts[] = "FULLTEXT({#column#},'{$this->_objMCP->escapeString($arrValue['actual_value'])}')";
 							
 							break;
 						
@@ -613,7 +711,7 @@ class MCPDAOView extends MCPDAO {
 								$strOperator = '<>';
 							}
 							
-							$arrParts[] = '{#column#}'.' '.$strOperator.' '.(is_numeric($arrValue['value'])?$arrValue['value']:"'{$arrValue['value']}'");
+							$arrParts[] = '{#column#}'.' '.$strOperator.' '.(is_numeric($arrValue['actual_value'])?$arrValue['actual_value']:"'{$arrValue['actual_value']}'");
 					}
 				}
 			}
@@ -732,7 +830,7 @@ class MCPDAOView extends MCPDAO {
 		// Add base table to query
 		$objQuery->from[] = "{$this->_fetchTableByViewType($objBase->path)} {$objBase->alias}";
 		
-		// Add contextual where clause - this is reposible for limiting entities to the type
+		// Add contextual where clause - this is responsible for limiting entities to the type
 		$this->_addQueryEntityContextFilter($objQuery,$objView->base_path);
 		
 		$toSQL = function($arrBranches,$objParent,$toSQL) use (&$intCounter,$objDAOView,$objQuery) {
@@ -893,15 +991,28 @@ class MCPDAOView extends MCPDAO {
 						* In this case its likely that the fields for the entitities relationship
 						* are defined at the next level below the entity itself. 
 						*/
-						if( !empty( $arrNode['children'] ) ) {
+						if( !empty( $arrNode['children'] ) && ($checkBelongs === null || $checkBelongs($arrRow) ) ) {
 							
 							// used to check if a row is a child of this one when called recusively
 							$mixUniqueAliasValue = $arrRow[$strUniqueRowAlias];
 							
 							// The function is used to determine whether a row should be considered a child of this one for relational mapping
-							$arrDomainRows[$arrRow[$strUniqueRowAlias]][$arrField['path']] = $toEntity($arrNode['children'],$objBranch,$toEntity,function($arrRow) use ($strUniqueRowAlias,$mixUniqueAliasValue)  {
+							$arrChildDomainRows = $toEntity($arrNode['children'],$objBranch,$toEntity,function($arrRow) use ($strUniqueRowAlias,$mixUniqueAliasValue)  {
 								return $arrRow[$strUniqueRowAlias] == $mixUniqueAliasValue;
 							});
+							
+							/*
+							* When relationship is 1:m or m:n use the the collection otherwise use the first item
+							* IE. A node has a single author so so $row['author']['username'] should yield
+							* the authrors name. However, a node may have several images in that case 
+							* $row['images'] is an aray of all the images that belong to the node or entity
+							* in question.
+							*/
+							if( $arrField['relation_type'] && strcmp($arrField['relation_type'],'many') == 0 ) {
+								$arrDomainRows[$arrRow[$strUniqueRowAlias]][$arrField['path']] =  $arrChildDomainRows;
+							} else {
+								$arrDomainRows[$arrRow[$strUniqueRowAlias]][$arrField['path']] =  array_pop($arrChildDomainRows);
+							}
 							
 						} 
 					
@@ -953,7 +1064,8 @@ class MCPDAOView extends MCPDAO {
 	/*
 	* Transforms a table column via DESCRIBE to a field. This
 	* wil return false if the column should be skipped / should
-	* not be added / is not compatible. 
+	* not be added / is not compatible. Some columns are note compatible
+	* such as; deleted. Deleted is a special internal column.
 	* 
 	* @param array describe column row
 	* @param str table name
@@ -1328,6 +1440,123 @@ class MCPDAOView extends MCPDAO {
 		
 	}
 	
+	/*
+	* Get the actual value for a view argument
+	* 
+	* @param str value as stored in database
+	* @param str context as stored in database
+	* @param str type as stored in database
+	* @param str context_routine as stored in database
+	* @param str serialized arguments to send to function or method calls
+	* @return mix true, resolved value of argument
+	*/
+	private function _getArgumentsActualValue($strValue,$strContext,$strType,$strRoutine=null,$strArgs=null) {
+		
+		$mixValue = null;
+		
+		// 'static','post','get','request','global_arg','module_arg','dao','function','class','view'
+		switch($strContext) {
+			
+			// Use value as statically defined
+			case 'static':
+				$mixValue = $strValue;
+				break;
+			
+			// from post array
+			case 'post':				
+				$mixValue = $this->_objMCP->getPost($strValue);				
+				break;
+			
+			// from get array
+			case 'get':
+				$mixValue = $this->_objMCP->getGet($strValue);
+				break;
+			
+			// from request array
+			case 'request':
+				$mixValue = $this->_objMCP->getRequest($strValue);
+				break;
+			
+			// Get value located at index position (index position is the value)
+			case 'global_arg':
+				$arrRequestArgs = $this->_objMCP->getRequestArgs();
+				$mixValue = isset($arrRequestArgs[$strValue])?$arrRequestArgs[$strValue]:null;
+				break;
+
+			// Get value located at index (index position is the value) - relative to args passed to module
+			case 'module_arg':
+				// @todo: need a way to reference arguments passed to module
+				break;
+			
+			// Get dao, call method with possible arguments (value represents dao pkg)
+			case 'dao':
+				
+				// Fetch dao
+				$objDAO = $this->_objMCP->getInstance($strValue);
+				
+				// Unserialize possible arguments
+				$arrDAOArgs = $strArgs !== null?base64_decode(unserialize($strArgs)):array();
+				
+				// call the method
+				$mixValue = call_user_func_array(array($objDAO,$strRoutine),$arrDAOArgs);
+				
+				break;
+
+			// Call a global or namespace function (value is functions name)
+			case 'function':
+				
+				// Unserialize possible arguments
+				$arrFuncArgs = $strArgs !== null?base64_decode(unserialize($strArgs)):array();
+
+				// call the function
+				$mixValue = call_user_func_array($strValue,$arrFuncArgs);
+				
+				break;
+				
+			// Call a static class method (value is the class name)
+			case 'class':
+				
+				// Unserialize possible arguments
+				$arrFuncArgs = $strArgs !== null?base64_decode(unserialize($strArgs)):array();
+
+				// call the method
+				$mixValue = call_user_func_array(array("$strValue::$strRoutine"),$arrFuncArgs);				
+				
+				break;
+
+			// reference to another view - embedded views
+			case 'view':
+				
+				// @todo: figure out how do this best - this is a special case
+				
+				break;
+				
+			default: // error out or something
+			
+		}
+		
+		// Cast the value to the correct type
+		switch($strType) {
+			
+			case 'int':
+				return (int) $mixValue;
+				
+			case 'string':
+				return (string) $mixValue;
+				
+			case 'float':
+				return (float) $mixValue;
+				
+			case 'bool':
+				// case to int because no bool value exists in SQL - uses 0 and 1
+				return (int) $mixValue;
+				
+			default: //error out
+			
+		}
+		
+		
+	}
 	
 	/*
 	* Get table from a path
@@ -1474,5 +1703,4 @@ class MCPDAOView extends MCPDAO {
 	
 	
 }
-
 ?>
