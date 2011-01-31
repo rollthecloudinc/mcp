@@ -231,6 +231,8 @@ class MCPDAOTaxonomy extends MCPDAO {
 			,$arrOptions !== null && isset($arrOptions['sort'])?"ORDER BY {$arrOptions['sort']}":''
 		);
 		
+		// echo "<p>$strSQL</p>";
+		
 		/*
 		* Fetch terms 
 		*/

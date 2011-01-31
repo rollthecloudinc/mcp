@@ -1063,10 +1063,87 @@ class MCP {
 					
 					// collect arguments
 					if($objConfig->args) {
-						foreach($objConfig->args->children() as $objArg) {
-							// replace special site id and user id constants
-							$arrArgs[] = str_replace(array('SITES_ID','USERS_ID'),$const,$objArg);
-						}
+						// foreach($objConfig->args->children() as $objArg) {
+							
+						/*
+						* Algorithm supports multi-dimensional associative arrays using xml 
+						* 
+						* Parses XML DAO argument structure into multi-dimensional array uses arg
+						* to differentiate between numeric and associative keys.
+						*/
+						$toArgs = function($objArg,$toArgs) use (&$const) {
+								
+							$arrReturn = array();
+							$intIndex = 0;
+								
+							foreach($objArg->children() as $objChild) {
+								
+								// arg is used to deliniate numeric index vs. associative
+								$strUseIndex = strcmp('arg', $objChild->getName() ) === 0?$intIndex++:$objChild->getName();
+									
+								if( $objChild->count() ) {
+									$arrReturn[$strUseIndex] = $toArgs($objChild,$toArgs);
+								} else {
+									// replace special site id and user id constants
+									$arrReturn[$strUseIndex] = str_replace(array('SITES_ID','USERS_ID'),$const,$objChild);
+								}
+									
+							}
+								
+							return $arrReturn;
+								
+						};
+							
+							
+						$arrArgs = $toArgs($objConfig->args,$toArgs);
+							
+							//echo '<pre>',print_r($arrArgs),'</pre>';
+							//exit;
+							
+							// deprecated olf code that didn't support multi-dimensional array declaration using xml ----
+							
+							// determine whether argument is serialized
+							/*$boolArgIsSerialized = false;			
+							foreach($objArg->attributes() as $strAttr=>$strValue) {
+								if( strcmp('serialized',$strAttr) === 0) {
+									$boolArgIsSerialized = true;
+									break;
+								}
+							}*/
+							
+							/*
+							* Support two-dimensional array 
+							*/
+							/*if( $boolArgIsSerialized === true ) {
+								
+								$mixUnserialized = unserialize(base64_decode( $objArg ));
+								
+								if( is_array($mixUnserialized) ) {
+									
+									$arrRebuiltArgs = array();
+									
+									foreach($mixUnserialized as $strArg) {
+										$arrRebuiltArgs[] = str_replace(array('SITES_ID','USERS_ID'),$const,$strArg);
+									}
+									
+									// echo '<pre>',print_r($arrRebuiltArgs),'</pre>';
+									
+									$arrArgs[] = $arrRebuiltArgs;
+									
+								} else {
+									// replace special site id and user id constants
+									$arrArgs[] = str_replace(array('SITES_ID','USERS_ID'),$const,$mixUnserialized);								
+								}
+								
+							} else {
+								// replace special site id and user id constants
+								$arrArgs[] = str_replace(array('SITES_ID','USERS_ID'),$const,$objArg);								
+							}*/
+							
+						// }
+						// Decrecated old code to that didn't support multi-dimensional arrays ---------------------
+							
+							
 					}
 					
 					// get dao

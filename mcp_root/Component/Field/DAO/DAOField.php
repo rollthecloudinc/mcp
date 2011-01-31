@@ -324,12 +324,42 @@ class MCPDAOField extends MCPDAO {
 					
 					if(is_array($args)) {
 						$values.= '<args>';
-						foreach($args as $arg) {
-							if(empty($arg)) continue;
-							$values.= '<arg>'.$arg.'</arg>';
-						}
+						//foreach($args as $arg) {
+							// if(empty($arg)) continue;
+							
+							/*if( is_array($arg) ) {
+								$values.= '<arg serialized="true"><![CDATA['.base64_encode(serialize($arg)).']]></arg>';
+							} else {
+								$values.= '<arg>'.$arg.'</arg>';
+							}*/
+							
+							$toArgs = function($args,$toArgs) {
+								
+								$strReturn = '';
+								
+								foreach($args as $strArgName => $arg) {
+									
+									$strUseName = is_numeric($strArgName)?'arg':$strArgName;
+									
+									if( is_array($arg) ) {
+										$strReturn.= "<$strUseName>".$toArgs($arg,$toArgs)."</$strUseName>";
+									} else {
+										$strReturn.= "<$strUseName>$arg</$strUseName>";
+									}
+									
+								}
+								
+								return $strReturn;
+								
+							};
+							
+							$values.= $toArgs($args,$toArgs);
+							
+						//}
 						$values.= '</args>';
-					}
+					} // end arg if
+					
+					
 				}
 				
 				$values.= '</dao>';
@@ -361,6 +391,11 @@ class MCPDAOField extends MCPDAO {
 		* Convert string to XML object
 		*/
 		$xml = simplexml_load_string($strXML);
+		
+		/*ob_clean();
+		header('Content-Type: text/xml');
+		echo $xml->asXML();
+		exit;*/
 		
 		/*
 		* Convert to config 

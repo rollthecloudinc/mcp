@@ -21,4 +21,5 @@
   ,node type, term of vocabulary x, vocabulary, etc. This can be done with the DAO call but
   really it needs to be easy to do though the DAO can be used the back-end to derive the values
   still. perhaps just hide the DAO for now in user interface.
+  - dao arg multi-dimensional numeric and associative support
   
