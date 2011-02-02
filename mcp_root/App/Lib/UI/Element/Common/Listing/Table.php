@@ -56,9 +56,11 @@ class Table implements \UI\Element {
 		$out.= '</thead>';
 		$out.= '<tbody>';
 		
+		$cycle = false;
+		
 		if(!empty($data)) {
 			foreach($data as $row) {
-				$out.= '<tr>';
+				$out.= '<tr'.($cycle =! $cycle?' class="odd"':'').'>';
 				foreach($headers as $header) {
 					
 					$out.= sprintf(

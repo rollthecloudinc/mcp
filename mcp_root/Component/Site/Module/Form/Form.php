@@ -229,6 +229,8 @@ class MCPSiteForm extends MCPModule {
 		*/
 		if($arrSite !== null) {
 			$arrValues['sites_id'] = $arrSite['sites_id'];
+		} else {
+			$arrValues['creators_id'] = $this->_objMCP->getUsersId();
 		}
 		
 		$this->_objDAOSite->save($arrValues);
