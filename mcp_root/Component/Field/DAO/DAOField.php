@@ -569,7 +569,7 @@ class MCPDAOField extends MCPDAO {
 			$arrField
 			,'MCP_FIELDS'
 			,'fields_id'
-			,array('entity_type','entities_id','cfg_name','cfg_label','cfg_description','cfg_required','cfg_default','cfg_type','cfg_values','cfg_sql','cfg_dao_pkg','cfg_dao_method','db_value','cfg_media','db_ref_table','db_ref_col')
+			,array('entity_type','entities_id','cfg_name','cfg_label','cfg_description','cfg_required','cfg_default','cfg_type','cfg_values','cfg_sql','cfg_dao_pkg','cfg_dao_method','db_value','cfg_media','db_ref_table','db_ref_col','db_ref_context')
 			,null
 			,array('cfg_dao_args')
 		);
@@ -623,14 +623,35 @@ class MCPDAOField extends MCPDAO {
 			/*
 			* Handle special image resource field 
 			*/
-			if(strcmp($arrField['cfg_media'],'image') == 0) {
+			if( in_array($arrField['cfg_media'],array('file','image')) ) { // strcmp($arrField['cfg_media'],'image') == 0
+				
+				/*
+				* Determine the correct DAO to use for uploading normal files 
+				* such as; pdfs, images, video and audio.
+				*/
+				$objDAOUpload = null;
+				switch( $arrField['cfg_media'] ) {
+					case 'image':
+						$objDAOUpload = $this->_objMCP->getInstance('App.Resource.File.DAO.DAOImage',array($this->_objMCP));
+						break;
+						
+					case 'file':
+						$objDAOUpload = $this->_objMCP->getInstance('App.Resource.File.DAO.DAOFile',array($this->_objMCP));
+						break;
+						
+					case 'audio': // todo
+					case 'video': // todo
+					default:
+						continue; // really an error todo
+						
+				}
 				
 				if($arrField['cfg_multi'] == 1) {
 					
 					foreach( array_keys($field_value) as $index) {
 						
 						if($field_value[$index] && isset($field_value[$index]['error']) && $field_value[$index]['error'] != 4) {
-							$field_value[$index]['value'] = $this->_objMCP->getInstance('App.Resource.File.DAO.DAOImage',array($this->_objMCP))->insert($field_value[$index],true);
+							$field_value[$index]['value'] = $objDAOUpload->insert($field_value[$index],true);
 						} else {
 							unset($field_value[$index]);
 							continue;
@@ -641,50 +662,21 @@ class MCPDAOField extends MCPDAO {
 				} else {
 					
 					if($field_value && isset($field_value['error']) && $field_value['error'] != 4) {
-						$field_value = $this->_objMCP->getInstance('App.Resource.File.DAO.DAOImage',array($this->_objMCP))->insert($field_value,true);
+						$field_value = $objDAOUpload->insert($field_value,true);
 					} else {
 						continue;
 					}				
 					
 				}
 				
-			}
+			/*
+			* Handle special file field 
+			*/
+			} /*else if ( strcmp($arrField['cfg_media'],'file') == 0 ) {
+				continue; // ignore for now
+			}*/
 			
 			// @TODO: add handling for other media types such as; video, audio, file, ect
-		
-			// deprecated as of move to supporting scalar fields
-			/*$strSQL = sprintf(
-				"INSERT IGNORE INTO MCP_FIELD_VALUES (fields_id,rows_id,db_varchar,db_text,db_int,db_bool,db_price)
-				    SELECT
-				         fields_id
-				         ,%s rows_id
-				         ,IF(db_value = 'varchar','%s',NULL) db_varchar
-				         ,IF(db_value = 'text',IF(cfg_serialized = 0,'%2\$s','%s'),NULL) db_text
-				         ,IF(db_value = 'int',%s,NULL) db_int
-				         ,IF(db_value = 'bool',%4\$s,NULL) db_bool
-				         ,IF(db_value = 'price','%2\$s',NULL) db_price
-				      FROM
-				         MCP_FIELDS
-				     WHERE
-				         sites_id = %s
-				       AND
-				         entity_type = '%s'
-				       AND
-				         entities_id %s
-				       AND
-				         cfg_name = '%s' ON DUPLICATE KEY UPDATE db_varchar = VALUES(db_varchar),db_text = VALUES(db_text),db_int = VALUES(db_int),db_bool = VALUES(db_bool),db_price = VALUES(db_price)"
-				
-				,$this->_objMCP->escapeString($intRowsId)
-				,$this->_objMCP->escapeString($field_value)
-				,base64_encode(serialize($field_value))
-				,$this->_objMCP->escapeString((int) $field_value)
-				,$this->_objMCP->escapeString($intSitesId !== null?$intSitesId:$this->_objMCP->getSitesId())
-				,$this->_objMCP->escapeString($strEntityType)
-				,$intEntitiesId !== null?"= {$this->_objMCP->escapeString($intEntitiesId)}":' IS NULL'
-				,$this->_objMCP->escapeString($field_name)
-			);
-			
-			$this->_objMCP->query($strSQL);*/
 			
 			/*
 			* Switch to save field that represents m:n reltionship vs. 1:n 

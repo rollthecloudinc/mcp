@@ -156,6 +156,14 @@ class MCPFieldForm extends MCPModule {
 
 				// logic necessary to mixin media with primitive db values interface wise
 				case 'db_value':
+					
+					if( !empty($arrField['db_ref_context']) ) {
+						
+						$this->_arrFrmValues[$strField] = !empty($arrField['db_ref_context_id'])?"{$arrField['db_ref_context']}:{$arrField['db_ref_context_id']}":$arrField['db_ref_context'];
+						break;
+						
+					}
+					
 					$this->_arrFrmValues[$strField] = $arrField !== null && $arrField['cfg_media'] !== null?$arrField['cfg_media']:$arrField['db_value'];
 					break;
 				
@@ -222,6 +230,11 @@ class MCPFieldForm extends MCPModule {
 		// ------------------------------------------------------------------------------------
 		// Relational resolution
 		// ------------------------------------------------------------------------------------
+		$arrValues['db_ref_context'] = '';
+		$arrValues['db_ref_context_id'] = '';
+		/*$arrValues['cfg_dao_pkg'] = '';
+		$arrValues['cfg_dao_method'] = '';
+		$arrValues['cfg_dao_args'] = '';*/
 			
 		/*
 		* Handle media type and entity reference conversions
@@ -264,6 +277,7 @@ class MCPFieldForm extends MCPModule {
 				$arrValues['db_value'] = 'int';
 				$arrValues['db_ref_table'] = 'MCP_VOCABULARY';
 				$arrValues['db_ref_col'] = 'vocabulary_id';
+				$arrValues['db_ref_context'] = 'vocabulary';
 				
 				// values will be derived using a dao call
 				$arrValues['cfg_dao_pkg'] = 'Component.Taxonomy.DAO.DAOTaxonomy';
@@ -280,6 +294,7 @@ class MCPFieldForm extends MCPModule {
 				$arrValues['db_value'] = 'int';
 				$arrValues['db_ref_table'] = 'MCP_NODE_TYPES';
 				$arrValues['db_ref_col'] = 'node_types_id';
+				$arrValues['db_ref_context'] = 'nodetype';
 				
 				// values will be derived using a dao call
 				$arrValues['cfg_dao_pkg'] = 'Component.Node.DAO.DAONode';
@@ -305,7 +320,10 @@ class MCPFieldForm extends MCPModule {
 						
 						$arrValues['db_value'] = 'int';
 						$arrValues['db_ref_table'] = 'MCP_NODES';
-						$arrValues['db_ref_col'] = 'nodes_id';		
+						$arrValues['db_ref_col'] = 'nodes_id';
+							
+						$arrValues['db_ref_context'] = 'node';	
+						$arrValues['db_ref_context_id'] = $relation_id;
 						
 						// values will be derived using a dao call
 						$arrValues['cfg_dao_pkg'] = 'Component.Node.DAO.DAONode';
@@ -321,6 +339,9 @@ class MCPFieldForm extends MCPModule {
 						$arrValues['db_value'] = 'int';
 						$arrValues['db_ref_table'] = 'MCP_TERMS';
 						$arrValues['db_ref_col'] = 'terms_id';	
+						
+						$arrValues['db_ref_context'] = 'term';	
+						$arrValues['db_ref_context_id'] = $relation_id;
 						
 						// values will be derived using a dao call
 						$arrValues['cfg_dao_pkg'] = 'Component.Taxonomy.DAO.DAOTaxonomy';

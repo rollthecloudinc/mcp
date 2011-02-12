@@ -542,7 +542,16 @@ class MCP {
 	* @return str image file path
 	*/
 	public function getImageFilePath() {
-		return FILES.'/images';
+		return FILES.DS.'images';
+	}
+	
+	/*
+	* Get absolute path to uploaded normal files 
+	* 
+	* @return str normal file image path
+	*/
+	public function getNormalFilePath() {
+		return FILES.DS.'files';
 	}
 	
 	/*

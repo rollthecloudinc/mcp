@@ -20,9 +20,11 @@
 	<li><a href="/index.php/<?php $this->_objMCP->getBaseUrl().'/' ?>Admin/Users">Users</a></li>
 	<li><a href="/index.php/<?php $this->_objMCP->getBaseUrl().'/' ?>Admin/Config">Config</a></li>
 	<li><a href="/index.php/<?php $this->_objMCP->getBaseUrl().'/' ?>Admin/Sites">Sites</a></li>
+	<li><a href="/index.php/<?php $this->_objMCP->getBaseUrl().'/' ?>Admin/Schemas">Schemas</a></li>
 </ul>
 
 <?php $this->header(); ?>
+<?php $this->messages(); ?>
 
 <div id="view"><?php $this->content(); ?></div>
 

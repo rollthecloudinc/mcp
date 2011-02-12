@@ -1,1 +1,14 @@
-<?php echo '<pre>',print_r($view),'</pre>'; ?>
+<?php 
+/*
+* pagination controls 
+*/
+echo $pager; 
+
+/*
+* Row data
+*/
+// echo '<pre>',print_r($rows),'</pre>'; 
+
+echo $content;
+
+?>

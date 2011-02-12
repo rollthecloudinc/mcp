@@ -59,6 +59,11 @@ class MCPDAOView extends MCPDAO {
 			,'system_name'=>'Image'
 			,'table'=>'MCP_MEDIA_IMAGES'
 		)
+		,array(
+			'human_name'=>'Files'
+			,'system_name'=>'File'
+			,'table'=>'MCP_MEDIA_FILES'
+		)
 	);
 	
 	/*
@@ -141,16 +146,27 @@ class MCPDAOView extends MCPDAO {
 		// Get all the columns for the table
 		$columns = $this->_objMCP->query("DESCRIBE $table");
 		
-		// Get all concrete fields
-		foreach($columns as $column) {
+		/*
+		* Config is a special case in that the presented schema is virtually
+		* derived from the config values dynamically.
+		* 
+		* There may be other cases like this in the future that is why
+		* in_array() is being used over direct string comparision.
+		*/
+		if( !in_array($table,array('MCP_CONFIG')) ) {
+		
+			// Get all concrete fields
+			foreach($columns as $column) {
 			
-			// Chance to augment/change types
-			$field = $this->_tableColumnToField($column,$table);
+				// Chance to augment/change types
+				$field = $this->_tableColumnToField($column,$table);
 			
-			// False return indicates field to ignore
-			if($field === false) continue;
+				// False return indicates field to ignore
+				if($field === false) continue;
 			
-			$fields[] = $field;
+				$fields[] = $field;
+			}
+		
 		}
 		
 		// Add any dynamic column
@@ -317,6 +333,18 @@ class MCPDAOView extends MCPDAO {
 			      
 			      ,d.human_name
 			      ,d.system_name
+			      
+			      ,COALESCE(d.opt_paginate,0) paginate
+			      ,CASE
+			          
+			      	 WHEN COALESCE( d.opt_paginate, 0 ) = 1
+			      	 THEN COALESCE( d.opt_rows_per_page , 20)
+			      	 
+			      	 ELSE NULL
+			      
+			       END `limit`
+			       ,d.opt_theme_wrap template_wrap
+			       ,d.opt_theme_row template_row
 			      
 			      ,a.id argument_id
 			      ,a.system_name argument_system_name
@@ -500,6 +528,18 @@ class MCPDAOView extends MCPDAO {
 			$view->system_name = $row['system_name'];
 			$view->human_name = $row['human_name'];
 			
+			// turn pagination on
+			$view->paginate = (bool) $row['paginate'];
+			
+			// Rows per page when pagination is turned on
+			$view->limit = $row['limit'];
+			
+			// Wrapper template
+			$view->template_wrap = $row['template_wrap'];
+			
+			// Individual row template
+			$view->template_row = $row['template_row'];
+			
 			// parse arguments
 			if($row['argument_id'] !== null && !isset($view->arguments[$row['argument_id']])) {
 				foreach($row as $col=>$value) {
@@ -629,9 +669,10 @@ class MCPDAOView extends MCPDAO {
 	* with child items.
 	* 
 	* @param array view data
+	* @param int SQL offset for pagination
 	* @return ?
 	*/
-	public function buildView($objView) {
+	public function fetchRows($objView,$intOffset=null) {
 		
 		$arrReturn = array();
 		
@@ -931,18 +972,27 @@ class MCPDAOView extends MCPDAO {
 		// Create final query
 		// --------------------------------------------------------------------
 		$strSQL = sprintf(
-			'SELECT %s FROM %s %s %s'
+			'SELECT SQL_CALC_FOUND_ROWS %s FROM %s %s %s %s'
+			
 			,implode(',',$objQuery->select)
 			,implode(' ',$objQuery->from)
 			,!empty($objQuery->where)?'WHERE '.implode(' AND ',$objQuery->where):''
 			,!empty($objQuery->orderby)?'ORDER BY '.implode(',',$objQuery->orderby):''
+			
+			// apply pagination limit 
+			,$objView->paginate?"LIMIT {$this->_objMCP->escapeString($intOffset)},{$this->_objMCP->escapeString($objView->limit)}":''
 		);
-		echo "<p>$strSQL</p>";
+		
+		// echo "<p>$strSQL</p>";
+		$this->_objMCP->addSystemStatusMessage("View Query: $strSQL");
 		
 		// ------------------------------------------------------------------
 		// fetch result set
 		// ------------------------------------------------------------------
 		$arrRows = $this->_objMCP->query($strSQL);
+		
+		// Number of found rows
+		$intFoundRows = array_pop(array_pop($this->_objMCP->query('SELECT FOUND_ROWS()')));
 		
 		//echo '<pre>',print_r($tree),'</pre>';
 		//echo '<pre>',print_r($arrNodes),'</pre>';
@@ -1030,12 +1080,18 @@ class MCPDAOView extends MCPDAO {
 		$arrDomainRows = $toEntity($arrNodes,$objBase,$toEntity);
 		
 		// echo '<pre>',print_r($arrRows),'</pre>';
-		echo '<pre>',print_r($arrDomainRows),'</pre>';
+		// echo '<pre>',print_r($arrDomainRows),'</pre>';
 		
+		// when pagination is disabled
+		if(!$objView->paginate) {
+			return $arrDomainRows;
+		}
 		
-		exit;
-		// return $arrDomainRows;
-		
+		// When pagination is enabled 
+		return array(
+			 $arrDomainRows
+			,$intFoundRows
+		);
 		
 	}
 	
@@ -1179,6 +1235,13 @@ class MCPDAOView extends MCPDAO {
 				$label = 'Published';
 				break;
 				
+			case 'site_name':
+			case 'site_directory':
+			case 'site_module_prefix':
+				$path = substr($path,5);
+				$label = ucwords(substr(str_replace('_',' ',$label),5));
+				break;
+				
 			case 'image_label':
 			case 'image_width':
 			case 'image_height':
@@ -1261,6 +1324,9 @@ class MCPDAOView extends MCPDAO {
 		// Get the Field DAO
 		$objDAOField = $this->_objMCP->getInstance('Component.Field.DAO.DAOField',array($this->_objMCP));
 		
+		// fields to mixin with dynamic
+		$add = array();
+		
 		/*
 		* Translate to correct parent entity type or fields 
 		*/
@@ -1284,7 +1350,11 @@ class MCPDAOView extends MCPDAO {
 			case 'Config':
 				$entity_type = 'MCP_CONFIG';
 				$primaryKey = '';
-				$entities_id = 0;
+				$entities_id = null;
+				
+				// Get static fields as virtual fields
+				$add = $this->_fetchStaticConfigFields();
+				
 				break;
 
 			// Image has special type with options
@@ -1324,7 +1394,7 @@ class MCPDAOView extends MCPDAO {
 		$relation.= ' ELSE NULL END';
 		
 		// Mimic Describe with dynamic fields
-		return $objDAOField->listFields(
+		return array_merge( $add , $objDAOField->listFields(
 			" f.cfg_label label
 			 ,f.cfg_name path
 			 ,f.cfg_name `name`
@@ -1348,7 +1418,7 @@ class MCPDAOView extends MCPDAO {
 				,$this->_objMCP->escapeString($entity_type)
 				,$entities_id === null?"IS NULL":"= {$this->_objMCP->escapeString($entities_id)}"
 			)
-		);
+		));
 		
 	}
 	
@@ -1399,6 +1469,58 @@ class MCPDAOView extends MCPDAO {
 	}
 	
 	/*
+	* Generate virtual field definitions for each config value except
+	* those that are stored as fields - overload the config using the
+	* dynamic fields.
+	* 
+	*  @return array static config fields defined via XML file
+	*/
+	private function _fetchStaticConfigFields() {
+		
+		$fields = array();
+		
+		// Get the entire configuration schema
+		$config = $this->_objMCP->getConfigSchema();
+		
+		/*
+		* Convert each static field to a virtual field
+		* definition. Dynamic fields will be flaged with:
+		* dynamic_field whereas those defined in the config
+		* XML are not.
+		*/
+		
+		foreach($config as $name=>&$def) {
+			
+			// skip over dynamic fields
+			if( isset($def['dynamic_field']) ) continue;
+			
+			$fields[] = array(
+				'label' 				=> $def['label']
+				,'path' 				=> $name
+				,'column'				=> $name
+				,'type'					=> 'TEXT'
+				,'compatible' 			=> 'select'
+				,'relation' 			=> null
+				,'relation_type' 		=> null
+				,'dynamic' 				=> false
+				,'actions'				=> ''
+				,'primary' 				=> false
+				,'options'				=> array()
+				
+				// These columns are only used for dynamic fields
+				,'entity_type'=>null
+				,'entities_id'=>null 
+				,'sites_id'=>null 
+				,'entities_primary_key'=>null
+			);
+			
+		}
+		
+		return $fields;
+		
+	}
+	
+	/*
 	* Add necessary filter to query for nodes, terms, etc of certain context
 	* based the view base path. 
 	* 
@@ -1419,8 +1541,8 @@ class MCPDAOView extends MCPDAO {
 		switch($strBase) {
 			
 			case 'Node':
-				// The base table will always have an alias of t1
-				$objQuery->where[] = "t1.node_types_id = {$this->_objMCP->escapeString($intId)}";
+				// The base table will always have an alias of t1 also only select non-deleted items
+				$objQuery->where[] = "t1.node_types_id = {$this->_objMCP->escapeString($intId)} AND t1.deleted = 0";
 				break;
 				
 			case 'Term':
@@ -1558,6 +1680,20 @@ class MCPDAOView extends MCPDAO {
 			
 		}
 		
+		
+	}
+	
+	/*
+	* Utiility method to determine SQL offset for view with 
+	* standard pagination enabled.
+	* 
+	* @param int current page
+	* @param int rows per page
+	* @return int SQL offset
+	*/
+	private function _getOffsetForPaging($intPage,$intLimit=20) {
+		
+		return ($intPage-1) * $intLimit;
 		
 	}
 	
