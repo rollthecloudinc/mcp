@@ -47,7 +47,7 @@ CREATE TABLE `MCP_CACHED_IMAGES` (
   `cached_images_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `base_images_id` blob NOT NULL,
   PRIMARY KEY (`cached_images_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=116 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=158 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -65,7 +65,7 @@ CREATE TABLE `MCP_CACHED_IMAGES_OPTIONS` (
   PRIMARY KEY (`cached_images_options_id`),
   UNIQUE KEY `cached_images_id` (`cached_images_id`,`images_option`,`images_value`),
   KEY `cached_images_id_2` (`cached_images_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=137 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=179 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -100,7 +100,7 @@ CREATE TABLE `MCP_COMMENTS` (
   KEY `comment_published` (`comment_published`),
   KEY `commenter_email` (`commenter_email`),
   KEY `deleted` (`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -164,13 +164,15 @@ CREATE TABLE `MCP_FIELDS` (
   `cfg_multi` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `cfg_multi_limit` smallint(5) unsigned DEFAULT NULL,
   `cfg_media` enum('image','video','audio','file') DEFAULT NULL,
-  `db_value` enum('varchar','text','int','price','bool') NOT NULL DEFAULT 'text' COMMENT 'database value mapping storage column',
+  `db_value` enum('varchar','text','int','price','bool','timestamp','date') NOT NULL DEFAULT 'text',
   `db_ref_table` varchar(128) DEFAULT NULL COMMENT 'Foreign key reference table',
   `db_ref_col` varchar(128) DEFAULT NULL COMMENT 'Foreign key reference table column',
+  `db_ref_context` varchar(128) DEFAULT NULL,
+  `db_ref_context_id` bigint(20) unsigned DEFAULT NULL,
   PRIMARY KEY (`fields_id`),
   UNIQUE KEY `sites_id` (`sites_id`,`entity_type`,`entities_id`,`cfg_name`),
   KEY `entity_type` (`entity_type`,`entities_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=23 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=45 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -189,6 +191,8 @@ CREATE TABLE `MCP_FIELD_VALUES` (
   `db_int` bigint(20) DEFAULT NULL COMMENT 'Neg/Pos integer value',
   `db_price` decimal(20,2) DEFAULT NULL COMMENT 'Price value',
   `db_bool` tinyint(3) unsigned DEFAULT NULL COMMENT 'Boolean binary 0 or 1 representation',
+  `db_timestamp` timestamp NULL DEFAULT NULL,
+  `db_date` date DEFAULT NULL,
   `weight` mediumint(9) DEFAULT '0',
   PRIMARY KEY (`field_values_id`),
   KEY `db_varchar` (`db_varchar`),
@@ -197,9 +201,36 @@ CREATE TABLE `MCP_FIELD_VALUES` (
   KEY `db_bool` (`db_bool`),
   KEY `fields_id` (`fields_id`,`rows_id`),
   KEY `weight` (`weight`),
+  KEY `db_timestamp` (`db_timestamp`),
+  KEY `db_date` (`db_date`),
   FULLTEXT KEY `db_text` (`db_text`),
   FULLTEXT KEY `db_varchar_2` (`db_varchar`)
-) ENGINE=MyISAM AUTO_INCREMENT=137 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=211 DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `MCP_MEDIA_FILES`
+--
+
+DROP TABLE IF EXISTS `MCP_MEDIA_FILES`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `MCP_MEDIA_FILES` (
+  `files_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `sites_id` bigint(20) unsigned NOT NULL,
+  `creators_id` bigint(20) unsigned NOT NULL,
+  `file_label` varchar(128) NOT NULL,
+  `file_mime` varchar(128) NOT NULL,
+  `file_size` varchar(128) NOT NULL,
+  `updated_on_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `created_on_timestamp` timestamp NULL DEFAULT NULL,
+  `deleted` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`files_id`),
+  KEY `sites_id` (`sites_id`),
+  KEY `creators_id` (`creators_id`),
+  KEY `sites_id_2` (`sites_id`,`creators_id`),
+  KEY `deleted` (`deleted`)
+) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -227,7 +258,7 @@ CREATE TABLE `MCP_MEDIA_IMAGES` (
   KEY `creators_id` (`creators_id`),
   KEY `sites_id_2` (`sites_id`,`creators_id`),
   KEY `deleted` (`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=113 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=156 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -254,7 +285,7 @@ CREATE TABLE `MCP_NAVIGATION` (
   KEY `menu_location` (`menu_location`),
   KEY `sites_id` (`sites_id`),
   KEY `users_id` (`users_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=7 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -305,7 +336,7 @@ CREATE TABLE `MCP_NAVIGATION_LINKS` (
   KEY `parent_type` (`parent_type`,`parent_id`),
   KEY `creators_id` (`creators_id`),
   KEY `deleted` (`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=105 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=109 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -337,8 +368,9 @@ CREATE TABLE `MCP_NODES` (
   KEY `sites_id` (`sites_id`),
   KEY `node_published` (`node_published`),
   KEY `authors_id` (`authors_id`),
-  KEY `deleted` (`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=48 DEFAULT CHARSET=utf8;
+  KEY `deleted` (`deleted`),
+  KEY `node_types_id` (`node_types_id`)
+) ENGINE=MyISAM AUTO_INCREMENT=67 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -365,7 +397,7 @@ CREATE TABLE `MCP_NODE_TYPES` (
   UNIQUE KEY `sites_id` (`sites_id`,`pkg`,`system_name`,`deleted`),
   UNIQUE KEY `sites_id_2` (`sites_id`,`pkg`,`human_name`,`deleted`),
   KEY `creators_id` (`creators_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=16 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=26 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -431,7 +463,7 @@ CREATE TABLE `MCP_PERMISSIONS_USERS` (
   `read_own_child` tinyint(3) unsigned DEFAULT NULL,
   PRIMARY KEY (`permissions_id`),
   UNIQUE KEY `item_type` (`item_type`,`item_id`,`users_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=13 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=16 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -452,7 +484,7 @@ CREATE TABLE `MCP_SESSIONS` (
   `session_data` blob,
   PRIMARY KEY (`sessions_id`),
   UNIQUE KEY `sid` (`sid`)
-) ENGINE=MyISAM AUTO_INCREMENT=1362 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=1512 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -476,7 +508,7 @@ CREATE TABLE `MCP_SITES` (
   UNIQUE KEY `site_name` (`site_name`,`deleted`),
   UNIQUE KEY `site_directory` (`site_directory`,`deleted`),
   UNIQUE KEY `site_module_prefix` (`site_module_prefix`,`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=10 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=20 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -530,7 +562,39 @@ CREATE TABLE `MCP_USERS` (
   PRIMARY KEY (`users_id`),
   UNIQUE KEY `sites_id` (`sites_id`,`username`,`deleted`),
   UNIQUE KEY `sites_id_2` (`sites_id`,`email_address`,`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=16 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=17 DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `MCP_VIEW_ARGUMENTS`
+--
+
+DROP TABLE IF EXISTS `MCP_VIEW_ARGUMENTS`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `MCP_VIEW_ARGUMENTS` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `parent_id` bigint(20) unsigned DEFAULT NULL COMMENT 'foreign key to argument in which one argument overrides the value of another, but not the type or context',
+  `creators_id` bigint(20) unsigned NOT NULL COMMENT 'user who initally created argument',
+  `displays_id` bigint(20) unsigned NOT NULL COMMENT 'foreign key to view argument belongs to',
+  `system_name` varchar(128) NOT NULL COMMENT 'Name of argument',
+  `human_name` varchar(128) NOT NULL COMMENT 'title/label of argument',
+  `value` longtext NOT NULL COMMENT 'This may be a class name, function name, get ref, post ref, view ref, static value, etc based on the context. The context will determine how the value is handled within the application.',
+  `type` enum('string','int','bool','float') DEFAULT NULL COMMENT 'The value type to cast the string to on the application end',
+  `context` enum('static','post','get','request','global_arg','module_arg','dao','function','class','view') NOT NULL,
+  `context_routine` varchar(128) DEFAULT NULL COMMENT 'The function or method name to call to derive the true value for dao, class and function contexts',
+  `context_args` longtext COMMENT 'Serialized array of arguments to pass to a method or function call for dao, function and class context',
+  `required` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT 'For context other than static whether the argument is required to build the view',
+  `removed` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT 'Determines whether argument has been removed for a overriding view',
+  `updated_on_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `created_on_timestamp` timestamp NULL DEFAULT NULL,
+  `deleted_on_timestamp` timestamp NULL DEFAULT NULL,
+  `deleted` tinyint(3) unsigned DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `displays_id` (`displays_id`,`system_name`,`deleted`),
+  UNIQUE KEY `displays_id_2` (`displays_id`,`human_name`,`deleted`),
+  KEY `displays_id_3` (`displays_id`,`deleted`)
+) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COMMENT='Contains arguments that may be referenced via select options';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -550,6 +614,10 @@ CREATE TABLE `MCP_VIEW_DISPLAYS` (
   `system_name` varchar(128) NOT NULL,
   `human_name` varchar(128) NOT NULL,
   `description` longtext,
+  `opt_paginate` tinyint(3) unsigned DEFAULT NULL,
+  `opt_rows_per_page` tinyint(3) unsigned DEFAULT NULL,
+  `opt_theme_wrap` varchar(255) DEFAULT NULL,
+  `opt_theme_row` varchar(255) DEFAULT NULL,
   `updated_on_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `created_on_timestamp` timestamp NULL DEFAULT NULL,
   `deleted_on_timestamp` timestamp NULL DEFAULT NULL,
@@ -557,7 +625,7 @@ CREATE TABLE `MCP_VIEW_DISPLAYS` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `parent_type` (`parent_type`,`parent_id`,`system_name`,`deleted`),
   UNIQUE KEY `parent_type_2` (`parent_type`,`parent_id`,`human_name`,`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=9 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -582,7 +650,7 @@ CREATE TABLE `MCP_VIEW_FIELDS` (
   `deleted` tinyint(3) unsigned DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `displays_id` (`displays_id`,`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=8 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=27 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -634,7 +702,7 @@ CREATE TABLE `MCP_VIEW_FILTERS` (
   `deleted` tinyint(3) unsigned DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `displays_id` (`displays_id`,`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=9 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -659,7 +727,7 @@ CREATE TABLE `MCP_VIEW_FILTER_VALUES` (
   `deleted` tinyint(3) unsigned DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `filters_id` (`filters_id`,`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=9 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -684,7 +752,7 @@ CREATE TABLE `MCP_VIEW_SORTING` (
   `deleted` tinyint(3) unsigned DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `displays_id` (`displays_id`,`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -708,7 +776,7 @@ CREATE TABLE `MCP_VIEW_SORTING_PRIORITY` (
   `deleted` tinyint(3) unsigned DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `sorting_id` (`sorting_id`,`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -746,4 +814,4 @@ CREATE TABLE `MCP_VOCABULARY` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2011-01-16 20:09:01
+-- Dump completed on 2011-02-12 14:25:33
