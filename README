@@ -128,6 +128,10 @@ Base directory and file structure:
 
 mcp_cache (read and write permissions) *
   - images
+  
+mcp_files (read and write permissions) *
+- images
+- files
 
 mcp_config *
   - Main.xml
@@ -158,38 +162,34 @@ All current application dependent table definitions are defined within dump file
 
 Outline:
 
-ACL (deprecated) - moving to more flexible layer w/ less inital se-up using standard set of
-of permissions that may be extended on a case by case basis. More to come - permissions layer has
-not been added at all.
-
 Node
-All content is stored in the form of a node / generic piece of content. The node may than be
-given a context by assigning it to a node type such as; product, etc. PlatForms may define
-their own internal node types.
+
+Inspired by Drupal a node represents a single piece of content such as; blog entry, artcile or product. Most physical
+content is stored as a node within the system.
 
 Node Type
-All available node types such as; product, project, blog, editorial, etc
 
-Plans are underway to allow custom extension of node types adding fields through
-a GUI similiar to the Drupal CCK module. This will be a feature made available
-in the future. 
+Inspired by Drupal a node type groups nodes together to be used in a certain context such as; product, blog entry. Node types
+determine the context of a node. Furthermore, node types may have additional fields added to them that propogate to all nodes
+of the type. In concept the abiity to define "meta" fields by node type is similiar to Drupal Field Module.
 
 Comment
-A comment may be assigned to a node. A node may have multiple types of comments
-as defined by the comment type table. At this point only a single comment type
-is used with a tree based nature.
+
+All nodes may have comments. Comments stores the comments for a node.
 
 User
-A user is the base table for all registered members of the site. From here any site or
-platform may extend the users table to add custom data binded to a useer for particular
-applications such as; addresses, etc. Although, something like address may become
-a MCP native table. So a more appropriate example perhaps would be age.
+
+Manages all registered users. User names and emails must be unique per site that the user
+is registered. Like nodes dynamic fields may be added to users to store additional information
+such as; profile or avatar image.
 
 Taxonomy (consist of two tables at this time)
 
 Vocabulary
+
 All vocabularies within system - a vocabulary organizes a set of terms. For example,
-Categories is a common example of a vocabulary.
+Categories is a common example of a vocabulary. Vocabularies may have dynamic fields added to them
+that propogate to all terms within the vocabulary.
 
 Terms
 All terms within the system. A common example of terms are the the actual category names such as;
@@ -248,11 +248,10 @@ Fields may be used to extend table and content types with user defined form elem
 a product node type could be extended with a price field. When this is done a price field will become
 available when entering new nodes of type product, just as price was an actual column in the database.
 Fields provide a method of creating "virtual columns" separate from the a tables actual schema yet, mixed
-in as if they were part of the schema on the application end. Currently has a away to go before done
-but the initial sturcture has been roughly developed. When completed it will be possible to add Virtual
-Fields to nearly all application entities such as; Users, Node Types, Terms, Vocabularies, etc. 
+in as if they were part of the schema on the application end. Items that support fields are:
+Users, Config, Nodes and Terms. 
 
-Virtual Displays (VD package)
+Views
 
 Displays will provide a User API to launch pages as navigation links using a variery of
 information within the database. Using the API non-programmers will be able to build basic
