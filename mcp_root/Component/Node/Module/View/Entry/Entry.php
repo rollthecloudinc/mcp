@@ -31,32 +31,6 @@ class MCPNodeViewEntry extends MCPModule {
 		$this->_objDAONode = $this->_objMCP->getInstance('Component.Node.DAO.DAONode',array($this->_objMCP));
 	}
 	
-	/*
-	* Determine whether edit link will be displayed/accessible based on permission settings
-	* 
-	* @retrun bool yes/no
-	*/
-	private function _determineWhetherToDisplayEditLink() {
-		
-		$arrNode = $this->_arrTemplateData['node'];
-		
-		if($arrNode === null) return false;
-		
-		$boolShowLink = false; // $this->_objMCP->hasPermission('LOGGED_IN',$this);
-		
-		/*if(!$boolShowLink) return $boolShowLink;
-		
-		$boolShowLink = $this->_objMCP->hasPermission('MCP_NODE_EDIT_ALL',$this);
-		
-		if($boolShowLink === false && $this->_objMCP->getUsersId() == $arrNode['authors_id']) {
-			$boolShowLink = $this->_objMCP->hasPermission('MCP_NODE_EDIT_OWN',$this);
-		} else if($boolEditAll === false) {
-			$boolShowLink = $this->_objMCP->hasPermission('MCP_NODE_EDIT_ALL',$this);
-		}*/
-
-		return $boolShowLink;
-	}
-	
 	public function execute($arrArgs) {
 		
 		$this->_strNodesId = !empty($arrArgs)?array_shift($arrArgs):null;
@@ -91,7 +65,7 @@ class MCPNodeViewEntry extends MCPModule {
 				,array($this->_arrTemplateData['node']['nodes_id'])
 				,null
 				,array($this)
-				,array(array($this,'onNodeUpdate'),'NODE_UPDATE')
+				/*,array(array($this,'onNodeUpdate'),'NODE_UPDATE')*/
 			);
 			$strTpl = 'Entry/Edit.php';
 		} else {
@@ -112,7 +86,26 @@ class MCPNodeViewEntry extends MCPModule {
 		$this->_arrTemplateData['EDIT_PATH'] = $this->getBasePath().'/Edit';
 		$this->_arrTemplateData['EDIT_TPL'] = $strEditTpl;
 		$this->_arrTemplateData['display_comments'] = $this->getConfigValue('display_comments');
-		$this->_arrTemplateData['display_edit_link'] = $this->_determineWhetherToDisplayEditLink();
+		
+		// allow edit?
+		$perm =  $this->_objMCP->getPermission(MCP::EDIT,'Node',(int) $this->_strNodesId);
+		$this->_arrTemplateData['display_edit_link'] = $perm['allow'];
+		
+		// comment form
+		$this->_arrTemplateData['comment'] = $this->_objMCP->executeComponent(
+			'Component.Node.Module.Form.Comment'
+			,array('Node', $this->_arrTemplateData['node']['nodes_id'] )
+			,null
+			,array($this)
+		);
+		
+		// comments list module
+		$this->_arrTemplateData['comments'] = $this->_objMCP->executeComponent(
+			'Component.Node.Module.List.Comment'
+			,array($this->_arrTemplateData['node']['nodes_id'])
+			,null
+			,array($this)
+		);
 		
 		return $strTpl;
 	}
@@ -134,11 +127,11 @@ class MCPNodeViewEntry extends MCPModule {
 	/*
 	* Event handler for when a node is updated
 	*/
-	public function onNodeUpdate($arrEvt) {
+	/*public function onNodeUpdate($arrEvt) {
 		$arrNode = $this->_objDAONode->fetchById($this->_arrTemplateData['node']['nodes_id']);
 		$this->_strNodesId = $arrNode['node_url'];
 		// $this->_objMCP->capture(get_class($arrEvt['target']).' fired '.$arrEvt['event']);
-	}
+	}*/
 	
 }
 ?>

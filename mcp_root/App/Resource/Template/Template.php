@@ -167,6 +167,40 @@ class MCPTemplate extends MCPResource {
 	}
 	
 	/*
+	* Display admin nav
+	* 
+	* The admin nav is not managed under the normal navigation menu structure. It is a stand-alone
+	* dynamic component.
+	* 
+	* The below is dirty, eventually this will be moved to it own separate module. I just need a way
+	* to print it consistently for now though the implemention will change in the future.
+	* 
+	*/
+	public function admin() {
+		
+		/*
+		* This will be moved to its own module eventually 
+		*/
+		$perm = $this->_objMCP->getPermission(MCP::READ,'Route','Admin/*');
+		if( $perm['allow'] ) {
+		
+		?><ul>
+			<!--  <li><a href="/index.php/<?php $this->_objMCP->getBaseUrl().'/' ?>Admin/DashBoard">DashBoard</a></li> -->
+			<li><a href="/index.php/<?php $this->_objMCP->getBaseUrl().'/' ?>Admin/Content">Content</a></li>
+			<li><a href="/index.php/<?php $this->_objMCP->getBaseUrl().'/' ?>Admin/Vocabulary">Vocabularies</a></li>
+			<!--  <li><a href="/index.php/<?php $this->_objMCP->getBaseUrl().'/' ?>Admin/VD">Displays</a></li> -->
+			<li><a href="/index.php/<?php $this->_objMCP->getBaseUrl().'/' ?>Admin/Navigation">Navigation</a></li>
+			<li><a href="/index.php/<?php $this->_objMCP->getBaseUrl().'/' ?>Admin/Users">Users</a></li>
+			<li><a href="/index.php/<?php $this->_objMCP->getBaseUrl().'/' ?>Admin/Config">Config</a></li>
+			<li><a href="/index.php/<?php $this->_objMCP->getBaseUrl().'/' ?>Admin/Sites">Sites</a></li>
+			<li><a href="/index.php/<?php $this->_objMCP->getBaseUrl().'/' ?>Admin/Schemas">Schemas</a></li>
+		</ul><?php
+		
+		}
+		
+	}
+	
+	/*
 	* Short-cut to echo global request content HTML
 	*/
 	public function content() {

@@ -108,6 +108,11 @@ class MCPNodeFormEntry extends MCPModule {
 		*/
 		if($this->_arrFrmPost !== null && empty($this->_arrFrmErrors)) {
 			$this->_frmSave();
+		
+		} else if( $this->_arrFrmPost !== null ) {
+			
+			// add system message for errors
+			$this->_objMCP->addSystemErrorMessage('Some errors were found that prevented form from saving.');
 		}
 		
 	}
@@ -278,7 +283,26 @@ class MCPNodeFormEntry extends MCPModule {
 		* 
 		* NEW: Adds in dynamic fields
 		*/
-		return $this->_objMCP->getFrmConfig($this->getPkg(),'frm',true,array('entity_type'=>'MCP_NODE_TYPES','entities_id'=>$entity_id));
+		$config = $this->_objMCP->getFrmConfig($this->getPkg(),'frm',true,array('entity_type'=>'MCP_NODE_TYPES','entities_id'=>$entity_id));
+		
+		/*
+		* Before dynamic fields and views were introduced the node tyoe could change with affecting anything. However, with
+		* the creation of Fields and Views changing the node type os not possible since other things may be affected. This
+		* is something that can be looked into in the futue but for nowthe simplest solution is to not allow changing the node
+		* type once it has been created.
+		*/
+		if( $arrNode !== null) {
+			unset($config['node_types_id']);
+		} else {
+			/*
+			* This just makes more sense since user will be creating a node of certain type. There is no need to
+			* allow them to select the node type. 
+			*/
+			$config['node_types_id']['static'] = 'Y';
+			$config['node_types_id']['default'] = $this->_strNodeTypeSelect;
+		}
+		
+		return $config;
 	
 	}
 	
@@ -325,35 +349,42 @@ class MCPNodeFormEntry extends MCPModule {
 		
 		/*
 		* Break up node typre string into pkg and system name 
+		* 
+		* Node type may not be changed once created
 		*/
-		$nodeTypeName = null;
-		$nodeTypePkg = null;
+		if( $arrNode === null ) {
+			$nodeTypeName = null;
+			$nodeTypePkg = null;
+			
+			if(strpos($arrValues['node_types_id'],'::') !== false) {
+				list($nodeTypeName,$nodeTypePkg) = explode('::',$arrValues['node_types_id'],2);
+			} else {
+				$nodeTypeName = $arrValues['node_types_id'];
+			}
+			
+			/*
+			* Build filter to locate node type primary key based on package, site and name 
+			*/
+			$strFilter = sprintf(
+				"t.sites_id = %s AND t.system_name = '%s' AND t.pkg %s"
+				,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
+				,$this->_objMCP->escapeString($nodeTypeName)
+				,empty($nodeTypePkg)?"= ''":"= '{$this->_objMCP->escapeString($nodeTypePkg)}'"
+			);
+			
+			/*
+			* Locate primary key of node type 
+			*/
+			$arrNodeType = array_pop($this->_objDAONode->fetchNodeTypes('t.node_types_id',$strFilter));
+			
+			/*
+			* Add node type 
+			*/
+			$arrValues['node_types_id'] = $arrNodeType['node_types_id'];
 		
-		if(strpos($arrValues['node_types_id'],'::') !== false) {
-			list($nodeTypeName,$nodeTypePkg) = explode('::',$arrValues['node_types_id'],2);
 		} else {
-			$nodeTypeName = $arrValues['node_types_id'];
+			$arrValues['node_types_id'] = $arrNode['node_types_id'];		
 		}
-		
-		/*
-		* Build filter to locate node type primary key based on package, site and name 
-		*/
-		$strFilter = sprintf(
-			"t.sites_id = %s AND t.system_name = '%s' AND t.pkg %s"
-			,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
-			,$this->_objMCP->escapeString($nodeTypeName)
-			,empty($nodeTypePkg)?"= ''":"= '{$this->_objMCP->escapeString($nodeTypePkg)}'"
-		);
-		
-		/*
-		* Locate primary key of node type 
-		*/
-		$arrNodeType = array_pop($this->_objDAONode->fetchNodeTypes('t.node_types_id',$strFilter));
-		
-		/*
-		* Add node type 
-		*/
-		$arrValues['node_types_id'] = $arrNodeType['node_types_id'];
 		
 		/*
 		* Save node to database 
@@ -390,6 +421,38 @@ class MCPNodeFormEntry extends MCPModule {
 	*/
 	protected function _getNode() {
 		return $this->_arrNode;
+	}
+	
+	/*
+	* Get form legend 
+	* 
+	* @return str form legend (based on node context)
+	*/
+	protected function _getLegend() {
+		
+		// Get node
+		$arrNode = $this->_getNode();
+		
+		if( $arrNode !== null ) {
+			
+			$arrNodeType = $this->_objDAONode->fetchNodeTypeById($arrNode['node_types_id']);
+			return "Edit {$arrNodeType['human_name']}"; //.(!empty($arrNodeType['pkg'])?" ({$arrNodeType['pkg']})":'');
+			
+		} else {
+			
+			$name = $this->_strNodeTypeSelect;
+			
+			// node types belonging to package need have the URL argument reversed to use the fetchNodeTypeByName method
+			if(strpos($name,'::') !== false) {
+				$tmp = explode('::',$name);
+				$name = "{$tmp[1]}::{$tmp[0]}";
+			}
+			
+			$arrNodeType = $this->_objDAONode->fetchNodeTypeByName($name);
+			return "Create {$arrNodeType['human_name']}"; //.(!empty($arrNodeType['pkg'])?" ({$arrNodeType['pkg']})":'');
+			
+		}
+		
 	}
 	
 	public function execute($arrArgs) {
@@ -444,7 +507,7 @@ class MCPNodeFormEntry extends MCPModule {
 		$this->_process();
 		
 		
-		// echo '<pre>',print_r($this->_getFrmConfig()),'</pre>';
+		// echo '<pre>',print_r($this->_arrFrmValues),'</pre>';
 		
 		// echo '<pre>',print_r( $this->_getFrmConfig() ),'</pre>';
 		//echo '<pre>',print_r($this->_getNode()),'</pre>';
@@ -456,7 +519,7 @@ class MCPNodeFormEntry extends MCPModule {
 		$this->_arrTemplateData['config'] = $this->_getFrmConfig();
 		$this->_arrTemplateData['values'] = $this->_arrFrmValues;
 		$this->_arrTemplateData['errors'] = $this->_arrFrmErrors;
-		$this->_arrTemplateData['legend'] = 'Content';
+		$this->_arrTemplateData['legend'] = $this->_getLegend();
 		
 		return 'Entry/Entry.php';
 	}

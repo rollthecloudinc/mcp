@@ -99,6 +99,24 @@ class MCPNavigationRouter extends MCPModule {
 	}
 	
 	private function _executeAdmin($arrArgs) {
+		
+		/*
+		* In most cases the only people able to access the main admin
+		* area should be developers. Actions are controlled using the permission
+		* management system on an entity/module by module basis. Being able
+		* to access the admin area only gives a user the ability to see the admin
+		* area. This has no impact on the ability to actually carry out tasks. Therefore,
+		* modules and associated actions can be exposed to people via nesting without
+		* giving them direct access to the actual admin area. This is the prefered way to develop
+		* an application considering the domain can be sculpted in a way that specific to the
+		* users business needs rather than needing to understand the the generic, components
+		* used to carry out business tasks. 
+		*/
+		$perm = $this->_objMCP->getPermission(MCP::READ,'Route','Admin/*');
+		if( !$perm['allow'] ) {
+			throw new MCPPermissionException($perm);
+		}
+		
 		/*
 		* The admin module is able to be changed or extended by doing so and changing the config
 		* admin module path to the location of the new admin module.
@@ -113,6 +131,15 @@ class MCPNavigationRouter extends MCPModule {
 	* @param array request args
 	*/
 	private function _executeComponent($arrArgs) {
+
+		/*
+		* Protected. Developers should be the only ones who are able to access
+		* components directly. 
+		*/
+		$perm = $this->_objMCP->getPermission(MCP::READ,'Route','Component/*');
+		if( !$perm['allow'] ) {
+			throw new MCPPermissionException($perm);
+		}
 		
 		/*
 		* Get requested component name 
@@ -134,6 +161,15 @@ class MCPNavigationRouter extends MCPModule {
 	* @param array request args
 	*/
 	private function _executePlatForm($arrArgs) {
+		
+		/*
+		* Protected. Developers should be the only ones who are able to access
+		* platform modules directly. 
+		*/
+		$perm = $this->_objMCP->getPermission(MCP::READ,'Route','PlatForm/*');
+		if( !$perm['allow'] ) {
+			throw new MCPPermissionException($perm);
+		}
 		
 		/*
 		* Get requested component name 

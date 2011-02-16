@@ -854,6 +854,84 @@
 			</pdelete>
 		</frm>
 	</mod>
+	<mod pkg="Component.Util.Module.Email">
+		<config>
+			<email>
+				<label>Email</label>
+				<required>Y</required>
+				<max>128</max>
+				<min>1</min>
+				<type>email</type>
+			</email>
+			<email_type>
+				<label>Type</label>
+				<required>Y</required>
+				<default>plain text</default>
+				<values>
+					<value>
+						<label>Plain Text</label>
+						<value>PLAIN_TEXT</value>
+					</value>
+					<value>
+						<label>HTML</label>
+						<value>HTML</value>
+					</value>
+				</values>
+			</email_type>
+			<email_subject>
+				<label>Subject</label>
+				<required>Y</required>
+				<default>Contact Message</default>
+				<min>1</min>
+				<max>70</max>
+				<type>text</type>
+			</email_subject>
+			<form_legend>
+				<label>Legend</label>
+				<required>Y</required>
+				<default>Contact Form</default>
+				<min>1</min>
+				<max>255</max>
+				<type>text</type>
+			</form_legend>
+		</config>
+		<frm>
+			<name>
+				<label>Name</label>
+				<required>Y</required>
+				<max>48</max>
+			</name>
+			<company>
+				<label>Company</label>
+				<required>N</required>
+				<max>48</max>
+			</company>
+			<email>
+				<label>Email</label>
+				<required>Y</required>
+				<max>128</max>
+				<type>email</type>
+			</email>
+			<phone>
+				<label>Phone</label>
+				<required>Y</required>
+				<max>12</max>
+				<min>12</min>
+				<type>phone</type>
+			</phone>
+			<website>
+				<label>Website</label>
+				<required>N</required>
+				<max>255</max>
+			</website>
+			<message>
+				<label>Message</label>
+				<required>Y</required>
+				<type>text</type>
+				<textarea>1</textarea>
+			</message>
+		</frm>
+	</mod>
 	<mod pkg="PlatForm.ProjectPad.Module.Register">
 		<frm mixin="Component.User.Module.Registration.Form">
 			<first_name>

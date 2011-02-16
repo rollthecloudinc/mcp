@@ -305,15 +305,91 @@ class MCPDAOField extends MCPDAO {
 					
 					$key = substr($attr,4);
 					
-					if(in_array($key,array('dao_pkg','dao_method','dao_args','multi','multi_limit'))) continue;
+					if(in_array($key,array('dao_pkg','dao_method','dao_args','multi','multi_limit','type'))) continue;
 					
 					$values.= "<$key>$value</$key>";
 				
 				}
 			}
 			
-			/* Build expected DAO callback format */
-			if(!empty($field['cfg_dao_pkg']) && !empty($field['cfg_dao_method'])) {
+			/*
+			* ---------------------------------------------------------------------------------------
+			* Foreign key based relation handling - field is a foreign key to a term, node, vocabaulary, nodetype 
+			*/
+			if( !empty($field['db_ref_context']) ) {
+				
+				switch( $field['db_ref_context'] ) {
+					
+					case 'node': // node relation
+						$values.= sprintf(
+							'<dao>
+								<pkg>Component.Node.DAO.DAONode</pkg>
+						      	<method>fetchNodes</method>
+						    		<args>
+										<arg>n.nodes_id value,n.node_title label</arg>
+						      			<arg>n.deleted = 0 AND n.sites_id = SITES_ID AND n.node_types_id = %s</arg>
+						      			<arg>n.node_title ASC</arg>
+						         	</args>
+							 </dao>'
+							,$this->_objMCP->escapeString( $field['db_ref_context_id'] )
+						);
+						break;
+						
+					case 'term': // term relation
+						$values.= sprintf(
+							'<dao>
+								<pkg>Component.Taxonomy.DAO.DAOTaxonomy</pkg>
+						      	<method>fetchTerms</method>
+						    		<args>
+										<arg>%s</arg>
+						      			<arg>vocabulary</arg>
+						      			<arg>1</arg>
+						      			<arg>
+						      				<select>t.terms_id value,t.human_name label</select>
+						      				<filter>t.deleted = 0</filter>
+						      				<sort>t.weight ASC</sort>
+						      			</arg>
+						         	</args>
+							 </dao>'
+							,$this->_objMCP->escapeString( $field['db_ref_context_id'] )
+						);
+						break;
+						
+					case 'vocabulary': // vocabulary foreign key
+						$values.=
+							'<dao>
+								<pkg>Component.Taxonomy.DAO.DAOTaxonomy</pkg>
+						      	<method>listVocabulary</method>
+						    		<args>
+										<arg>v.vocabulary_id value,v.system_name label</arg>
+						      			<arg>v.deleted = 0 AND v.sites_id = SITES_ID</arg>
+						      			<arg>v.human_name ASC</arg>
+						         	</args>
+							 </dao>';
+						break;
+						
+					case 'nodetype': // node type foreign key
+						$values.=
+							'<dao>
+								<pkg>Component.Node.DAO.DAONode</pkg>
+						      	<method>fetchNodeTypes</method>
+						    		<args>
+										<arg>t.node_types_id value,t.system_name label</arg>
+						      			<arg>t.deleted = 0 AND t.sites_id = SITES_ID</arg>
+						      			<arg>t.human_name ASC</arg>
+						         	</args>
+							 </dao>';
+						break;
+						
+					default:
+				}
+			
+			/*
+			* Field values are derived from a explicit DAO method call 
+			* - contemplating removing this with the creation of field foreign key handlers it really
+			* doesn't seem necessary.
+			*/
+			} else if(!empty($field['cfg_dao_pkg']) && !empty($field['cfg_dao_method'])) {
 				$values.= '<dao>';
 				
 				$values.= '<pkg>'.$field['cfg_dao_pkg'].'</pkg>';
@@ -373,6 +449,10 @@ class MCPDAOField extends MCPDAO {
 				// time is only supports a fixed number. So for now use a fixed value.
 				$values.= '<multi>'. ( empty($field['cfg_multi_limit']) ? 5 : $field['cfg_multi_limit'] ) .'</multi>';
 				
+			}
+			
+			if( strcmp('bool',$field['db_value']) == 0) {
+				$values.= '<type>bool</type>';
 			}
 			
 			/*

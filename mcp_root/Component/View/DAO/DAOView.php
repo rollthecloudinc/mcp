@@ -984,7 +984,7 @@ class MCPDAOView extends MCPDAO {
 		);
 		
 		// echo "<p>$strSQL</p>";
-		$this->_objMCP->addSystemStatusMessage("View Query: $strSQL");
+		// $this->_objMCP->addSystemStatusMessage("View Query: $strSQL");
 		
 		// ------------------------------------------------------------------
 		// fetch result set
@@ -1026,6 +1026,8 @@ class MCPDAOView extends MCPDAO {
 					
 					// Map the raw result set to the proper domain level result set
 					foreach($arrRows as &$arrRow) {
+						
+						// $arrDomainRows[ $arrRow[$strUniqueRowAlias] ]['id'] = $arrRow[$strUniqueRowAlias];
 						
 						// Make sure the row exists within the result set
 						// The second check is used is used skip over rows that don't belong to a parent for m:n,m:1 relationships
@@ -1077,10 +1079,18 @@ class MCPDAOView extends MCPDAO {
 			
 		};
 		
-		$arrDomainRows = $toEntity($arrNodes,$objBase,$toEntity);
+		$arrDomainRows = $toEntity($arrNodes,$objBase,$toEntity);	
 		
 		// echo '<pre>',print_r($arrRows),'</pre>';
 		// echo '<pre>',print_r($arrDomainRows),'</pre>';
+		
+		/*
+		* Add "magical" boolean allow_delete,allow_edit and allow_delete
+		* keys to determine whether current user is able to carry out the action
+		* on the base entity type. For example, use if($row['allow_edit']) ...; to
+		* display a link to edit the entity for users who are allowed to do so.
+		*/
+		$this->_addPermissionsToViewResultSet($arrDomainRows,$objView);
 		
 		// when pagination is disabled
 		if(!$objView->paginate) {
@@ -1684,16 +1694,67 @@ class MCPDAOView extends MCPDAO {
 	}
 	
 	/*
-	* Utiility method to determine SQL offset for view with 
-	* standard pagination enabled.
+	* Add base entity permissions to view result set rows
 	* 
-	* @param int current page
-	* @param int rows per page
-	* @return int SQL offset
+	* @param result set rows
+	* @param obj view
 	*/
-	private function _getOffsetForPaging($intPage,$intLimit=20) {
+	private function _addPermissionsToViewResultSet(&$arrRows,$objView) {
 		
-		return ($intPage-1) * $intLimit;
+		$ids = array();
+		
+		foreach($arrRows as $id=>&$row) {
+			$ids[] = $id;
+		}
+		
+		if( empty($ids) ) return;
+		
+		$edit = array();
+		$delete = array();
+		$read = array();
+		
+		switch($objView->base) {
+			
+			case 'Node': // node base
+				$edit = $this->_objMCP->getPermission(MCP::EDIT,'Node',$ids);
+				$delete = $this->_objMCP->getPermission(MCP::DELETE,'Node',$ids);
+				$read = $this->_objMCP->getPermission(MCP::READ,'Node',$ids);
+				break;
+				
+			case 'Term': // term base
+				$edit = $this->_objMCP->getPermission(MCP::EDIT,'Term',$ids);
+				$delete = $this->_objMCP->getPermission(MCP::DELETE,'Term',$ids);
+				$read = $this->_objMCP->getPermission(MCP::READ,'Term',$ids);
+				break;
+				
+			case 'NodeType': // node type base
+				$edit = $this->_objMCP->getPermission(MCP::EDIT,'NodeType',$ids);
+				$delete = $this->_objMCP->getPermission(MCP::DELETE,'NodeType',$ids);
+				$read = $this->_objMCP->getPermission(MCP::READ,'NodeType',$ids);
+				break;
+				
+			case 'Vocabulary': // vocab base
+				$edit = $this->_objMCP->getPermission(MCP::EDIT,'Vocabulary',$ids);
+				$delete = $this->_objMCP->getPermission(MCP::DELETE,'Vocabulary',$ids);
+				$read = $this->_objMCP->getPermission(MCP::READ,'Vocabulary',$ids);
+				break;
+				
+			case 'Site': // site base
+				$edit = $this->_objMCP->getPermission(MCP::EDIT,'Site',$ids);
+				$delete = $this->_objMCP->getPermission(MCP::DELETE,'Site',$ids);
+				$read = $this->_objMCP->getPermission(MCP::READ,'Site',$ids);
+				break;
+				
+			default:
+				return;
+			
+		}
+		
+		foreach($arrRows as $id=>&$row) {
+			$row['allow_edit'] = $edit[$id]['allow'];
+			$row['allow_delete'] = $delete[$id]['allow'];
+			$row['allow_read'] = $read[$id]['allow'];
+		}
 		
 	}
 	

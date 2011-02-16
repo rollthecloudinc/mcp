@@ -192,7 +192,7 @@ class Form implements \UI\Element {
 								,'value'=>strcmp($input_type,'checkbox') == 0?'1':$val
 								,'max'=>isset($data['max'])?$data['max']:null
 								,'id'=>$idbase.strtolower(str_replace('_','-',$field)).( isset($data['multi'])?'-'.($i+1):'')
-								,'checked'=>strcmp($input_type,'checkbox') == 0 && $val?true:false
+								,'checked'=>strcmp($input_type,'checkbox') == 0 && ((string) $val)?true:false
 								,'disabled'=>$strDisabled?true:false
 							));
 							

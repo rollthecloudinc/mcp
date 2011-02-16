@@ -212,7 +212,10 @@ class MCP {
 		$this->import('App.Lib.UI.Manager');
 		//$this->import('App.Resource.ACL');
 		
+		// Exception classes
 		$this->import('App.Core.Exception.Permission');
+		$this->import('App.Core.Exception.DAO');
+		$this->import('App.Core.Exception.DB');
 		
 		/*
 		* Load main XML config 

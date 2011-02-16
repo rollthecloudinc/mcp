@@ -280,13 +280,13 @@ class MCPFieldForm extends MCPModule {
 				$arrValues['db_ref_context'] = 'vocabulary';
 				
 				// values will be derived using a dao call
-				$arrValues['cfg_dao_pkg'] = 'Component.Taxonomy.DAO.DAOTaxonomy';
+				/*$arrValues['cfg_dao_pkg'] = 'Component.Taxonomy.DAO.DAOTaxonomy';
 				$arrValues['cfg_dao_method'] = 'listVocabulary';
 				$arrValues['cfg_dao_args'] = array(
 					 "v.vocabulary_id value,v.system_name label"
 					,"v.deleted = 0 AND v.sites_id = SITES_ID"
 					,"v.human_name ASC"
-				);
+				);*/
 				
 				break;
 				
@@ -297,13 +297,13 @@ class MCPFieldForm extends MCPModule {
 				$arrValues['db_ref_context'] = 'nodetype';
 				
 				// values will be derived using a dao call
-				$arrValues['cfg_dao_pkg'] = 'Component.Node.DAO.DAONode';
+				/*$arrValues['cfg_dao_pkg'] = 'Component.Node.DAO.DAONode';
 				$arrValues['cfg_dao_method'] = 'fetchNodeTypes';
 				$arrValues['cfg_dao_args'] = array(
 					 "t.node_types_id value,t.system_name label"
 					,"t.deleted = 0 AND t.sites_id = SITES_ID"
 					,"t.human_name ASC"
-				);
+				);*/
 				
 				break;
 				
@@ -326,13 +326,13 @@ class MCPFieldForm extends MCPModule {
 						$arrValues['db_ref_context_id'] = $relation_id;
 						
 						// values will be derived using a dao call
-						$arrValues['cfg_dao_pkg'] = 'Component.Node.DAO.DAONode';
+						/*$arrValues['cfg_dao_pkg'] = 'Component.Node.DAO.DAONode';
 						$arrValues['cfg_dao_method'] = 'fetchNodes';
 						$arrValues['cfg_dao_args'] = array(
 							 "n.nodes_id value,n.node_title label"
 							,"n.deleted = 0 AND n.sites_id = SITES_ID AND n.node_types_id = {$this->_objMCP->escapeString($relation_id)}"
 							,"n.node_title ASC"
-						);
+						);*/
 						
 					} else if( strcmp('term',$relation) === 0 ) {
 						
@@ -344,7 +344,7 @@ class MCPFieldForm extends MCPModule {
 						$arrValues['db_ref_context_id'] = $relation_id;
 						
 						// values will be derived using a dao call
-						$arrValues['cfg_dao_pkg'] = 'Component.Taxonomy.DAO.DAOTaxonomy';
+						/*$arrValues['cfg_dao_pkg'] = 'Component.Taxonomy.DAO.DAOTaxonomy';
 						$arrValues['cfg_dao_method'] = 'fetchTerms';
 						$arrValues['cfg_dao_args'] = array(
 							$relation_id
@@ -355,7 +355,7 @@ class MCPFieldForm extends MCPModule {
 								,'filter' => "t.deleted = 0"
 								,'sort'   => "t.weight ASC"
 							)
-						);
+						);*/
 									
 					}
 					
@@ -381,8 +381,25 @@ class MCPFieldForm extends MCPModule {
 			$arrValues['sites_id'] = $this->_objMCP->getSitesId();
 		}
 		
-		// Save the info
-		$this->_objDAOField->saveField($arrValues);
+		
+		try {
+			
+			// Save the field info
+			$this->_objDAOField->saveField($arrValues);
+		
+			/*
+			* Add success message 
+			*/
+			$this->_objMCP->addSystemStatusMessage('Field '.($arrField !== null?'Edited':'Created' ).'!');
+			
+		} catch(MCPDAOException $e) {
+			
+			$this->_objMCP->addSystemErrorMessage(
+				'An internal issue has prevented the field from being '.($arrField !== null?'edited':'created' )
+				,$e->getMessage()
+			);
+			
+		}
 		
 	}
 	
@@ -392,7 +409,78 @@ class MCPFieldForm extends MCPModule {
 	* @return array configuration
 	*/
 	protected function _getFrmConfig() {
-		return $this->_objMCP->getFrmConfig($this->getPkg());
+		
+		// get form config
+		$config = $this->_objMCP->getFrmConfig($this->getPkg());
+		
+		// Get the field
+		$arrField = $this->_getField();
+		
+		/*
+		* Certain things can not change after creation. There are to many cases were things
+		* can go wrong if these items change. So for now possible isses are addressed 
+		* by not allowing the fields to change once created. This is something that can be looked to in
+		* the future to allow the fields to change after creation.
+		*/
+		if( $arrField !== null ) {
+			
+			/* ------------------------------------------------------------------------------------------
+			* The value determines storage area and columns inside the values table. This can simply not
+			* change at this time because changing this results in the need to move any values currently
+			* stored to the the new storage field. 
+			*/
+			$config['db_value']['static'] = 'Y';
+			
+			if( !empty($arrField['db_ref_context']) ) {
+						
+				$config['db_value']['default'] = !empty($arrField['db_ref_context_id'])?"{$arrField['db_ref_context']}:{$arrField['db_ref_context_id']}":$arrField['db_ref_context'];
+						
+			} else {
+			
+				$config['db_value']['default'] = $arrField !== null && $arrField['cfg_media'] !== null?$arrField['cfg_media']:$arrField['db_value'];
+				
+			}
+			
+			/* -------------------------------------------------------------------------------------------
+			* The entity assigned to the field can not change. If the entity assigned to the field
+			* were to change there would be entity misss-matches and a whole slew of other issues
+			* that I rather avoid at this point. 
+			*/
+			$config['entity']['static'] = 'Y';
+			$config['entity']['default'] = $arrField['entities_id'] !== null?"{$arrField['entity_type']}-{$arrField['entities_id']}":$arrField['entity_type'];
+			
+			/* -------------------------------------------------------------------------------------------
+			* In theory the name of the field could change. The discrepency is that any templates that
+			* reference the name or views would break. So for now the name can not change because views
+			* and possible other custom templates may break that reference the field as a entity attribute. 
+			*/
+			$config['cfg_name']['static'] = 'Y';
+			$config['cfg_name']['default'] = $arrField['cfg_name'];
+			
+			/* -------------------------------------------------------------------------------------------
+			* Multi-fields value and limit may not change at this time. The largest issue with changing something
+			* that is atomic to scalar or vice-versa is templates that use the value as a atomic or sclar will
+			* break. For example, a field named image that is atomic would be: $node['image']['label'] but once
+			* made scalar the syntax now needs to be be $node['image'][0]['label']. There are just to many possible
+			* issues that switching between one and many relationship. 
+			*/
+			$config['cfg_multi']['static'] = 'Y';
+			$config['cfg_multi']['default'] = $arrField['cfg_multi'];
+			
+			$config['cfg_multi_limit']['static'] = 'Y';
+			$config['cfg_multi_limit']['default'] = $arrField['cfg_multi_limit'];
+			
+		}
+		
+		/*
+		* For now kill the dao callback and SQL embed - creates to many potential security issues and problems. At this
+		* time these fields may be filled with data internally when a field is a foreign key reference to a term, node, etc. I think
+		* this pretty much takes care of the need to bind SQL or DAO call to a field manually. So for now its just going to be
+		* removed from the user interface.
+		*/
+		unset($config['cfg_dao_args'],$config['cfg_dao_pkg'],$config['cfg_dao_method'],$config['cfg_sql']);
+		
+		return $config;
 	}
 	
 	/*
@@ -450,11 +538,13 @@ class MCPFieldForm extends MCPModule {
 		* Check permissions 
 		* Can user add/ edit field for entity?
 		*/
-		/*$field = $this->_getField();
-		$perm = $this->_objMCP->getPermission(($field === null?MCP::ADD:MCP::EDIT),'Field', ( $field === null?$this->_strEntityPreselect:$field['fields_id'] ));
+		$field = $this->_getField();
+		$post = $this->_objMCP->getPost( $this->_getFrmName() );
+		
+		$perm = $this->_objMCP->getPermission(($field === null?MCP::ADD:MCP::EDIT),'Field', ( $field === null?$this->_strEntityPreselect?$this->_strEntityPreselect:$post['entity']:$field['fields_id'] ));
 		if(!$perm['allow']) {
 			throw new MCPPermissionException($perm);
-		}*/
+		}
 		
 		/*
 		* Process form 

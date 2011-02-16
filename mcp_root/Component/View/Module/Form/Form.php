@@ -42,7 +42,7 @@ class MCPViewForm extends MCPModule {
 		
 		// echo '<pre>',print_r($arrConfig),'</pre>';
 		
-		$view = $this->_objDAOView->fetchViewById(4);
+		$view = $this->_objDAOView->fetchViewById(array_shift($arrArgs));
 		// echo '<pre>',print_r($view),'</pre>';
 		
 		// ------------------------------------------------------------------------------------------------

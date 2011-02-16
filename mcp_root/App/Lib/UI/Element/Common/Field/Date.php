@@ -9,7 +9,7 @@ class Date implements \UI\Element {
 				'required'=>true
 			)
 			,'format'=>array(
-				'default'=>'M d,Y g:ia'
+				'default'=>'M d, Y g:ia'
 			)
 			,'type'=>array(
 				'default'=>'timestamp'

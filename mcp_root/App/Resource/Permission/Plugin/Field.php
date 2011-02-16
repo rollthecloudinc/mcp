@@ -391,25 +391,41 @@ class MCPPermissionField extends MCPDAO implements MCPPermission {
 		
 		/*
 		* Build out sql for each entity group 
+		* 
+		* This works a little different than others. The most specific case is that a permission
+		* exist that is specific to adding fields to the entity. The next case is based on whether
+		* the user is allowed to edit the item_type defined by the field. The nest case is whether the
+		* user created the item type defined by the field. The last case is whether the user has global
+		* level permission to edit the entity type (defined by item_id = 0 ).
+		* 
 		*/
 		$sql = array();
 		foreach($grouped as $item_type=>$item_ids) {
-			$sql[] = sprintf(
+			$sql[] =
 				"SELECT
 				     CASE
 				     
-				     	WHEN amp.item_id = 0
-				     	THEN '%s'
+				     	WHEN f.entities_id = 0
+				     	THEN '{$this->_objMCP->escapeString($item_type)}'
 				     	
 				     	ELSE
-				     	CONCAT('%1\$s','-',amp.item_id)
+				     	CONCAT('{$this->_objMCP->escapeString($item_type)}','-',f.entities_id)
 				     
 				     END item_id
 				     
 					,CASE
 							     	
-						WHEN amp.add IS NOT NULL
-						THEN amp.add
+						WHEN fp.add IS NOT NULL
+						THEN fp.add
+						
+						WHEN ntp.edit IS NOT NULL
+						THEN ntp.edit
+						
+						WHEN f.creators_id = {$this->_objMCP->escapeString($userId === null?0:$userId)}
+						THEN 1
+						
+						WHEN gtp.edit IS NOT NULL
+						THEN gtp.edit
 							     	
 						ELSE
 						0
@@ -419,23 +435,45 @@ class MCPPermissionField extends MCPDAO implements MCPPermission {
 					,'You are not allowed to create a field for entity' deny_add_msg_dev
 				     
 				  FROM
-				     MCP_PERMISSIONS_USERS amp
+				  
+				     MCP_FIELDS f
+				     
+				  LEFT OUTER
+				  JOIN
+				  
+				     MCP_PERMISSIONS_USERS fp
+				    ON
+				     CONCAT(f.entity_type,'-FIELDS') = fp.item_type
+				   AND
+				     COALESCE(f.entities_id,0) = fp.item_id
+				   AND
+				     fp.users_id = {$this->_objMCP->escapeString($userId === null?0:$userId)}
+				        
+				  LEFT OUTER
+				  JOIN
+				     MCP_PERMISSIONS_USERS ntp
+				    ON
+				     f.entity_type = ntp.item_type
+				   AND
+				     COALESCE(f.entities_id,0) = ntp.item_id
+				   AND
+				     ntp.users_id = {$this->_objMCP->escapeString($userId === null?0:$userId)}
+				     
+				     
+				  LEFT OUTER
+				  JOIN
+				     MCP_PERMISSIONS_USERS gtp
+				    ON
+				     f.entity_type = gtp.item_type
+				   AND
+				     gtp.item_id = 0
+				   AND
+				     gtp.users_id = {$this->_objMCP->escapeString($userId === null?0:$userId)}
+				     
 				 WHERE
-				     amp.item_type = '%1\$s-FIELDS'
+				     f.entity_type = '{$this->_objMCP->escapeString($item_type)}'
 				   AND
-				     amp.item_id IN (%s)
-				   AND
-				     amp.users_id = %s"		
-
-				// shared item type such as; MCP_NODE_TYPES, etc
-				,$this->_objMCP->escapeString($item_type)
-				
-				// item ids
-				,$this->_objMCP->escapeString(implode(',',$item_ids))
-				
-				// user to check for
-				,$this->_objMCP->escapeString($userId === null?0:$userId)
-			);
+				     f.entities_id IN ({$this->_objMCP->escapeString(implode(',',$item_ids))})";
 		}
 		
 		/*
