@@ -315,7 +315,7 @@ class MCPPermissionUser extends MCPDAO implements MCPPermission {
 		* If user is not logged in and ip isn't banned they may register / create
 		* a new user. 
 		*/
-		if( empty($intUser) ) {
+		if( /*empty($intUser)*/ true ) {
 			foreach($arrSiteIds as $id) {
 				$arrPerms[] = array(
 					'item_id'=>$id

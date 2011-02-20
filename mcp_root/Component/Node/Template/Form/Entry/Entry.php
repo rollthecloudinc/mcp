@@ -2,7 +2,7 @@
 /*
 * Code mirror initiation 
 */
-mcp.hash.push(function() {
+/*mcp.hash.push(function() {
 
 	var config = {
 		parserfile: [
@@ -23,8 +23,15 @@ mcp.hash.push(function() {
 	
 	var nodeContentEditor = CodeMirror.fromTextArea("node-content",config);
 	//var blogIntroEditor =  CodeMirror.fromTextArea("node-intro-content",config);
+});*/
+</script>
+
+<script type="text/javascript">
+$(document).ready(function() {
+	$('#node-node-content').ckeditor();
 });
 </script>
+
 <?php echo $this->ui('Common.Form.Form',array(
 	'name'=>$name
 	,'action'=>$action

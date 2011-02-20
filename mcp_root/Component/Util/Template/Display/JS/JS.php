@@ -1,15 +1,15 @@
-<script type="text/javascript" src="/lib/mcp/pkg/core/mcp.js"></script>
-<script type="text/javascript" src="/lib/codemirror/pkg/js/codemirror.js"></script>
-<script type="text/javascript" src="/lib/jquery/pkg/jquery-1.4.2.min.js"></script>
-<script type="text/javascript" src="/lib/yui/pkg/build/yui/yui-min.js"></script>
-<script type="text/javascript">
-var mcp = {
-	hash:[]
-};
+<!-- jquery -->
+<script type="text/javascript" src="/lib/jquery/v1.5/jquery-1.5.min.js"></script>
 
-window.onload = function(e) {
-	for(var i=0;i<mcp.hash.length;i++) {
-		mcp.hash[i]();
-	}
-};
+<!-- ckeditor and jquery adapter -->
+<script type="text/javascript" src="/lib/ckeditor/v3.5.2/ckeditor.js"></script>
+<script type="text/javascript" src="/lib/ckeditor/v3.5.2/adapters/jquery.js"></script>
+
+<!-- tinymce and jquery adapter -->
+<script type="text/javascript" src="/lib/tinymce/v3.3.9.3/jscripts/tiny_mce/tiny_mce.js"></script>
+<script type="text/javascript">
+/*tinyMCE.init({
+    theme : "advanced",
+    mode : "textareas"
+});*/
 </script>

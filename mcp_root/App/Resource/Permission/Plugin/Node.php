@@ -140,7 +140,7 @@ class MCPPermissionNode extends MCPDAO implements MCPPermission {
 	*/
 	private function _rud($arrNodeIds,$intUser=null) {
 
-		$strSQL = sprintf(
+		/*$strSQL = sprintf( old query w/o role management
 			"SELECT
 			       l.nodes_id item_id
 			      ,CASE 
@@ -282,6 +282,207 @@ class MCPPermissionNode extends MCPDAO implements MCPPermission {
 			     l.nodes_id IN (%s)"
 			,$this->_objMCP->escapeString($intUser === null?0:$intUser)
 			,$this->_objMCP->escapeString(implode(',',$arrNodeIds))
+		);*/
+		
+		$strSQL = sprintf(
+			"SELECT
+			 	 b.nodes_id item_id #base item unique id#
+			 	 
+			 	 #can user delete node#
+				 ,CASE 
+						
+					#user permission resolution (priority)#
+					WHEN upe.`delete` IS NOT NULL
+					THEN upe.`delete`
+					
+					WHEN b.`authors_id` = upe.users_id AND upe.`delete_own` IS NOT NULL
+					THEN upe.`delete_own`
+						      	
+					WHEN b.`authors_id` = upp.users_id AND upp.`delete_own_child` IS NOT NULL
+					THEN upp.`delete_own_child`
+						      	
+					WHEN upp.`delete_child` IS NOT NULL
+					THEN upp.`delete_child`
+					
+					#role permission resolution#
+					WHEN MAX(rpe.`delete`) IS NOT NULL
+					THEN MAX(rpe.`delete`)
+					
+					WHEN MAX(rpe.`delete_own`) IS NOT NULL
+					THEN MAX(rpe.`delete_own`)
+						      	
+					WHEN MAX(rpp.`delete_own_child`) IS NOT NULL
+					THEN MAX(rpp.`delete_own_child`)
+						      	
+					WHEN MAX(rpp.`delete_child`) IS NOT NULL
+					THEN MAX(rpp.`delete_child`)	
+					
+					#by default the creator of the node is allowed to delete it#
+					WHEN b.`authors_id` = %s
+					THEN 1
+					
+					#by default if user has no permissions to delete deny#
+					ELSE
+					0
+						      
+				END allow_delete
+				
+				#can the user edit node#		      
+				,CASE 
+						
+					#user permission resolution (priority)#
+					WHEN upe.`edit` IS NOT NULL
+					THEN upe.`edit`
+					
+					WHEN b.`authors_id` = upe.users_id AND upe.`edit_own` IS NOT NULL
+					THEN upe.`edit_own`
+						      	
+					WHEN b.`authors_id` = upp.users_id AND upp.`edit_own_child` IS NOT NULL
+					THEN upp.`edit_own_child`
+						      	
+					WHEN upp.`edit_child` IS NOT NULL
+					THEN upp.`edit_child`
+					
+					#role permission resolution#
+					WHEN MAX(rpe.`edit`) IS NOT NULL
+					THEN MAX(rpe.`edit`)
+					
+					WHEN MAX(rpe.`edit_own`) IS NOT NULL
+					THEN MAX(rpe.`edit_own`)
+						      	
+					WHEN MAX(rpp.`edit_own_child`) IS NOT NULL
+					THEN MAX(rpp.`edit_own_child`)
+						      	
+					WHEN MAX(rpp.`edit_child`) IS NOT NULL
+					THEN MAX(rpp.`edit_child`)
+						      
+					#by default creator of node is allowed to edit it#
+					WHEN b.`authors_id` = %1\$s
+					THEN 1
+						 
+					#deny edit for everyone else#
+					ELSE
+					0
+						      
+				END allow_edit	
+				
+				#can the user read node#		      
+				,CASE 
+						
+					#user permission resolution (priority)#
+					WHEN upe.`read` IS NOT NULL
+					THEN upe.`read`
+					
+					WHEN b.`authors_id` = upe.users_id AND upe.`read_own` IS NOT NULL
+					THEN upe.`read_own`
+						      	
+					WHEN b.`authors_id` = upp.users_id AND upp.`read_own_child` IS NOT NULL
+					THEN upp.`read_own_child`
+						      	
+					WHEN upp.`read_child` IS NOT NULL
+					THEN upp.`read_child`
+					
+					#role permission resolution#
+					WHEN MAX(rpe.`read`) IS NOT NULL
+					THEN MAX(rpe.`read`)
+					
+					WHEN MAX(rpe.`read_own`) IS NOT NULL
+					THEN MAX(rpe.`read_own`)
+						      	
+					WHEN MAX(rpp.`read_own_child`) IS NOT NULL
+					THEN MAX(rpp.`read_own_child`)
+						      	
+					WHEN MAX(rpp.`read_child`) IS NOT NULL
+					THEN MAX(rpp.`read_child`)
+					
+					#by default author may read node#
+					WHEN b.`authors_id` = %1\$s
+					THEN 1
+						
+					#by default everyone may read the node#
+					ELSE
+					1
+						      
+				END allow_read
+						      
+			FROM
+				`MCP_NODES` b #base entity table#
+				
+			# user entity permission#
+			LEFT OUTER
+			JOIN
+				MCP_PERMISSIONS_USERS upe #explicit user node permissions(highest precedence) - user(u) permission(p) entity(e)#
+			  ON
+				b.nodes_id = upe.item_id
+			 AND
+			    upe.users_id = %1\$s
+			 AND
+			    upe.item_type = 'MCP_NODES'
+			    
+			 #user entity parent permission#
+			 LEFT OUTER
+			 JOIN
+			     MCP_PERMISSIONS_USERS upp #explicit user node type permissions (parent permission) - user(u) permission(p) parent(p)#
+			   ON
+			     b.node_types_id = upp.item_id
+			  AND
+			     upp.users_id = %1\$s
+			  AND
+				 upp.item_type = 'MCP_NODE_TYPES'
+			
+			  # entity role permission#	 
+			  LEFT OUTER
+			  JOIN
+			     MCP_USERS_ROLES u2r #roles user has been assigned to - for entity role permission resolution#
+			    ON
+			     u2r.users_id = %1\$s
+			  LEFT OUTER
+			  JOIN
+			     MCP_ROLES r #roles - resolving entity role permission#
+			    ON
+			      u2r.roles_id = r.roles_id
+			   AND
+			      r.deleted = 0
+			  LEFT OUTER
+			  JOIN
+				  MCP_PERMISSIONS_ROLES rpe #role(r) permission(p) entity(e)#
+				ON
+			      rpe.item_type = 'MCP_NODES'
+			    AND
+				  b.nodes_id = rpe.item_id
+			    AND
+			      r.roles_id = rpe.roles_id
+			      
+			   # parent role permission#
+			   LEFT OUTER
+			   JOIN
+			      MCP_USERS_ROLES u2r2 #roles users has been assigned to - for parent role permission resolution#
+			     ON
+			      u2r2.users_id = %1\$s
+			   LEFT OUTER
+			   JOIN
+			      MCP_ROLES r2 #roles - resolving parent entity role permission#
+			     ON
+			      u2r2.roles_id = r2.roles_id
+			    AND
+			      r2.deleted = 0
+			   LEFT OUTER
+			   JOIN
+			      MCP_PERMISSIONS_ROLES rpp #role(r) permission(p) parent(p)#
+			     ON
+			      rpp.item_type = 'MCP_NODE_TYPES'
+			    AND
+			      b.node_types_id = rpp.item_id
+			    AND
+			      r2.roles_id = rpp.roles_id
+				 
+			 WHERE
+				  b.nodes_id IN (%s)
+			 GROUP
+			    BY
+			      b.nodes_id"
+			,$this->_objMCP->escapeString($intUser === null?0:$intUser)
+			,$this->_objMCP->escapeString(implode(',',$arrNodeIds))
 		);
 		
 		$arrPerms = $this->_objMCP->query($strSQL);
@@ -300,7 +501,7 @@ class MCPPermissionNode extends MCPDAO implements MCPPermission {
 	*/
 	private function _c($arrNodeTypeIds,$intUser=null) {
 
-		$strSQL = sprintf(
+		/*$strSQL = sprintf( // old query w/o role management
 			"SELECT
 			      m.node_types_id item_id
 			      ,CASE
@@ -347,6 +548,77 @@ class MCPPermissionNode extends MCPDAO implements MCPPermission {
 			      mp.item_type = 'MCP_NODE_TYPES'
 			 WHERE
 			      m.node_types_id IN (%s)"
+			,$this->_objMCP->escapeString($intUser === null?0:$intUser)
+			,$this->_objMCP->escapeString(implode(',',$arrNodeTypeIds))
+		);*/
+		
+		$strSQL = sprintf(
+			"SELECT
+			     b.node_types_id item_id #the generic entity id#
+				 ,CASE
+						      
+					#user permissions have precedence over roles. Determoine whether user has explicit setting to create a node of the type#
+				    WHEN pu.add_child IS NOT NULL
+					THEN pu.add_child
+				
+					#user permissions have precedence over roles. Determine whether user has explicit setting to create node of a type they created#   
+					WHEN b.creators_id = pu.users_id AND pu.add_own_child IS NOT NULL
+					THEN pu.add_own_child
+				
+					#determines whether user is assigned to role that has settings for creating node of type#
+					WHEN MAX(pr.add_child) IS NOT NULL
+					THEN MAX(pr.add_child)
+					
+					#Determines whether user is assigned to role that has settings for creating node of a type that they created#
+					WHEN MAX(pr.add_own_child) IS NOT NULL
+					THEN MAX(pr.add_own_child)
+					
+					#by default creator of node type can create nodes of that type#
+					WHEN b.creators_id = %s
+					THEN 1
+						
+					#When nothing has been matched deny creation of node of specified type#      	
+					ELSE
+					0
+						      
+					END allow_add	       
+			  FROM
+			      MCP_NODE_TYPES b #base table entity#
+			  LEFT OUTER
+			  JOIN
+			      MCP_PERMISSIONS_USERS pu #current logged-in users explicit permission settings#
+			    ON
+			      pu.item_type = 'MCP_NODE_TYPES' #base entity type#
+			   AND
+				  b.node_types_id = pu.item_id #base entity primary key#
+			   AND
+				  pu.users_id = %1\$s #current user primary key#
+			  LEFT OUTER
+			  JOIN
+				  MCP_USERS_ROLES u2r #roles that the current user is assigned to. This is the look-up table that assigns a role to a user# 
+			    ON
+				  u2r.users_id = %1\$s
+			  LEFT OUTER
+			  JOIN
+			      MCP_ROLES r
+			    ON
+			      u2r.roles_id = r.roles_id
+			   AND
+			      r.deleted = 0 #ignore roles that have been deleted ie. when deleted is null the role has beeen deleted#
+			  LEFT OUTER
+			  JOIN
+				  MCP_PERMISSIONS_ROLES pr #permission settings for the roles that the current user has been assigned to#
+				ON
+			      pr.item_type = 'MCP_NODE_TYPES' #base entity type#
+			    AND
+				  b.node_types_id = pr.item_id #base entity primary key#
+			    AND
+			      r.roles_id = pr.roles_id #role#
+			  WHERE
+				  b.node_types_id IN (%s)
+			  GROUP
+				 BY
+				  b.node_types_id"
 			,$this->_objMCP->escapeString($intUser === null?0:$intUser)
 			,$this->_objMCP->escapeString(implode(',',$arrNodeTypeIds))
 		);

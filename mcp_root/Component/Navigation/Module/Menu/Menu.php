@@ -53,7 +53,12 @@ class MCPNavigationMenu extends MCPModule {
 	*/
 	public function paintMenu($arrLinks,$intRunner=0) {
 		
-		$strReturn = '<ul>';
+		if( $intRunner === 0 ) {
+			$strReturn = '<ul id="nav-'.str_replace('_','-',$this->_arrMenu['system_name']).'">';
+		} else {
+			$strReturn = '<ul>';
+		}
+		
 		foreach($arrLinks as $arrLink) {
 			
 			$strReturn.= sprintf(

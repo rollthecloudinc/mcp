@@ -284,7 +284,7 @@ class MCPPermissionNodeType extends MCPDAO implements MCPPermission {
 	*/
 	private function _c($intUser=null) {
 		
-		$strSQL = sprintf(
+		/*$strSQL = sprintf( old query w/o role management
 			"SELECT
 			     amp.item_id
 			     ,CASE
@@ -307,10 +307,62 @@ class MCPPermissionNodeType extends MCPDAO implements MCPPermission {
 			   AND
 			     amp.item_type = 'MCP_NODE_TYPES'"
 			,$this->_objMCP->escapeString($intUser === null?0:$intUser)
+		);*/
+		
+		$strSQL = sprintf(
+			"SELECT
+			      CASE
+			     
+					WHEN pu.add IS NOT NULL
+					THEN pu.add
+			     
+			     	WHEN MAX(pr.add) IS NOT NULL
+			     	THEN MAX(pr.add)
+			     	
+			     	ELSE 0   	
+			     END allow_add
+			  FROM
+			     MCP_USERS u
+			     
+			  #user permission resolution#
+			  LEFT OUTER
+			  JOIN
+				  MCP_PERMISSIONS_USERS pu
+			    ON
+				  pu.item_type = 'MCP_NODE_TYPES'
+			   AND
+			      pu.item_id = 0
+			   AND
+				  u.users_id = pu.users_id
+				  
+			  # role management resolution#
+			  LEFT OUTER
+			  JOIN
+			      MCP_USERS_ROLES u2r
+			    ON
+			      u.users_id = u2r.users_id
+			  LEFT OUTER
+			  JOIN
+			      MCP_ROLES r
+			    ON
+			      u2r.roles_id = r.roles_id
+			   AND
+			      r.deleted = 0
+			  LEFT OUTER
+			  JOIN
+			      MCP_PERMISSIONS_ROLES pr #role permissions#
+			    ON
+			      pr.item_type = 'MCP_NODE_TYPES'
+			   AND
+			      pr.item_id = 0
+			   AND
+			      r.roles_id = pr.roles_id
+			 WHERE
+			      u.users_id = %s"
+			,$this->_objMCP->escapeString($intUser === null?0:$intUser)
 		);
 		
 		$arrPerms = $this->_objMCP->query($strSQL);
-		
 		
 		return array_pop($arrPerms);
      

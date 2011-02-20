@@ -64,6 +64,11 @@ class MCPDAOView extends MCPDAO {
 			,'system_name'=>'File'
 			,'table'=>'MCP_MEDIA_FILES'
 		)
+		,array(
+			'human_name'=>'Roles'
+			,'system_name'=>'Role'
+			,'table'=>'MCP_ROLES'
+		)
 	);
 	
 	/*
