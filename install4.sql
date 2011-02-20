@@ -849,6 +849,42 @@ CREATE TABLE `MCP_VOCABULARY` (
   KEY `creators_id` (`creators_id`)
 ) ENGINE=MyISAM AUTO_INCREMENT=8 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `PLT_PROJECTPAD_PROJECTS`
+--
+
+DROP TABLE IF EXISTS `PLT_PROJECTPAD_PROJECTS`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `PLT_PROJECTPAD_PROJECTS` (
+  `nodes_id` bigint(20) unsigned NOT NULL,
+  `categories_id` bigint(20) unsigned NOT NULL,
+  `ideal_price` mediumint(9) DEFAULT NULL,
+  `bumped_on_timestamp` timestamp NULL DEFAULT NULL,
+  `closed_on_timestamp` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`nodes_id`),
+  KEY `categories_id` (`categories_id`),
+  KEY `ideal_price` (`ideal_price`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `PLT_PROJECTPAD_USERS`
+--
+
+DROP TABLE IF EXISTS `PLT_PROJECTPAD_USERS`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `PLT_PROJECTPAD_USERS` (
+  `users_id` bigint(20) unsigned NOT NULL,
+  `first_name` varchar(25) NOT NULL,
+  `last_name` varchar(25) NOT NULL,
+  `states_id` bigint(20) unsigned DEFAULT NULL,
+  `points` varchar(128) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`users_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
