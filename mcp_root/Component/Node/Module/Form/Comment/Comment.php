@@ -244,7 +244,11 @@ class MCPNodeFormComment extends MCPModule {
 		// fetch edit comment or node to comment on
 		if($intId !== null) {
 			if($boolNew === true) {
-				$this->_arrNode = $this->_objDAONode->fetchById($intId);
+				/*
+				* Important: use cached node version - only thing we really care about
+				* here is the id anyway. 
+				*/
+				$this->_arrNode = $this->_objDAONode->fetchById($intId,'*',true);
 			} else {
 				$this->_arrComment = $this->_objDAONode->fetchCommentById($intId);
 			}

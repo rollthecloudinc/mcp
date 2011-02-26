@@ -69,5 +69,57 @@ class MCPDAOUtil extends MCPDAO {
 		
 	}
 	
+	/*
+	* Get the term associated with terms for states
+	* 
+	* @param str select columns
+	* @return str states
+	*/
+	public function fetchStateTerm($strSelect='c.*') {
+		return array_pop($this->_objMCP->query(
+		  "SELECT
+		         $strSelect
+			 FROM
+			     MCP_TERMS c
+			 INNER
+			  JOIN
+			     MCP_VOCABULARY v
+			    ON
+			     c.parent_id = v.vocabulary_id
+			   AND
+			     v.pkg = 'Component.Util'
+			   AND
+			     v.system_name = 'countries'
+			   AND
+			     v.sites_id = 0
+			 WHERE
+			     c.parent_type = 'vocabulary'
+			   AND
+			     c.system_name = 'United States'
+			 LIMIT 1"
+		));
+	}
+	
+	/*
+	* Fetch the vocabulary that stores country data
+	* 
+	* @param str select columns
+	* @return array vocabulary
+	*/
+	public function fetchCountryVocabulary($strSelect='*') {
+		return array_pop($this->_objMCP->query(
+			"SELECT
+			      $strSelect
+			   FROM
+			      MCP_VOCABULARY
+			  WHERE
+			      pkg = 'Component.Util'
+			    AND
+			      system_name = 'countries'
+			   AND
+			      sites_id = 0"
+		));
+	}
+	
 }
 ?>

@@ -956,8 +956,7 @@ class MCP {
 	* @param str type of config
 	* @param bool include mixins
 	* @param array dynamic : Adds dynamic fields
-	*      2 keys allowed: entity_type (required) and entities_id (optional)
-	* 
+	*    2 keys allowed: entity_type (required) and entities_id (optional)
 	* @return array form configuration
 	*/
 	public function getFrmConfig($strPkg,$strType='frm',$boolMixin=true,$arrDynamic=null) {
@@ -969,7 +968,7 @@ class MCP {
 			$entities_id = isset($arrDynamic['entities_id'])?$arrDynamic['entities_id']:null;
 			
 			/*
-			* This procedure is reliant on the Field Component, no other great way around it 
+			* This procedure is relient on the Field Component, no other great way around it 
 			*/
 			return $this->getInstance('Component.Field.DAO.DAOField',array($this))->getFrmConfig(
 				$arrDynamic['entity_type'] // notice this is ALWAYS required
@@ -1277,6 +1276,10 @@ class MCP {
 	* @return array rows
 	*/
 	public function query($strSQL,$arrBind=array()) {
+		static $i=0;
+		
+		// echo "<p>".($i++).": $strSQL</p>";
+		
 		return $this->_objDB->query($strSQL,$arrBind);
 	}
 	
@@ -1427,7 +1430,17 @@ class MCP {
 	* @return mix cached value
 	*/
 	public function getCacheDataValue($strName,$strPkg=null) {
-		return $this->_objCacheHandler->getDataValue($strName,$strPkg);
+		
+		$data = $this->_objCacheHandler->getDataValue($strName,$strPkg);
+		
+		/*
+		* All we really care about it the value, nothing more. So lets
+		* eliminate a step of logic by just returning the value for now. This
+		* seems most practical as I can't think of a case when the whole
+		* row is really needed. 
+		*/
+		return $data !== null?$data['cache_value']:$data;
+		
 	}
 	
 	/*

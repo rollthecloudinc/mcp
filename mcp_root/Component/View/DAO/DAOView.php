@@ -69,7 +69,17 @@ class MCPDAOView extends MCPDAO {
 			,'system_name'=>'Role'
 			,'table'=>'MCP_ROLES'
 		)
-	);
+	)
+	
+	/*
+	* Cached describe queries 
+	*/
+	,$_arrCachedDescribe = array()
+	
+	/*
+	* Cached dynamic fields by view type 
+	*/
+	,$_arrCachedDynamicFieldViewType = array();
 	
 	/*
 	* The types of items view may display
@@ -148,8 +158,8 @@ class MCPDAOView extends MCPDAO {
 		// Get the table for the view type
 		$table = $this->_fetchTableByViewType($strViewType);
 		
-		// Get all the columns for the table
-		$columns = $this->_objMCP->query("DESCRIBE $table");
+		// Get the table schema
+		$columns = $this->_describe($table);
 		
 		/*
 		* Config is a special case in that the presented schema is virtually
@@ -1322,6 +1332,16 @@ class MCPDAOView extends MCPDAO {
 	*/
 	private function _fetchDynamicFieldsByViewType($strViewType) {
 		
+		/*
+		* First check the cache
+		* 
+		*  This SIGNIFICANTLY reduces the number of queries in combination
+		*  with describe per request caching. 
+		*/
+		if( isset($this->_arrCachedDynamicFieldViewType[$strViewType]) ) {
+			return $this->_arrCachedDynamicFieldViewType[$strViewType];
+		}
+		
 		$entity_type = null;
 		$entities_id = null;
 		
@@ -1383,8 +1403,9 @@ class MCPDAOView extends MCPDAO {
 				return false;
 		}
 		
-		// Case statement to convert db_value to type
-		$values = $this->_objMCP->query('DESCRIBE MCP_FIELD_VALUES');	
+		// Case statement to convert db_value to types	
+		$values = $this->_describe('MCP_FIELD_VALUES');
+		
 		$type = 'CASE ';
 		foreach($values as $column) {
 			if(strpos($column['Field'],'db_') === 0) {
@@ -1409,7 +1430,7 @@ class MCPDAOView extends MCPDAO {
 		$relation.= ' ELSE NULL END';
 		
 		// Mimic Describe with dynamic fields
-		return array_merge( $add , $objDAOField->listFields(
+		$data = array_merge( $add , $objDAOField->listFields(
 			" f.cfg_label label
 			 ,f.cfg_name path
 			 ,f.cfg_name `name`
@@ -1434,6 +1455,11 @@ class MCPDAOView extends MCPDAO {
 				,$entities_id === null?"IS NULL":"= {$this->_objMCP->escapeString($entities_id)}"
 			)
 		));
+		
+		// cache the dynamic fields ( I don't believe they change dynamically )
+		$this->_arrCachedDynamicFieldViewType[$strViewType] = $data;
+		
+		return $data;
 		
 	}
 	
@@ -1760,6 +1786,30 @@ class MCPDAOView extends MCPDAO {
 			$row['allow_delete'] = $delete[$id]['allow'];
 			$row['allow_read'] = $read[$id]['allow'];
 		}
+		
+	}
+	
+	/*
+	* Run describe query on given table
+	* 
+	* @param str table name
+	* @return array table schema
+	*/
+	private function _describe($table) {
+		
+		// Get all the columns for the table
+		if( isset($this->_arrCachedDescribe[$table]) ) {
+			
+			// use the cached value to eliminate a query
+			return  $this->_arrCachedDescribe[$table];
+			
+		}
+			
+		// Get the table schema
+		$this->_arrCachedDescribe[$table] = $this->_objMCP->query("DESCRIBE $table");
+			
+		// cache the describe query for the table (it won't change)
+		return $this->_arrCachedDescribe[$table];
 		
 	}
 	

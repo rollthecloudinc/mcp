@@ -39,7 +39,12 @@ class MCPNodeFormEntry extends MCPModule {
 	/*
 	* Preselect node type when creating new content via argument passed through URL 
 	*/
-	,$_strNodeTypeSelect;
+	,$_strNodeTypeSelect
+	
+	/*
+	* Cached config - proxy it in 
+	*/
+	,$_arrCachedFrmConfig;
 	
 	public function __construct(MCP $objMCP,MCPModule $objParentModule=null,$arrConfig=null) {		
 		parent::__construct($objMCP,$objParentModule,$arrConfig);
@@ -249,6 +254,13 @@ class MCPNodeFormEntry extends MCPModule {
 	protected function _getFrmConfig() {
 		
 		/*
+		* Proxy config 
+		*/
+		if( $this->_arrCachedFrmConfig !== null ) {
+			return $this->_arrCachedFrmConfig;
+		}
+		
+		/*
 		* get current node 
 		*/
 		$arrNode = $this->_getNode();
@@ -302,7 +314,12 @@ class MCPNodeFormEntry extends MCPModule {
 			$config['node_types_id']['default'] = $this->_strNodeTypeSelect;
 		}
 		
-		return $config;
+		/*
+		* Assign config to proxy property 
+		*/
+		$this->_arrCachedFrmConfig = $config;
+		
+		return $this->_arrCachedFrmConfig;
 	
 	}
 	
@@ -325,10 +342,10 @@ class MCPNodeFormEntry extends MCPModule {
 		*/
 		$arrValues = $this->_arrFrmValues;
 		
-		//echo '<pre>',print_r($arrValues),'</pre>';
+		//echo '<pre>',print_r($_POST),'</pre>';
 		
 		//echo '<pre>',print_r($this->_arrFrmPost),'</pre>';
-		// return;
+		//return;
 		
 		/*
 		* Get current node 
@@ -455,6 +472,42 @@ class MCPNodeFormEntry extends MCPModule {
 		
 	}
 	
+	/*
+	* Get layout to use for form
+	* 
+	* @return str layout file
+	*/
+	protected function _getLayout() {
+		
+		// Get node
+		$arrNode = $this->_getNode();
+		
+		if( $arrNode !== null ) {
+			
+			$arrNodeType = $this->_objDAONode->fetchNodeTypeById($arrNode['node_types_id']);
+			
+		} else {
+			
+			$name = $this->_strNodeTypeSelect;
+			
+			// node types belonging to package need have the URL argument reversed to use the fetchNodeTypeByName method
+			if(strpos($name,'::') !== false) {
+				$tmp = explode('::',$name);
+				$name = "{$tmp[1]}::{$tmp[0]}";
+			}
+			
+			$arrNodeType = $this->_objDAONode->fetchNodeTypeByName($name);
+			
+		}
+			
+		if( $arrNodeType['form_tpl'] !== null ) {
+			return ROOT.str_replace('*',$this->_objMCP->getSite(),$arrNodeType['form_tpl']);
+		} else {
+			return null;
+		}
+		
+	}
+	
 	public function execute($arrArgs) {
 		
 		/*
@@ -520,6 +573,7 @@ class MCPNodeFormEntry extends MCPModule {
 		$this->_arrTemplateData['values'] = $this->_arrFrmValues;
 		$this->_arrTemplateData['errors'] = $this->_arrFrmErrors;
 		$this->_arrTemplateData['legend'] = $this->_getLegend();
+		$this->_arrTemplateData['layout'] = $this->_getLayout();
 		
 		return 'Entry/Entry.php';
 	}

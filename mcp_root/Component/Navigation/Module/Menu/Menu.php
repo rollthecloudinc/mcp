@@ -39,7 +39,7 @@ class MCPNavigationMenu extends MCPModule {
 		}
 		
 		if($this->_arrMenu !== null) {
-			$this->_arrTemplateData['menu'] = $this->_objDAONavigation->fetchMenu($this->_arrMenu['navigation_id']);
+			$this->_arrTemplateData['menu'] = $this->_objDAONavigation->fetchMenu($this->_arrMenu['navigation_id'],'nav',true,true);
 		} else {
 			$this->_arrTemplateData['menu'] = array();
 		}

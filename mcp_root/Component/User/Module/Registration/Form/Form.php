@@ -79,8 +79,6 @@ class MCPUserRegistrationForm extends MCPModule {
 			$this->_arrFrmErrors = $this->_objValidator->validate($this->_getFrmConfig(),$this->_arrFrmValues);
 		}
 		
-		if($this->_getUser() !== null) unset($this->_arrFrmErrors['pwd']);
-		
 		/*
 		* Save form data 
 		*/
@@ -196,7 +194,16 @@ class MCPUserRegistrationForm extends MCPModule {
 			$entity_id = $this->_objMCP->getSitesId();
 		}
 		
-		return $this->_objMCP->getFrmConfig($this->getPkg(),'frm',true,array('entity_type'=>'MCP_SITES','entities_id'=>$entity_id));
+		$config = $this->_objMCP->getFrmConfig($this->getPkg(),'frm',true,array('entity_type'=>'MCP_SITES','entities_id'=>$entity_id));
+		
+		/*
+		* remove password when editing existing user 
+		*/
+		if($arrUser !== null) {
+			unset($config['pwd']);
+		}
+		
+		return $config;
 	}
 	
 	/*

@@ -167,9 +167,21 @@ class MCPDAOTaxonomy extends MCPDAO {
 	* 
 	* @param int terms id
 	* @param str select columns
+	* @param bool accept cached term?
 	* @return array term data
 	*/
-	public function fetchTermById($intTermsId,$strSelect='t.*') {
+	public function fetchTermById($intTermsId,$strSelect='t.*',$boolCache=true) {
+		
+		/*
+		* Cache handling 
+		*/
+		if($boolCache === true) {
+			$arrCachedTerm = $this->_getCachedTerm($intTermsId);
+			if( $arrCachedTerm !== null ) {
+				return $arrCachedTerm;
+			}
+		}
+		
 		$arrTerm = array_pop($this->_objMCP->query(sprintf(
 			'SELECT
 			      %s
@@ -422,6 +434,11 @@ class MCPDAOTaxonomy extends MCPDAO {
 		*/
 		$this->_objMCP->saveFieldValues($dynamic,$pk,'MCP_VOCABULARY',$entity_id);
 		
+		/*
+		* Update cache 
+		*/
+		$this->_setCachedTerm( isset($arrTerm['terms_id'])?$arrTerm['terms_id']:$intId );
+		
 		return $intId;
 		
 	}
@@ -604,6 +621,36 @@ class MCPDAOTaxonomy extends MCPDAO {
 		// echo "<p>$strSQL</p>";
 		
 		return 1;
+		
+	}
+	
+	/*
+	* Get cached term
+	* 
+	* @param in terms id
+	* @return array term data
+	*/
+	private function _getCachedTerm($intId) {
+		return $this->_objMCP->getCacheDataValue("term_{$intId}",$this->getPkg());
+	}
+	
+	/*
+	* Set cached term
+	* 
+	* @param int terms id
+	* @return bool
+	*/
+	private function _setCachedTerm($intId) {
+		
+		/*
+		* Get current snapshot 
+		*/
+		$arrTerm = $this->fetchTermById($intId,'t.*',false);
+		
+		/*
+		* Update the cache value 
+		*/
+		return $this->_objMCP->setCacheDataValue("term_{$intId}",$arrTerm,$this->getPkg());
 		
 	}
 	

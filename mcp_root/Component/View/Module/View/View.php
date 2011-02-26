@@ -78,7 +78,7 @@ class MCPViewView extends MCPModule {
 		$this->_intPage = !empty($arrArgs) && is_numeric($arrArgs[0])?array_shift($arrArgs):1;
 		
 		// Internal redirect - sued to switch between edit and read nested modules
-		$this->_strRequest = !empty($arrArgs) && in_array($arrArgs[0],array('Edit','View'))?array_shift($arrArgs):null;
+		$this->_strRequest = !empty($arrArgs) && in_array($arrArgs[0],array('Edit','Create','View'))?array_shift($arrArgs):null;
 		
 		// Set view data
 		if($intViewsId !== null) {
@@ -162,7 +162,7 @@ class MCPViewView extends MCPModule {
 		*/
 		
 		// Edit entity
-		if( $this->_objView && strcmp('Edit',$this->_strRequest) === 0) {
+		if( $this->_objView && in_array($this->_strRequest,array('Edit','Create')) ) {
 			
 			switch($this->_objView->base) {
 				

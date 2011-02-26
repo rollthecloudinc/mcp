@@ -137,9 +137,9 @@ class MCPNavigationRouter extends MCPModule {
 		* components directly. 
 		*/
 		$perm = $this->_objMCP->getPermission(MCP::READ,'Route','Component/*');
-		if( !$perm['allow'] ) {
+		/*if( !$perm['allow'] ) { // this is driving me crazy
 			throw new MCPPermissionException($perm);
-		}
+		}*/
 		
 		/*
 		* Get requested component name 

@@ -39,7 +39,12 @@ class MCPFieldForm extends MCPModule {
 	/*
 	* Preselect entity when creating new field (resolved via URL argument)
 	*/
-	,$_strEntityPreselect;	
+	,$_strEntityPreselect
+	
+	/*
+	* Cached config - proxy it in 
+	*/
+	,$_arrCachedFrmConfig;	
 	
 	public function __construct(MCP $objMCP,MCPModule $objParentModule=null,$arrConfig=null) {
 		parent::__construct($objMCP,$objParentModule,$arrConfig);
@@ -272,21 +277,19 @@ class MCPFieldForm extends MCPModule {
 				break;
 				
 			// end media start entity ---------------------------
+			
+			case 'user':
+				$arrValues['db_value'] = 'int';
+				$arrValues['db_ref_table'] = 'MCP_USERS';
+				$arrValues['db_ref_col'] = 'users_id';
+				$arrValues['db_ref_context'] = 'user';
+				break;
 				
 			case 'vocabulary':
 				$arrValues['db_value'] = 'int';
 				$arrValues['db_ref_table'] = 'MCP_VOCABULARY';
 				$arrValues['db_ref_col'] = 'vocabulary_id';
 				$arrValues['db_ref_context'] = 'vocabulary';
-				
-				// values will be derived using a dao call
-				/*$arrValues['cfg_dao_pkg'] = 'Component.Taxonomy.DAO.DAOTaxonomy';
-				$arrValues['cfg_dao_method'] = 'listVocabulary';
-				$arrValues['cfg_dao_args'] = array(
-					 "v.vocabulary_id value,v.system_name label"
-					,"v.deleted = 0 AND v.sites_id = SITES_ID"
-					,"v.human_name ASC"
-				);*/
 				
 				break;
 				
@@ -296,21 +299,12 @@ class MCPFieldForm extends MCPModule {
 				$arrValues['db_ref_col'] = 'node_types_id';
 				$arrValues['db_ref_context'] = 'nodetype';
 				
-				// values will be derived using a dao call
-				/*$arrValues['cfg_dao_pkg'] = 'Component.Node.DAO.DAONode';
-				$arrValues['cfg_dao_method'] = 'fetchNodeTypes';
-				$arrValues['cfg_dao_args'] = array(
-					 "t.node_types_id value,t.system_name label"
-					,"t.deleted = 0 AND t.sites_id = SITES_ID"
-					,"t.human_name ASC"
-				);*/
-				
 				break;
 				
 			default:
 				
 				// term and node handler in format: node:2 or vocaulary:4 ie. node:{nodetype} or term:{vocabulary}
-				if(strpos($arrValues['db_value'],'term:') === 0 || strpos($arrValues['db_value'],'node:') === 0) {
+				if(strpos($arrValues['db_value'],'term:') === 0 || strpos($arrValues['db_value'],'node:') === 0 || strpos($arrValues['db_value'],'term_child:') === 0) {
 					
 					// separate the entity (node,term) from the nodetype or vocabulary id
 					list($relation,$relation_id) = explode(':',$arrValues['db_value'],2);
@@ -325,15 +319,6 @@ class MCPFieldForm extends MCPModule {
 						$arrValues['db_ref_context'] = 'node';	
 						$arrValues['db_ref_context_id'] = $relation_id;
 						
-						// values will be derived using a dao call
-						/*$arrValues['cfg_dao_pkg'] = 'Component.Node.DAO.DAONode';
-						$arrValues['cfg_dao_method'] = 'fetchNodes';
-						$arrValues['cfg_dao_args'] = array(
-							 "n.nodes_id value,n.node_title label"
-							,"n.deleted = 0 AND n.sites_id = SITES_ID AND n.node_types_id = {$this->_objMCP->escapeString($relation_id)}"
-							,"n.node_title ASC"
-						);*/
-						
 					} else if( strcmp('term',$relation) === 0 ) {
 						
 						$arrValues['db_value'] = 'int';
@@ -342,21 +327,16 @@ class MCPFieldForm extends MCPModule {
 						
 						$arrValues['db_ref_context'] = 'term';	
 						$arrValues['db_ref_context_id'] = $relation_id;
-						
-						// values will be derived using a dao call
-						/*$arrValues['cfg_dao_pkg'] = 'Component.Taxonomy.DAO.DAOTaxonomy';
-						$arrValues['cfg_dao_method'] = 'fetchTerms';
-						$arrValues['cfg_dao_args'] = array(
-							$relation_id
-							,"vocabulary"
-							,true
-							,array(
-								 'select' => "t.terms_id value,t.human_name label"
-								,'filter' => "t.deleted = 0"
-								,'sort'   => "t.weight ASC"
-							)
-						);*/
 									
+					} else if ( strcmp('term_child',$relation) === 0 ) {
+						
+						$arrValues['db_value'] = 'int';
+						$arrValues['db_ref_table'] = 'MCP_TERMS';
+						$arrValues['db_ref_col'] = 'terms_id';	
+						
+						$arrValues['db_ref_context'] = 'term_child';	
+						$arrValues['db_ref_context_id'] = $relation_id;
+						
 					}
 					
 				}
@@ -409,6 +389,11 @@ class MCPFieldForm extends MCPModule {
 	* @return array configuration
 	*/
 	protected function _getFrmConfig() {
+		
+		// config is proxied in - onl needs to be built once per request
+		if( $this->_arrCachedFrmConfig !== null ) {
+			return $this->_arrCachedFrmConfig;
+		}
 		
 		// get form config
 		$config = $this->_objMCP->getFrmConfig($this->getPkg());
@@ -470,6 +455,55 @@ class MCPFieldForm extends MCPModule {
 			$config['cfg_multi_limit']['static'] = 'Y';
 			$config['cfg_multi_limit']['default'] = $arrField['cfg_multi_limit'];
 			
+			/* 
+			* min, max and textarea are only compatible with longtext and varchar at this time. So remove them from the equation
+			* for everything else. It might be good to move this logic to the dao so it can be easily modified
+			* when adding new types.
+			*/
+			if( !in_array($arrField['db_value'], array('varchar','text')) ) {
+				unset($config['cfg_max'],$config['cfg_min'],$config['cfg_textarea']);
+			}
+			
+			/*
+			* If the field type does not support multiple values kill the size option. Size is only compatible
+			* with fields that support multiple values.  
+			*/
+			if( !$arrField['cfg_multi'] ) {
+				unset($config['cfg_size']);
+			}
+			
+			/*
+			* Add field widgets - these are the widgets compatible with the field 
+			*/
+			$config['cfg_widget'] = array(
+				 'label'=>'Widget'
+				,'required'=>'Y'
+				,'values'=>$this->_objDAOField->fetchFieldWidgets($arrField['fields_id'])
+			);
+			
+			/*
+			* Unset default and use real default field 
+			*/
+			
+		} else {
+			
+			/* 
+			* The default value may only be set after the type has been determined. This is necessary to determine
+			* the approriate storage field and provide the correct values for drop-downs or multi-selects.
+			*/
+			unset($config['cfg_default']);
+			
+			/* 
+			* min and max chars and textarea may only be set for compatible type. Therefore, the type needs to be set
+			* before min and max compatibility can be determined.
+			*/
+			unset($config['cfg_max'],$config['cfg_min'],$config['cfg_textarea']);
+			
+			/*
+			* Kill the size until it has been determined that the field is one that supports multiple values. 
+			*/
+			unset($config['cfg_size']);
+			
 		}
 		
 		/*
@@ -479,6 +513,18 @@ class MCPFieldForm extends MCPModule {
 		* removed from the user interface.
 		*/
 		unset($config['cfg_dao_args'],$config['cfg_dao_pkg'],$config['cfg_dao_method'],$config['cfg_sql']);
+		
+		/*
+		* Kill cfg type for now. I think the purpose of this is validation. It may better to actually
+		* allow selection of multiple validators possibly. This isn't vitally important at this point
+		* considering values will be validated based on type. This would be additive, domain level
+		* validation to make sure a string matches a certain pattern or something or is perhaps
+		* unique within a set. For now I'm killing it and will revisit a little latter.
+		*/
+		unset($config['cfg_type']);
+		
+		// cache the form config
+		$this->_arrCachedFrmConfig = $config;
 		
 		return $config;
 	}
@@ -542,9 +588,9 @@ class MCPFieldForm extends MCPModule {
 		$post = $this->_objMCP->getPost( $this->_getFrmName() );
 		
 		$perm = $this->_objMCP->getPermission(($field === null?MCP::ADD:MCP::EDIT),'Field', ( $field === null?$this->_strEntityPreselect?$this->_strEntityPreselect:$post['entity']:$field['fields_id'] ));
-		if(!$perm['allow']) {
+		/*if(!$perm['allow']) {
 			throw new MCPPermissionException($perm);
-		}
+		}*/
 		
 		/*
 		* Process form 

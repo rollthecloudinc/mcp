@@ -65,11 +65,11 @@ class Tree implements \UI\Element {
 		*/
 		if(!empty($data)) {
 			$out.="<$list_element>";
-			foreach($data as $item) {
+			foreach($data as $index=>$item) {
 				$out.= sprintf(
 					'<li%s>%s%s</li>'
 					,$depth_class === true?' class="depth-'.$runner.'"':''
-					,$mutation !== null?call_user_func_array($mutation,array($item[$value_key],$item)):$item[$value_key]
+					,$mutation !== null?call_user_func_array($mutation,array($item[$value_key],$item,$index)):$item[$value_key]
 					,$this->_html(array(
 						'data'=>isset($item[$child_key]) && !empty($item[$child_key])?$item[$child_key]:array()
 						,'child_key'=>$child_key

@@ -202,9 +202,21 @@ class MCPDAONode extends MCPDAO {
 	* 
 	* @param int nodes id
 	* @param str select columns
+	* @param bool accept cached node?
 	* @return array nodes data
 	*/
-	public function fetchById($intId,$strSelect='*') {
+	public function fetchById($intId,$strSelect='*',$boolCache=true) {
+		
+		/*
+		* Caching option checks to see if a cached version exists and if so returns
+		* that avoiding the logic necessary to build the node from scratch. 
+		*/
+		if( $boolCache === true ) {
+			$arrCachedNode = $this->_getCachedNode($intId);	
+			if( $arrCachedNode !== null ) {
+				return $arrCachedNode;
+			}
+		}
 		
 		$strSQL = sprintf(
 			'SELECT %s,node_types_id tmp_node_types_id FROM MCP_NODES WHERE nodes_id = %u'
@@ -492,6 +504,11 @@ class MCPDAONode extends MCPDAO {
 		*/
 		$this->_objMCP->saveFieldValues($dynamic,(isset($arrNode['nodes_id'])?$arrNode['nodes_id']:$intId),'MCP_NODE_TYPES',$arrNode['node_types_id']);
 		
+		/*
+		* Update node cache 
+		*/
+		$this->_setCachedNode( isset($arrNode['nodes_id'])?$arrNode['nodes_id']:$intId );
+		
 		return $intId;
 		
 	}
@@ -518,7 +535,7 @@ class MCPDAONode extends MCPDAO {
 			$arrNodeType
 			,'MCP_NODE_TYPES'
 			,'node_types_id'
-			,array('system_name','human_name','pkg','description','theme_tpl')
+			,array('system_name','human_name','pkg','description','theme_tpl','form_tpl')
 			,'created_on_timestamp'
 			,null
 			
@@ -632,6 +649,36 @@ class MCPDAONode extends MCPDAO {
 		* Use PHP native filter function to further santize title 
 		*/
 		return filter_var($strNodeTitle,FILTER_SANITIZE_URL);
+	}
+	
+	/*
+	* Get node stored in cache 
+	* 
+	* @param int nodes id
+	* @return array node data
+	*/
+	private function _getCachedNode($intId) {
+		return $this->_objMCP->getCacheDataValue("node_{$intId}",$this->getPkg());
+	}
+	
+	/*
+	* Update cache with most  up to date snapshot of node
+	* 
+	* @param int nodes id
+	* @return bool
+	*/
+	private function _setCachedNode($intId) {
+		
+		/*
+		* Bypass cache and get most recent node state 
+		*/
+		$arrNode = $this->fetchById($intId,'*',false);
+		
+		/*
+		* Save node to cache 
+		*/
+		return $this->_objMCP->setCacheDataValue("node_{$intId}",$arrNode,$this->getPkg());
+		
 	}
 	
 }

@@ -29,6 +29,9 @@ class Select implements \UI\Element {
 			,'value_key'=>array(
 				'default'=>'value'
 			)
+			,'multiple'=>array(
+				'default'=>false
+			)
 		);
 	}
 	
@@ -38,11 +41,12 @@ class Select implements \UI\Element {
 		$out='';
 		
 		$out.= sprintf(
-			'<select name="%s" id="%s"%s%s>'
+			'<select name="%s" id="%s"%s%s%s>'
 			,$name
 			,$id
 			,$disabled === true?' disabled="disabled"':''
 			,$size !== null?' size="'.$size.'"':''
+			,$multiple === true?' multiple="multiple"':''
 		);
 						
 		/*
@@ -52,12 +56,18 @@ class Select implements \UI\Element {
 			$out='';
 			
 			foreach($data['values'] as $option_value) {
+				
+				if(is_array($value)) {
+					$selected = in_array($option_value[$value_key],$value);
+				} else {
+					$selected = $value == $option_value[$value_key];
+				}
 			
 				$out.= sprintf(
 					'<option class="depth-%u" value="%s"%s>%s</option>'
 					,$runner
 					,$option_value[$value_key]
-					,$value == $option_value[$value_key]?' selected="selected"':''
+					,$selected?' selected="selected"':''
 					,$option_value[$label_key]
 				);	
 									

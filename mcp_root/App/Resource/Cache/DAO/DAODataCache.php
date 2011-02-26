@@ -49,7 +49,7 @@ class MCPDAODataCache extends MCPDAO {
 		/*
 		* Unserialize serialized data 
 		*/
-		if($arrValue['serialized'] == 1) {
+		if($arrValue !== null && $arrValue['serialized'] == 1) {
 			$arrValue['cache_value'] = unserialize(base64_decode($arrValue['cache_value']));
 		}
 		

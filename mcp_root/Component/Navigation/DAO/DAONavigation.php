@@ -207,9 +207,20 @@ class MCPDAONavigation extends MCPDAO {
 	* @param int parent id
 	* @param str parent type [nav,link]
 	* @param bool recursive?
+	* @param bool accept cached version of COMPLETE menu?
 	* @return array menu
 	*/
-	public function fetchMenu($intParentId,$strParentType='nav',$boolR=true) {
+	public function fetchMenu($intParentId,$strParentType='nav',$boolR=true,$boolCache=true) {	
+		
+		/*
+		* Cache option is active for a complete menu build
+		*/
+		if( strcmp('nav',$strParentType) === 0 && $boolR === true && $boolCache === true) {
+			$arrCachedNav = $this->_getCachedNav($intParentId);
+			if( $arrCachedNav !== null ) {
+				return $arrCachedNav;
+			}
+		}
 		
 		/*
 		* Locate all real navigation links 
@@ -414,15 +425,34 @@ class MCPDAONavigation extends MCPDAO {
 	/*
 	* Insert or update navigation link
 	*/
-	public function saveLink($arrLink) {		
-		$this->_save(
+	public function saveLink($arrLink) {	
+			
+		$intId = $this->_save(
 			$arrLink
 			,'MCP_NAVIGATION_LINKS'
 			,'navigation_links_id'
 			,array('parent_type','link_title','browser_title','page_heading','link_url','sites_internal_url','target_module','target_template','target_window','new_window_name','header_content','body_content','footer_content','header_content_type','body_content_type','footer_content_type','datasource_query','datasource_dao','datasource_dao_method')
 			,'created_on_timestamp'
 			,array('target_module_args','target_module_config','links_data','datasource_dao_args')
-		);	
+		);
+
+		// ---- Update the nvaigation menu cache -----------------------------------------
+		
+		/*
+		* Get the links id
+		*/
+		$intLinkId = isset($arrLink['navigation_links_id'])?$arrLink['navigation_links_id']:$intId;
+		
+		/*
+		* Get the navigation menu associated with the link
+		*/
+		$arrNav = $this->fetchNavByLinkId($intLinkId);
+		
+		/*
+		* Set the cache value for the links associated navigation menu 
+		*/
+		$this->_setCachedNav($arrNav['navigation_id']);
+		
 	}
 	
 	/*
@@ -538,6 +568,13 @@ class MCPDAONavigation extends MCPDAO {
 		);
 		
 		$this->_objMCP->query($strSQL);
+		
+		/*
+		* Update the nav cache 
+		*/
+		$arrNav = $this->fetchNavByLinkId($intLinksId);
+		$this->_setCachedNav($arrNav['navigation_id']);
+		
 		return 1;
 		
 	}
@@ -592,6 +629,13 @@ class MCPDAONavigation extends MCPDAO {
 		);
 		
 		$this->_objMCP->query($strSQL);
+		
+		/*
+		* Update the nav cache 
+		*/
+		$arrNav = $this->fetchNavByLinkId($intLinksId);
+		$this->_setCachedNav($arrNav['navigation_id']);
+		
 		return 1;
 		
 	}
@@ -646,6 +690,12 @@ class MCPDAONavigation extends MCPDAO {
 			       MCP_NAVIGATION_LINKS.navigation_links_id IN (%s)'
 			,$this->_objMCP->escapeString(implode(',',$arrIds))
 		);
+		
+		/*
+		* Update the nav cache 
+		*/
+		$arrNav = $this->fetchNavByLinkId($intLinksId);
+		$this->_setCachedNav($arrNav['navigation_id']);
 		
 		return $this->_objMCP->query($strSQL);
 	
@@ -735,6 +785,12 @@ class MCPDAONavigation extends MCPDAO {
 		*/
 		$this->_objMCP->query($strSQLDelete);
 		$this->_objMCP->query($strSQL);
+		
+		/*
+		* Update the nav cache 
+		*/
+		$arrNav = $this->fetchNavByLinkId($intLinksId);
+		$this->_setCachedNav($arrNav['navigation_id']);
 		
 		return 1;
 		
@@ -880,6 +936,36 @@ class MCPDAONavigation extends MCPDAO {
 		
 		return $arrFound;
 		
+	}
+	
+	/*
+	* Get cached navigation menu
+	* 
+	* @param int navigation id
+	* @return array complete navigation menu
+	*/
+	private function _getCachedNav($intId) {
+		return $this->_objMCP->getCacheDataValue("nav_{$intId}",$this->getPkg());	
+	}
+	
+	/*
+	* Update the navigation menu cache with a new value 
+	* 
+	* @param int navigation id
+	* @param array navigation menu
+	* @return bool
+	*/
+	private function _setCachedNav($intId) {
+		
+		/*
+		* Bypass caching and build complete menu from current state
+		*/
+		$arrMenu = $this->fetchMenu($intId,'nav',true,false);
+		
+		/*
+		* Cache the menu 
+		*/
+		return $this->_objMCP->setCacheDataValue("nav_{$intId}",$arrMenu,$this->getPkg());
 	}
 	
 }

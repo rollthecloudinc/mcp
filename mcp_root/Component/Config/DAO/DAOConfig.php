@@ -15,7 +15,12 @@ class MCPDAOConfig extends MCPDAO {
 	/*
 	* Dynamic field values 
 	*/
-	,$_arrDynamic;
+	,$_arrDynamic
+	
+	/*
+	* Cached complete config 
+	*/
+	,$arrCachedConfig;
 	
 	public function __construct(MCP $objMCP) {
 		parent::__construct($objMCP);
@@ -23,6 +28,7 @@ class MCPDAOConfig extends MCPDAO {
 	}
 	
 	private function _init() {
+		
 		// Read in global configuration setings
 		$objXML = simplexml_load_file(ROOT.DS.'App'.DS.'Config'.DS.'Config.xml');
 		
@@ -38,6 +44,11 @@ class MCPDAOConfig extends MCPDAO {
 		* is concerned these values are part of the concrete config.
 		*/
 		$this->_arrDynamic = $this->_objMCP->addFields(array(),0,'MCP_CONFIG');
+		
+		/*
+		* Create a cached version of the config 
+		*/
+		$this->_arrCachedConfig = $this->fetchEntireConfig();
 		
 	}
 	
@@ -101,6 +112,14 @@ class MCPDAOConfig extends MCPDAO {
 	* @return str config value
 	*/
 	public function fetchConfigValueByName($strName) {
+		
+		/*
+		* Use the request cached config value when it exists
+		* to eliminate a most likely unnecessary query. 
+		*/
+		if( isset($this->_arrCachedConfig[$strName]) ) {
+			return $this->_arrCachedConfig[$strName];
+		}
 		
 		/*
 		* Check for valid configuration setting name

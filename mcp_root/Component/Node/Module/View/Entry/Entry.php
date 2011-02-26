@@ -43,12 +43,14 @@ class MCPNodeViewEntry extends MCPModule {
 		if($this->_strNodesId !== null) {
 			
 			if( is_numeric($this->_strNodesId) ) {
-				$this->_arrTemplateData['node'] = $this->_objDAONode->fetchById((int) $this->_strNodesId);
+				$this->_arrTemplateData['node'] = $this->_objDAONode->fetchById((int) $this->_strNodesId,'*',true);
+				
+				$this->_replacePlaceholders($this->_arrTemplateData['node']);
 			} else {
 				/*
 				* @TODO: Need to pass the node type also 
 				*/
-				$this->_arrTemplateData['node'] = $this->_objDAONode->fetchNodeByUrl($this->_strNodesId,$this->_objMCP->getSitesId());
+				// $this->_arrTemplateData['node'] = $this->_objDAONode->fetchNodeByUrl($this->_strNodesId,$this->_objMCP->getSitesId());
 			}
 			
 		} else {
@@ -132,6 +134,16 @@ class MCPNodeViewEntry extends MCPModule {
 		$this->_strNodesId = $arrNode['node_url'];
 		// $this->_objMCP->capture(get_class($arrEvt['target']).' fired '.$arrEvt['event']);
 	}*/
+	
+	protected function _replacePlaceholders($arrNode) {
+		
+		$matches = array();
+		
+		preg_match_all('/<mcp.*?>/xsm',$arrNode['node_content'],$matches);
+		
+		//echo '<pre>',print_r($matches),'</pre>';
+		
+	}
 	
 }
 ?>

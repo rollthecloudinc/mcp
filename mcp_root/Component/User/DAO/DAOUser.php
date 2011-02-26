@@ -55,6 +55,11 @@ class MCPDAOUser extends MCPDAO {
 			unset($arrUser['tmp_users_id'],$arrUser['tmp_sites_id']);
 		}
 		
+		// may break something
+		if( $strLimit === null ) {
+			return $arrUsers;
+		}
+		
 		return array(
 			$arrUsers
 			,array_pop(array_pop($this->_objMCP->query('SELECT FOUND_ROWS()')))
@@ -67,9 +72,21 @@ class MCPDAOUser extends MCPDAO {
 	* 
 	* @param int users id
 	* @param str fields to select
+	* @param bool accept cached version?
 	* @return array user data
 	*/
-	public function fetchById($intId,$strSelect='*') {
+	public function fetchById($intId,$strSelect='*',$boolCache=true) {
+		
+		/*
+		* Cache handling 
+		*/
+		if( $boolCache === true ) {
+			$arrCachedUser = $this->_getCachedUser($intId);
+			if( $arrCachedUser !== null ) {
+				return $arrCachedUser;
+			}
+		}
+		
 		$strId = $this->_objMCP->escapeString($intId);
 		$strSQL = "SELECT $strSelect,users_id tmp_users_id,sites_id tmp_sites_id FROM MCP_USERS WHERE users_id = ?";
 		$arrUser = array_pop($this->_objMCP->query($strSQL,array($intId)));
@@ -217,6 +234,9 @@ class MCPDAOUser extends MCPDAO {
 		// Save dynamic fields
 		$this->_objMCP->saveFieldValues($dynamic,$user['users_id'],'MCP_SITES',$user['sites_id']);
 		
+		// update cache
+		$this->_setCachedUser( isset($arrUser['users_id'])?$arrUser['users_id']:$intId );
+		
 		return $intId;
 		
 	}
@@ -244,6 +264,36 @@ class MCPDAOUser extends MCPDAO {
 		
 		echo "<p>$strSQL</p>";
 		// return $this->_objMCP->query($strSQL);
+		
+	}
+	
+	/*
+	* Get cached user
+	* 
+	* @param int users id
+	* @return array user data
+	*/
+	private function _getCachedUser($intId) {
+		return $this->_objMCP->getCacheDataValue("user_{$intId}",$this->getPkg());
+	}
+	
+	/*
+	* Set cached user
+	* 
+	* @param int users id
+	* @return bool
+	*/
+	private function _setCachedUser($intId) {
+		
+		/*
+		* Get most recent snapshot 
+		*/
+		$arrUser = $this->fetchById($intId,'*',false);
+		
+		/*
+		* Update cache 
+		*/
+		return $this->_objMCP->setCacheDataValue("user_{$intId}",$arrUser,$this->getPkg());
 		
 	}
 	

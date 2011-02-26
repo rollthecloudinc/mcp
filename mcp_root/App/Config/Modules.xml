@@ -693,6 +693,12 @@
 				<required>N</required>
 				<type>node_type_theme_tpl</type>
 			</theme_tpl>
+			<form_tpl>
+				<label>Form Template</label>
+				<max>255</max>
+				<required>N</required>
+				<type>node_type_form_tpl</type>
+			</form_tpl>
 			<description>
 				<label>Description</label>
 				<required>N</required>

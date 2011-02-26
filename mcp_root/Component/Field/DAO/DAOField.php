@@ -51,6 +51,120 @@ class MCPDAOField extends MCPDAO {
 	}
 	
 	/*
+	* Fetch the widgets compatible with a given field.
+	* 
+	* @param int field id
+	* @return array collection of widgets
+	*/
+	public function fetchFieldWidgets($intFieldId) {
+		
+		$arrWidgets = array();
+		
+		// Get the field data
+		$arrField = $this->fetchFieldById($intFieldId);
+		
+		// determine widgets compatible with field
+		
+		switch($arrField['db_value']) {
+			
+			case 'varchar':
+			case 'text':
+				$arrWidgets[] = array(
+					'value'=>'text'
+					,'label'=>'Text'
+				);	
+				$arrWidgets[] = array(
+					'value'=>'textarea'
+					,'label'=>'TextArea'
+				);		
+				$arrWidgets[] = array(
+					'value'=>'password'
+					,'label'=>'Password'
+				);
+				break;
+				
+			case 'date':
+				$arrWidgets[] = array(
+					'value'=>'date'
+					,'label'=>'Date'
+				);
+				break;	
+
+			case 'timestamp':
+				$arrWidgets[] = array(
+					'value'=>'timestamp'
+					,'label'=>'Timestamp'
+				);
+				break;	
+				
+			case 'int':
+				$arrWidgets[] = array(
+					'value'=>'text'
+					,'label'=>'Text'
+				);
+				$arrWidgets[] = array(
+					'value'=>'select'
+					,'label'=>'ComboBox'
+				);
+				break;
+
+			case 'price':
+				$arrWidgets[] = array(
+					'value'=>'text'
+					,'label'=>'Text'
+				);
+				break;
+				
+			case 'bool':
+				$arrWidgets[] = array(
+					 'value'=>'checkbox'
+					,'label'=>'Checkbox'
+				);
+				$arrWidgets[] = array(
+					'value'=>'select'
+					,'label'=>'ComboBox'
+				);
+				break;
+				
+			default:
+			
+		}
+		
+		/* multi value compatible */
+		if( $arrField['cfg_multi'] ) {
+			$arrWidgets[] = array(
+				'label'=>'Multi-Select'
+				,'value'=>'multi_select'
+			);
+			$arrWidgets[] = array(
+				'value'=>'checkbox_group'
+				,'label'=>'Checkbox Group'
+			);
+		}
+		
+		/* media special case */
+		if($arrField['cfg_media'] !== null) {
+			$arrWidgets = array(
+				array(
+					'label'=>ucwords($arrField['cfg_media'])
+					,'value'=>$arrField['cfg_media']
+				)
+			);
+		}
+		
+		/* Foreign key contextual reference */
+		if( $arrField['db_ref_context'] !== null ) {
+			$arrWidgets[] = array(
+				'value'=>'select'
+				,'label'=>'ComboBox'
+			);	
+		}
+		
+		return $arrWidgets;
+		
+	}
+	
+	/*
 	* Get field values
 	* 
 	* @TODO: Modify to fetch values for multiple rows using a single query. The one restraint
@@ -244,15 +358,21 @@ class MCPDAOField extends MCPDAO {
 			}
 			
 			if($arrField['multi'] == 1) {
+				
+				/*
+				* Make empty array for multi-fields without any values 
+				*/
+				if( strlen($field) === 0 ) {
+					$arrValues[$arrField['field_name']]['field_name'] = $arrField['field_name'];
+					$arrValues[$arrField['field_name']]['field_value'] = array();
+					continue;
+				}
+				
 				$arrValues[$arrField['field_name']]['field_name'] = $arrField['field_name'];
 				$arrValues[$arrField['field_name']]['field_value'][] = $field;
-				//$arrValues[$arrField['field_name']]['field_value_relation'][] = $relation;
-				//$arrValues[$arrField['field_name']]['field_values_id'][] = $arrField['field_values_id'];
 			} else {
 				$arrValues[$arrField['field_name']]['field_name'] = $arrField['field_name'];
 				$arrValues[$arrField['field_name']]['field_value'] = $field;
-				//$arrValues[$arrField['field_name']]['field_value_relation'] = $relation;
-				//$arrValues[$arrField['field_name']]['field_values_id'] = $arrField['field_values_id'];
 			}
 			
 		}
@@ -336,22 +456,24 @@ class MCPDAOField extends MCPDAO {
 						break;
 						
 					case 'term': // term relation
+					case 'term_child': // term child
 						$values.= sprintf(
 							'<dao>
 								<pkg>Component.Taxonomy.DAO.DAOTaxonomy</pkg>
 						      	<method>fetchTerms</method>
 						    		<args>
 										<arg>%s</arg>
-						      			<arg>vocabulary</arg>
+						      			<arg>%s</arg>
 						      			<arg>1</arg>
 						      			<arg>
 						      				<select>t.terms_id value,t.human_name label</select>
 						      				<filter>t.deleted = 0</filter>
-						      				<sort>t.weight ASC</sort>
+						      				<sort>t.weight ASC,t.human_name ASC</sort>
 						      			</arg>
 						         	</args>
 							 </dao>'
 							,$this->_objMCP->escapeString( $field['db_ref_context_id'] )
+							,strcmp('term_child', $field['db_ref_context'] ) === 0?'term':'vocabulary'
 						);
 						break;
 						
@@ -380,6 +502,19 @@ class MCPDAOField extends MCPDAO {
 						         	</args>
 							 </dao>';
 						break;
+						
+					case 'user': // user foreign key
+						$values.=
+							'<dao>
+								<pkg>Component.User.DAO.DAOUser</pkg>
+						      	<method>listAll</method>
+						    		<args>
+										<arg>users_id value,username label</arg>
+						      			<arg>deleted = 0 AND sites_id = SITES_ID</arg>
+						      			<arg>username ASC</arg>
+						         	</args>
+							 </dao>';
+						break;				
 						
 					default:
 				}
@@ -539,9 +674,10 @@ class MCPDAOField extends MCPDAO {
 		// Add dynamic entity references
 		// ----------------------------------------------------------------------------------
 		
-		// DAOs needed to get node types and vocabularies
+		// DAOs needed to get node types, vocabularies and util (resolve states and countries)
 		$objDAONode = $this->_objMCP->getInstance('Component.Node.DAO.DAONode',array($this->_objMCP));
 		$objDAOTaxonomy = $this->_objMCP->getInstance('Component.Taxonomy.DAO.DAOTaxonomy',array($this->_objMCP));
+		$objDAOUtil = $this->_objMCP->getInstance('Component.Util.DAO.DAOUtil',array($this->_objMCP));
 		
 		// node type or a node of type x
 		$arrValueTypes[] = array(
@@ -558,6 +694,26 @@ class MCPDAOField extends MCPDAO {
 			,'value'=>'vocabulary'
 			
 			,'values'=> $objDAOTaxonomy->listVocabulary("CONCAT('term:',v.vocabulary_id) value,IF(v.pkg = '',v.system_name,CONCAT(v.pkg,'::',v.system_name)) label","v.deleted = 0 AND v.sites_id = {$this->_objMCP->escapeString($this->_objMCP->getSitesId())}")
+		);
+		
+		// user
+		$arrValueTypes[] = array(
+			'label'=>'User'
+			,'value'=>'user'
+		);
+		
+		// special state type
+		$arrState = $objDAOUtil->fetchStateTerm();
+		$arrValueTypes[] = array(
+			'label'=>'State'
+			,'value'=>"term_child:{$arrState['terms_id']}"
+		);
+		
+		// special country type
+		$arrCountry = $objDAOUtil->fetchCountryVocabulary();
+		$arrValueTypes[] = array(
+			'label'=>'Country'
+			,'value'=>"term:{$arrCountry['vocabulary_id']}"
 		);
 		
 		return $arrValueTypes;
@@ -645,11 +801,12 @@ class MCPDAOField extends MCPDAO {
 	* @return int (update: affacted rows,insert: pk)
 	*/
 	public function saveField($arrField) {
+		
 		return $this->_save(
 			$arrField
 			,'MCP_FIELDS'
 			,'fields_id'
-			,array('entity_type','entities_id','cfg_name','cfg_label','cfg_description','cfg_required','cfg_default','cfg_type','cfg_values','cfg_sql','cfg_dao_pkg','cfg_dao_method','db_value','cfg_media','db_ref_table','db_ref_col','db_ref_context')
+			,array('entity_type','entities_id','cfg_name','cfg_label','cfg_description','cfg_required','cfg_default','cfg_type','cfg_values','cfg_sql','cfg_dao_pkg','cfg_dao_method','db_value','cfg_media','db_ref_table','db_ref_col','db_ref_context','cfg_widget')
 			,null
 			,array('cfg_dao_args')
 		);
