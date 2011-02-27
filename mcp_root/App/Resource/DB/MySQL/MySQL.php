@@ -53,6 +53,7 @@ class MCPMySQL extends MCPResource implements MCPDB {
 		*/
 		if(!empty($arrBind)) {
 			$strSQL = $this->_rewriteQuery($strSQL,$arrBind);
+			// echo "<p>$strSQL</p>";
 		}
 		
 		$objResult = mysql_query($strSQL,$this->_objLink);
@@ -155,6 +156,11 @@ class MCPMySQL extends MCPResource implements MCPDB {
 	* adapters that do actually supply this capability such as; PDO
 	* and MySQLi.
 	* 
+	* IMPORTANT: strings and integers MUST be properly type casts. When a string
+	* '0' is supplied that value is treated as a string, not an integer. Similarly 
+	* the value 0 that is meant to be a string will be treated as a integer if not
+	* a true string.
+	* 
 	* @param str SQL w/ placeholders 
 	* @param array bindings
 	* @return str rewritten SQL
@@ -175,7 +181,16 @@ class MCPMySQL extends MCPResource implements MCPDB {
 		* Name based placeholder named and pattern change
 		*/
 		if(strpos($strSQL,'?') === false) {
-			$pattern = '('.implode('|',array_keys($arrBind)).')';
+			
+			/*
+			* This is a bit of an issue when using binding for a multiple insert.
+			* The common convention is name_1. So name_13 will match name_1
+			* when name_1 is prior to name_13. To get around that the array is 
+			* reversed do that name_13 comes before name_1. This seems to prevent
+			* the issue when using named placeholders.
+			*/
+			$pattern = '('.implode('|', array_reverse(array_keys($arrBind))).')';
+			
 			$named = 'true';
 		}
 		

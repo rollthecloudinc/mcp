@@ -137,13 +137,21 @@ class MCPDAOConfig extends MCPDAO {
 		* Fetch site specific config value but default to global setting
 		* when site specific setting doesn't exist. 
 		*/
-		$strSQL = sprintf(
+		/* $strSQL = sprintf(
 			"SELECT config_value FROM MCP_CONFIG WHERE sites_id = %s AND config_name = '%s'"
 			,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
 			,$this->_objMCP->escapeString($strName)
-		);
+		);*/
 		
-		$arrRow = array_pop($this->_objMCP->query($strSQL)); 
+		$arrRow = array_pop($this->_objMCP->query(
+			'SELECT config_value FROM MCP_CONFIG WHERE sites_id = :sites_id AND config_name = :config_name'
+			,array(
+				':sites_id'=>(int) $this->_objMCP->getSitesId()
+				,':config_name'=>(string) $strName
+			)
+		)); 
+		
+		
 		return $arrRow === null?$this->_arrConfig[$strName]:$arrRow['config_value'];	
 	}
 	
@@ -168,13 +176,22 @@ class MCPDAOConfig extends MCPDAO {
 			return true;
 		}
 		
-		$strSQL = sprintf(
+		/*$strSQL = sprintf(
 			"INSERT IGNORE INTO MCP_CONFIG (sites_id,config_name,config_value) VALUES (%s,'%s','%s') ON DUPLICATE KEY UPDATE config_value = VALUES(config_value)"
 			,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
 			,$this->_objMCP->escapeString($strName)
 			,$this->_objMCP->escapeString($strValue)
+		);*/
+		
+		$this->_objMCP->query(
+			'INSERT IGNORE INTO MCP_CONFIG (sites_id,config_name,config_value) VALUES (:sites_id,:config_name,:config_value) ON DUPLICATE KEY UPDATE config_value = VALUES(config_value)'
+			,array(
+				':sites_id'=>(int) $this->_objMCP->getSitesId()
+				,':config_name'=>(string) $strName
+				,'config_value'=>(string) $strValue
+			)
 		);
-		$this->_objMCP->query($strSQL);
+		
 		return true;
 	}
 	
@@ -192,7 +209,9 @@ class MCPDAOConfig extends MCPDAO {
 		
 		// insert statements
 		$arrInsert = array();
+		$arrBind = array();
 		
+		$intCounter = 0; // used to build unique placehoolders for bind variables
 		foreach($arrConfig as $strName=>$strValue) {
 			
 			// prevent non-config based data from being placed in db on accident
@@ -207,12 +226,24 @@ class MCPDAOConfig extends MCPDAO {
 			}
 			
 			// build separate insert statements
-			$arrInsert[] = sprintf(
+			/*$arrInsert[] = sprintf(
 				"(%s,'%s','%s')"
 				,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
 				,$this->_objMCP->escapeString($strName)
 				,$this->_objMCP->escapeString($strValue)
-			);
+			);*/
+			
+			// Build out bind insert string
+			$arrInsert[] = "(:sites_id_{$intCounter},:config_name_{$intCounter},:config_value_{$intCounter})";
+			
+			// add values to variable bind array
+			$arrBind[":sites_id_{$intCounter}"] = (int) $this->_objMCP->getSitesId();
+			$arrBind[":config_name_{$intCounter}"] = (string) $strName;
+			$arrBind[":config_value_{$intCounter}"] = (string) $strValue;
+			
+			// increment unique bind variable counter
+			$intCounter++;
+			
 		}
 		
 		// create SQL w/ duplicate key update
@@ -227,7 +258,7 @@ class MCPDAOConfig extends MCPDAO {
 		}
 		
 		// run query
-		return $this->_objMCP->query($strSQL);
+		return $this->_objMCP->query($strSQL,$arrBind);
 		
 	}
 	
@@ -246,10 +277,17 @@ class MCPDAOConfig extends MCPDAO {
 		/*
 		* Select all config values that have been overrided 
 		*/
-		$arrRows = $this->_objMCP->query(sprintf(
+		/*$arrRows = $this->_objMCP->query(sprintf(
 			'SELECT config_name,config_value FROM MCP_CONFIG WHERE sites_id = %s'
 			,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
-		));
+		));*/
+		
+		$arrRows = $this->_objMCP->query(
+			'SELECT config_name,config_value FROM MCP_CONFIG WHERE sites_id = :sites_id'
+			,array(
+				':sites_id'=>(int) $this->_objMCP->getSitesId()
+			)
+		);
 		
 		/*
 		* Override base values 
