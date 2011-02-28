@@ -13,6 +13,9 @@ class MCPDAONode extends MCPDAO {
 	* @param str order by clause
 	* @param str limit clause
 	* @return array [nodes,found rows]
+	* 
+	* @todo: refine bind variable implementation
+	* 
 	*/
 	public function listAll($strSelect='n.*',$mixWhere=null,$strSort=null,$strLimit=null) {
 		
@@ -84,6 +87,8 @@ class MCPDAONode extends MCPDAO {
 	* @param str order by clause
 	* @param str limit clause (triggers found rows)
 	* @return array nodes comments
+	* 
+	* @todo: support variable binding
 	*/
 	public function fetchNodesComments($intId,$strSelect='c.*',$mixWhere=null,$strSort=null,$strLimit=null) {
 		
@@ -145,6 +150,8 @@ class MCPDAONode extends MCPDAO {
 	* @param str sort clause
 	* @param str limit statement
 	* @return array node types
+	* 
+	* @todo: refine bind variable support
 	*/
 	public function fetchNodeTypes($strSelect='t.*',$mixFilter=null,$strSort=null,$strLimit=null) {
 		
@@ -201,37 +208,43 @@ class MCPDAONode extends MCPDAO {
 	* Fetch nodes data by id
 	* 
 	* @param int nodes id
-	* @param str select columns
 	* @param bool accept cached node?
 	* @return array nodes data
 	*/
-	public function fetchById($intId,$strSelect='*',$boolCache=true) {
+	public function fetchById($intId,$boolCache=true) {
 		
 		/*
 		* Caching option checks to see if a cached version exists and if so returns
 		* that avoiding the logic necessary to build the node from scratch. 
 		*/
-		if( $boolCache === true ) {
+		/*if( $boolCache === true ) {
 			$arrCachedNode = $this->_getCachedNode($intId);	
 			if( $arrCachedNode !== null ) {
 				return $arrCachedNode;
 			}
-		}
+		}*/
 		
-		$strSQL = sprintf(
+		/*$strSQL = sprintf(
 			'SELECT %s,node_types_id tmp_node_types_id FROM MCP_NODES WHERE nodes_id = %u'
 			,$strSelect
 			,(int) $intId
-		);
+		);*/
 		
 		// fetch node
-		$arrNode = array_pop($this->_objMCP->query($strSQL));
+		$arrNode = array_pop($this->_objMCP->query(
+			'SELECT * FROM MCP_NODES WHERE nodes_id = :nodes_id'
+			,array(
+				':nodes_id'=>(int) $intId
+			)
+		));
 		
 		// decorate node with dynamic field values
-		$arrNode = $this->_objMCP->addFields($arrNode,$intId,'MCP_NODE_TYPES',$arrNode['tmp_node_types_id']);
+		if( $arrNode !== null ) {
+			$arrNode = $this->_objMCP->addFields($arrNode,$intId,'MCP_NODE_TYPES',$arrNode['node_types_id']);
+		}
 		
 		// remove the entity id
-		unset($arrNode['tmp_node_types_id']);
+		// unset($arrNode['tmp_node_types_id']);
 		
 		return $arrNode;
 	}
@@ -243,12 +256,20 @@ class MCPDAONode extends MCPDAO {
 	* @param str select columns
 	* @return array node type data
 	*/
-	public function fetchNodeTypeById($intId,$strSelect='*') {
-		$strSQL = sprintf(
+	public function fetchNodeTypeById($intId) {
+		
+		/*$strSQL = sprintf(
 			'SELECT %s FROM MCP_NODE_TYPES WHERE node_types_id = ?'
 			,$strSelect
-		);
-		return array_pop($this->_objMCP->query($strSQL,array((int) $intId)));
+		);*/
+		
+		
+		return array_pop($this->_objMCP->query(
+			'SELECT * FROM MCP_NODE_TYPES WHERE node_types_id = :node_types_id'
+			,array(
+				':node_types_id'=>(int) $intId
+			)
+		));
 	}
 	
 	/*
@@ -331,12 +352,15 @@ class MCPDAONode extends MCPDAO {
 	* @param str select columns
 	* @return array comment data
 	*/
-	public function fetchCommentById($intId,$strSelect='*') {
-		$strSQL = sprintf(
-			'SELECT %s FROM MCP_COMMENTS WHERE comments_id = ?'
-			,$strSelect
-		);
-		return array_pop($this->_objMCP->query($strSQL,array((int) $intId)));
+	public function fetchCommentById($intId) {
+		
+		return array_pop($this->_objMCP->query(
+			'SELECT * FROM MCP_COMMENTS WHERE comments_id = :comments_id'
+			,array(
+				':comments_id'=>(int) $intId
+			)
+		));
+			
 	}
 	
 	/*
@@ -553,6 +577,8 @@ class MCPDAONode extends MCPDAO {
 	* purgeNodeType. However, for safety reasons any item MUST be deleted before purged.
 	* 
 	* @param mix sinle integer values or array of integer values ( MCP_NODE_TYPES primary key )
+	* 
+	* @todo: support variable binding
 	*/
 	public function deleteNodeTypes($mixNodeTypesId) {
 
@@ -589,6 +615,8 @@ class MCPDAONode extends MCPDAO {
 	* Delete node(s)
 	* 
 	* @param mix single interger value or array of integers ( MCP_NODES primary key )
+	* 
+	* @todo: support variable binding
 	*/
 	public function deleteNodes($mixNodeId) {
 

@@ -43,7 +43,7 @@ class MCPNodeViewEntry extends MCPModule {
 		if($this->_strNodesId !== null) {
 			
 			if( is_numeric($this->_strNodesId) ) {
-				$this->_arrTemplateData['node'] = $this->_objDAONode->fetchById((int) $this->_strNodesId,'*',true);
+				$this->_arrTemplateData['node'] = $this->_objDAONode->fetchById((int) $this->_strNodesId);
 				
 				$this->_replacePlaceholders($this->_arrTemplateData['node']);
 			} else {

@@ -248,7 +248,7 @@ class MCPNodeFormComment extends MCPModule {
 				* Important: use cached node version - only thing we really care about
 				* here is the id anyway. 
 				*/
-				$this->_arrNode = $this->_objDAONode->fetchById($intId,'*',true);
+				$this->_arrNode = $this->_objDAONode->fetchById($intId);
 			} else {
 				$this->_arrComment = $this->_objDAONode->fetchCommentById($intId);
 			}

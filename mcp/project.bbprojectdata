@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>HierarchyData</key>
+	<array>
+		<string>ED14BC69-A7AD-4B3C-A036-4EEC558D73CD</string>
+	</array>
+	<key>ProjectItems</key>
+	<dict>
+		<key>ED14BC69-A7AD-4B3C-A036-4EEC558D73CD</key>
+		<dict>
+			<key>ItemData</key>
+			<dict>
+				<key>AliasData</key>
+				<data>
+				AAAAAAFSAAIAAQxNYWNpbnRvc2ggSEQAAAAAAAAAAAAA
+				AAAAAADIBn3bSCsAAAAISgQDbWNwAAAAAAAAAAAAAAAA
+				AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+				AAAAAAAAAAAAAAAAAAAAAAonCcj6N+4AAAAAAAAAAP//
+				//8AAAkgAAAAAAAAAAAAAAAAAAAABVNpdGVzAAAQAAgA
+				AMgGthsAAAARAAgAAMj6cC4AAAABAAwACEoEAAhJ/QAA
+				kj8AAgAqTWFjaW50b3NoIEhEOlVzZXJzOnRvZGR6bWlq
+				ZXdza2k6U2l0ZXM6bWNwAA4ACAADAG0AYwBwAA8AGgAM
+				AE0AYQBjAGkAbgB0AG8AcwBoACAASABEABIAHVVzZXJz
+				L3RvZGR6bWlqZXdza2kvU2l0ZXMvbWNwAAATAAEvAAAV
+				AAIAFP//AAA=
+				</data>
+				<key>FileURL</key>
+				<string>file://localhost/Users/toddzmijewski/Sites/mcp/</string>
+				<key>RelativePath</key>
+				<string>./</string>
+				<key>TypeID</key>
+				<string>_CFileLocator</string>
+				<key>Version</key>
+				<integer>1</integer>
+			</dict>
+			<key>ItemName</key>
+			<string>mcp</string>
+			<key>ItemType</key>
+			<string>FolderReference</string>
+		</dict>
+	</dict>
+	<key>com.barebones.DocumentFormatVersion</key>
+	<integer>5</integer>
+	<key>com.barebones.DocumentType</key>
+	<string>Project</string>
+</dict>
+</plist>

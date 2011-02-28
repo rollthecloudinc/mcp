@@ -13,6 +13,8 @@ class MCPDAOSite extends MCPDAO {
 	* @param order by clause
 	* @param limit clause
 	* @return array users
+	* 
+	* @todo convert to variable binding - support it
 	*/
 	public function listAll($strSelect='s.*',$strFilter=null,$strSort=null,$strLimit=null) {
 		
@@ -58,17 +60,22 @@ class MCPDAOSite extends MCPDAO {
 	* Fetch site data by sites id 
 	* 
 	* @param int site id
-	* @param str select fields
 	* @return array site data
 	*/
-	public function fetchById($intId,$strSelect='*') {
-		$strSQL = sprintf(
+	public function fetchById($intId) {
+		
+		/*$strSQL = sprintf(
 			'SELECT %s FROM MCP_SITES WHERE sites_id = %s'
 			,$strSelect
 			,$this->_objMCP->escapeString($intId)
-		);	
+		);*/
 			
-		$arrSite = array_pop($this->_objMCP->query($strSQL));
+		$arrSite = array_pop($this->_objMCP->query(
+			'SELECT * FROM MCP_SITES WHERE sites_id = :sites_id'
+			,array(
+				':sites_id'=>(int) $intId
+			)
+		));
 		
 		if($arrSite !== null) {
 			$arrSite = $this->_loadXMLSiteData($arrSite);

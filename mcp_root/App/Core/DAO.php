@@ -40,6 +40,8 @@ abstract class MCPDAO extends MCPResource {
 		
 		$arrSerialized = empty($arrSerialized)?array():$arrSerialized;
 		
+		$arrBind = array();
+		
 		foreach($arrData as $strField=>$mixValue) {
 			
 			if(strcmp($strPrimaryKey,$strField) == 0) {
@@ -49,23 +51,25 @@ abstract class MCPDAO extends MCPResource {
 			}
 			
 			if(!is_array($mixValue) && strlen($mixValue) == 0 && !in_array($strField,$ignoreNullCast)) {
-				$mixValue = 'NULL';
+				$mixValue = null; /*'NULL';*/
 			} else if(in_array($strField,$arrStrings)) {
-				$mixValue = "'".$this->_objMCP->escapeString($mixValue)."'";
+				$mixValue = (string) $mixValue;
 			} else if(in_array($strField,$arrSerialized)) {
-				$mixValue = "'".base64_encode(serialize($mixValue))."'";
+				$mixValue = base64_encode(serialize($mixValue));
 			} else {
-				$mixValue = $this->_objMCP->escapeString($mixValue);
+				$mixValue = (int) $this->_objMCP->escapeString($mixValue);
 			}
 			
 			$arrColumns[] = $strField;  
-			$arrValues[] = $mixValue;
+			$arrValues[] = '?'; /*$mixValue;*/
+			$arrBind[] = $mixValue;
 			
 		}
 		
 		if(!$boolUpdate && !empty($strCreated) && !array_key_exists($strCreated,$arrColumns)) {
 			$arrColumns[] = $strCreated;
-			$arrValues[] = 'NOW()';
+			$arrValues[] = 'FROM_UNIXTIME(?)';
+			$arrBind[] = time();
 		}
 		
 		$strSQL = sprintf(
@@ -76,7 +80,7 @@ abstract class MCPDAO extends MCPResource {
 			,$boolUpdate === true?' ON DUPLICATE KEY UPDATE '.implode(',',$arrUpdate):''
 		);
 		
-		return $this->_objMCP->query($strSQL);
+		return $this->_objMCP->query($strSQL,$arrBind);
 		
 	}
 	

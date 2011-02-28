@@ -225,6 +225,7 @@ class MCPDAOField extends MCPDAO {
 			         
 			         ELSE NULL END field_value
 			         ,NULL field_value_relation
+			         
 			  FROM
 			     MCP_FIELDS f 
 			  LEFT OUTER

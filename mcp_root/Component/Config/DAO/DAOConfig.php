@@ -188,7 +188,7 @@ class MCPDAOConfig extends MCPDAO {
 			,array(
 				':sites_id'=>(int) $this->_objMCP->getSitesId()
 				,':config_name'=>(string) $strName
-				,'config_value'=>(string) $strValue
+				,':config_value'=>(string) $strValue
 			)
 		);
 		

@@ -13,6 +13,8 @@ class MCPDAOUser extends MCPDAO {
 	* @param order by clause
 	* @param limit clause
 	* @return array users
+	* 
+	* @todo: convert to variable binding - support
 	*/
 	public function listAll($strSelect='*',$strFilter=null,$strSort=null,$strLimit=null) {
 		
@@ -71,29 +73,35 @@ class MCPDAOUser extends MCPDAO {
 	* Fetch a single user by id 
 	* 
 	* @param int users id
-	* @param str fields to select
 	* @param bool accept cached version?
 	* @return array user data
 	*/
-	public function fetchById($intId,$strSelect='*',$boolCache=true) {
+	public function fetchById($intId,$boolCache=true) {
 		
 		/*
 		* Cache handling 
 		*/
-		if( $boolCache === true ) {
+		/*if( $boolCache === true ) {
 			$arrCachedUser = $this->_getCachedUser($intId);
 			if( $arrCachedUser !== null ) {
 				return $arrCachedUser;
 			}
-		}
+		}*/
 		
-		$strId = $this->_objMCP->escapeString($intId);
-		$strSQL = "SELECT $strSelect,users_id tmp_users_id,sites_id tmp_sites_id FROM MCP_USERS WHERE users_id = ?";
-		$arrUser = array_pop($this->_objMCP->query($strSQL,array($intId)));
+		$arrUser = array_pop(
+			$this->_objMCP->query(
+				'SELECT u.* FROM MCP_USERS u WHERE u.users_id = :users_id'
+				,array(
+					':users_id'=>(int) $intId
+				)
+		));
 		
 		// add dynamic fields
-		$arrUser = $this->_objMCP->addFields($arrUser,$arrUser['tmp_users_id'],'MCP_SITES',$arrUser['tmp_sites_id']);
-		unset($arrUser['tmp_users_id'],$arrUser['tmp_sites_id']);
+		if( $arrUser !== null ) {
+			$arrUser = $this->_objMCP->addFields($arrUser,$arrUser['users_id'],'MCP_SITES',$arrUser['sites_id']);
+		}
+		
+		// unset($arrUser['tmp_users_id'],$arrUser['tmp_sites_id']);
 		
 		return $arrUser;
 	}
@@ -109,7 +117,7 @@ class MCPDAOUser extends MCPDAO {
 	*/
 	public function fetchUserByLoginCredentials($strUsername,$strPassword,$intSitesId) {
 		
-		$strSQL = 
+		/*$strSQL = 
 			sprintf(
 		          "SELECT 
 		                users_id 
@@ -127,9 +135,28 @@ class MCPDAOUser extends MCPDAO {
 		           ,$this->_objMCP->escapeString($strUsername)
 		           ,$this->_objMCP->escapeString($strPassword)
 		           ,$this->_objMCP->escapeString($this->_objMCP->getSalt())
-		 	);
+		 	);*/
 
-		 return array_pop($this->_objMCP->query($strSQL));
+		 return array_pop($this->_objMCP->query(
+                  'SELECT 
+		                users_id 
+		             FROM
+		                MCP_USERS
+		            WHERE
+		                sites_id = :sites_id
+		              AND
+		                username = :username
+		              AND
+		                pwd = SHA1( CONCAT(:password,:salt,created_on_timestamp) )
+		              AND
+		                deleted = 0'
+		 	,array(
+		 		 ':sites_id'=>(int) $intSitesId
+		 		,':username'=>(string) $strUsername
+		 		,':password'=>(string) $strPassword
+		 		,':salt'=>(string) $this->_objMCP->getSalt()
+		 	)
+		 ));
 	}
 	
 	/*
@@ -139,11 +166,21 @@ class MCPDAOUser extends MCPDAO {
 	* @param array user data
 	*/
 	public function updateUsersData($intId,$arrUserData) {
-		$strSQL = sprintf(
+		
+		/*$strSQL = sprintf(
 			"UPDATE MCP_USERS SET user_data = '%s' WHERE users_id = %s"
 			,base64_encode(serialize($arrUserData))
 			,$this->_objMCP->escapeString($intId)
+		);*/
+		
+		return $this->_objMCP->query(
+			'UPDATE MCP_USERS SET user_data = :user_data WHERE users_id = :users_id'
+			,array(
+				 ':user_data'=>(string) base64_encode(serialize($arrUserData))
+				,':users_id'=>(int) $intId
+			)
 		);
+		
 	}
 	
 	/*
@@ -153,6 +190,8 @@ class MCPDAOUser extends MCPDAO {
 	* is perfectly acceptable considering the generic save method exists as a helper more
 	* than anything else. However, when the circumstance calls for it its fine to not use it
 	* or copy and modify it as needed to achieve goals that are outside the base functionality.
+	* 
+	* @todo: convert to variable binding
 	* 
 	* @param array user data
 	*/
@@ -245,6 +284,8 @@ class MCPDAOUser extends MCPDAO {
 	* Delete a user 
 	* 
 	* @param mix single integer value or array of integers (MCP_USERS primary key)
+	* 
+	* @todo: convert to variable binding
 	*/
 	public function deleteUsers($mixUsersId) {
 		

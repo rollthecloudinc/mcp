@@ -12,6 +12,9 @@ class MCPDAOTaxonomy extends MCPDAO {
 	* @param str sort
 	* @param str limit
 	* @return array vocabulary
+	* 
+	* @todo: add variable binding support
+	* 
 	*/
 	public function listVocabulary($strSelect='v.*',$strFilter=null,$strSort=null,$strLimit=null) {
 		
@@ -73,6 +76,9 @@ class MCPDAOTaxonomy extends MCPDAO {
 	* @param str sort
 	* @param str limit
 	* @return array terms
+	* 
+	* @todo: add variable binding support
+	* 
 	*/
 	public function listTerms($strSelect='t.*',$strFilter=null,$strSort=null,$strLimit=null) {
 		
@@ -140,11 +146,12 @@ class MCPDAOTaxonomy extends MCPDAO {
 	* Fetch vocabulary by id
 	* 
 	* @param int vocabularies id
-	* @param str select columns
 	* @return array vocabulary data
 	*/
-	public function fetchVocabularyById($intVocabularyId,$strSelect='v.*') {
-		$arrVocab = array_pop($this->_objMCP->query(sprintf(
+	public function fetchVocabularyById($intVocabularyId) {
+		
+		
+		/*$arrVocab = array_pop($this->_objMCP->query(sprintf(
 			'SELECT
 			      %s
 			   FROM
@@ -153,10 +160,24 @@ class MCPDAOTaxonomy extends MCPDAO {
 			      v.vocabulary_id = %s'
 			,$strSelect
 			,$this->_objMCP->escapeString($intVocabularyId)
-		)));
+		)));*/
+		
+		$arrVocab = array_pop($this->_objMCP->query(
+			'SELECT
+			      v.*
+			   FROM
+			      MCP_VOCABULARY v
+			  WHERE
+			      v.vocabulary_id = :vocabulary_id'
+			,array(
+				':vocabulary_id'=>(int) $intVocabularyId
+			)
+		));
 		
 		// decorate node with dynamic field values
-		$arrVocab = $this->_objMCP->addFields($arrVocab,$intVocabularyId,'MCP_VOCABULARY');
+		if( $arrVocab !== null ) {
+			$arrVocab = $this->_objMCP->addFields($arrVocab,$intVocabularyId,'MCP_VOCABULARY');
+		}
 		
 		return $arrVocab;
 		
@@ -170,19 +191,19 @@ class MCPDAOTaxonomy extends MCPDAO {
 	* @param bool accept cached term?
 	* @return array term data
 	*/
-	public function fetchTermById($intTermsId,$strSelect='t.*',$boolCache=true) {
+	public function fetchTermById($intTermsId,$boolCache=true) {
 		
 		/*
 		* Cache handling 
 		*/
-		if($boolCache === true) {
+		/*if($boolCache === true) {
 			$arrCachedTerm = $this->_getCachedTerm($intTermsId);
 			if( $arrCachedTerm !== null ) {
 				return $arrCachedTerm;
 			}
-		}
+		}*/
 		
-		$arrTerm = array_pop($this->_objMCP->query(sprintf(
+		/*$arrTerm = array_pop($this->_objMCP->query(sprintf(
 			'SELECT
 			      %s
 			      ,parent_id tmp_parent_id
@@ -193,18 +214,33 @@ class MCPDAOTaxonomy extends MCPDAO {
 			      t.terms_id = %s'
 			,$strSelect
 			,$this->_objMCP->escapeString($intTermsId)
-		)));
+		)));*/
+		
+		$arrTerm = array_pop($this->_objMCP->query(
+			'SELECT
+                  t.*
+			   FROM
+			      MCP_TERMS t
+			  WHERE
+			      t.terms_id = :terms_id'
+			,array(
+				':terms_id'=>(int) $intTermsId
+			)
+		));
 		
 		// dynamic field vocab resolution
-		if(strcmp('vocabulary',$arrTerm['tmp_parent_type']) === 0) {
-			$entity_id = $arrTerm['tmp_parent_id'];
-		} else {
-			$vocab = $this->fetchTermsVocabulary($arrTerm['tmp_parent_id']);
-			$entity_id = $vocab['vocabulary_id'];
-		}
+		if( $arrTerm !== null ) {
 		
-		// decorate node with dynamic field values
-		$arrTerm = $this->_objMCP->addFields($arrTerm,$intTermsId,'MCP_VOCABULARY',$entity_id);
+			if(strcmp('vocabulary',$arrTerm['parent_type']) === 0) {
+				$entity_id = $arrTerm['parent_id'];
+			} else {
+				$vocab = $this->fetchTermsVocabulary($arrTerm['parent_id']);
+				$entity_id = $vocab['vocabulary_id'];
+			}
+		
+			// decorate node with dynamic field values
+			$arrTerm = $this->_objMCP->addFields($arrTerm,$intTermsId,'MCP_VOCABULARY',$entity_id);
+		}
 		
 		return $arrTerm;
 		
@@ -219,6 +255,8 @@ class MCPDAOTaxonomy extends MCPDAO {
 	* @param bool recursive
 	* @param array option set for selecting specific columns, adding filters or changing default sort order
 	* @return array terms
+	* 
+	* @todo: conert to variable binding
 	*/
 	public function fetchTerms($intParentId,$strParentType='vocabulary',$boolR=true,$arrOptions=null) {
 		
@@ -272,7 +310,7 @@ class MCPDAOTaxonomy extends MCPDAO {
 	*/
 	public function fetchTermsVocabulary($intTermsId,$runner=0,$echo=false) {
 		
-		$strSQL = sprintf(
+		/*$strSQL = sprintf(
 			'SELECT
 			      t.terms_id
 			      ,t.parent_id
@@ -282,9 +320,21 @@ class MCPDAOTaxonomy extends MCPDAO {
 			  WHERE
 			      t.terms_id = %s'
 			,$this->_objMCP->escapeString($intTermsId)
-		);
+		);*/
 		
-		$arrRow = array_pop($this->_objMCP->query($strSQL));
+		$arrRow = array_pop($this->_objMCP->query(
+            'SELECT
+			      t.terms_id
+			      ,t.parent_id
+			      ,t.parent_type
+			   FROM
+			      MCP_TERMS t
+			  WHERE
+			      t.terms_id = :terms_id'
+			,array(
+				':terms_id'=>(int) $intTermsId
+			)
+		));
 		
 		if(strcmp($arrRow['parent_type'],'vocabulary') != 0) {
 			return $this->fetchTermsVocabulary($arrRow['parent_id'],($runner+1),$echo);
@@ -312,6 +362,12 @@ class MCPDAOTaxonomy extends MCPDAO {
 			// properly ommits items that have been soft deleted
 			'filter'=>'t.deleted = 0'
 		));
+		
+		/*
+		* @todo: when fetchTerms is converted to variable binding update this
+		* method as appropriate to be compatible with change to fetchTerms
+		* signature that supports variable binding.
+		*/
 		
 		/*
 		* Recursive function used to flatten hierarchy
@@ -447,6 +503,8 @@ class MCPDAOTaxonomy extends MCPDAO {
 	* Delete a vocabulary
 	* 
 	* @param mix single integer value or array of integer values ( MCP_VOCABULARY primary key )
+	* 
+	* @todo: convert to variable binding
 	*/
 	public function deleteVocabulary($mixVocabularyId) {
 		
@@ -489,6 +547,12 @@ class MCPDAOTaxonomy extends MCPDAO {
 			'filter'=>'t.deleted = 0'
 		));
 		
+		/*
+		* @todo: when fetchTerms is converted to variable binding update this
+		* method as appropriate to be compatible with change to fetchTerms
+		* signature that supports variable binding.
+		*/ 
+		
 		$objIds = new ArrayObject(array($arrTarget['terms_id']));
 		
 		/*
@@ -511,6 +575,8 @@ class MCPDAOTaxonomy extends MCPDAO {
 		
 		/*
 		* Create SQL 
+		* 
+		* @todo: convert to variable binding
 		*/
 		$strSQL = sprintf(
 			'UPDATE
@@ -534,6 +600,8 @@ class MCPDAOTaxonomy extends MCPDAO {
 	* inside the navigation DAO. It is pretty much the same process considering
 	* the tree structure is the takes on a same form and similar dpenedent methods exist.
 	* 
+	* @todo: convert to variable binding
+	* 
 	* @param int terms id
 	*/
 	public function removeTerm($intTermsId) {
@@ -556,6 +624,12 @@ class MCPDAOTaxonomy extends MCPDAO {
 		$arrTerms = $this->fetchTerms($arrTarget['parent_id'],$arrTarget['parent_type'],false,array(
 			'filter'=>'t.deleted = 0'
 		));
+		
+		/*
+		* @todo: when fetchTerms is converted to variable binding update this
+		* method as appropriate to be compatible with change to fetchTerms
+		* signature that supports variable binding.
+		*/ 
 		
 		/*
 		* reorder array 
