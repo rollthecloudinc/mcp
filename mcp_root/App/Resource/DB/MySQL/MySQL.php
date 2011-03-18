@@ -58,8 +58,8 @@ class MCPMySQL extends MCPResource implements MCPDB {
 		
 		$objResult = mysql_query($strSQL,$this->_objLink);
 		
-		if(!$objResult) {
-			$this->_objMCP->triggerError('SQL Query invalid');
+		if( mysql_error($this->_objLink) ) {
+			throw new MCPDBException('Query failed');
 		}
 		
 		$arrRows = array();
@@ -67,10 +67,10 @@ class MCPMySQL extends MCPResource implements MCPDB {
 			while($arrRow = mysql_fetch_assoc($objResult)) {
 				$arrRows[] = $arrRow;
 			}
-		} else if(strpos($strSQL,'INSERT') === 0) {
-			return $this->lastInsertId();
-		} else if(strpos($strSQL,'UPDATE') === 0) {
-			return $this->affectedRows();
+		} else if(strpos($strSQL,'INSERT') === 0) {		
+			return $this->lastInsertId();		
+		} else if(strpos($strSQL,'UPDATE') === 0) {		
+			return $this->affectedRows();			
 		}
 		
 		return $arrRows;		
@@ -124,6 +124,16 @@ class MCPMySQL extends MCPResource implements MCPDB {
 	*/
 	public function beginTransaction() {
 		
+		/*
+		* Turn off auto commit 
+		*/
+		mysql_query('SET autocommit=0;',$this->_objLink);
+		
+		/*
+		* Start the transaction 
+		*/
+		mysql_query('START TRANSACTION;',$this->_objLink);
+		
 	}
 	
 	/*
@@ -131,12 +141,32 @@ class MCPMySQL extends MCPResource implements MCPDB {
 	*/
 	public function rollback() {
 		
+		/*
+		* Rollback the transaction
+		*/
+		mysql_query('ROLLBACK;',$this->_objLink);
+		
+		/*
+		* Turn on auto commit 
+		*/
+		mysql_query('SET autocommit=1;',$this->_objLink);
+		
 	}
 	
 	/*
 	* Commit a transaction 
 	*/
 	public function commit() {
+		
+		/*
+		* Commit the transaction
+		*/
+		mysql_query('COMMIT;',$this->_objLink);
+		
+		/*
+		* Turn on auto commit 
+		*/
+		mysql_query('SET autocommit=1;',$this->_objLink);
 		
 	}
 	

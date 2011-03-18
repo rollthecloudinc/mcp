@@ -45,6 +45,11 @@ class Form implements \UI\Element {
 			,'layout'=>array(
 				'default'=>null
 			)
+
+			,'recaptcha'=>array(
+				'default'=>null
+			)
+			
 		);
 	}
 	
@@ -404,7 +409,12 @@ class Form implements \UI\Element {
 				
 				$elements[$field] = $element;
 				
-			} 
+			}
+			
+			if( $recaptcha !== null ) {
+				$elements['recaptcha'] = $recaptcha;
+				$form.= "<li>$recaptcha</li>";
+			}
 			
 			/*
 			* Submit button 
@@ -421,9 +431,12 @@ class Form implements \UI\Element {
 			}
 				
 			$form.= '</ul>';
+			
 		} else {
 			$form.= '<p>No form available</p>';
 		}
+		
+
 		
 		$form.= '</fieldset></form>';
 		

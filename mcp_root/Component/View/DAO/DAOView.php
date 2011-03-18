@@ -319,6 +319,25 @@ class MCPDAOView extends MCPDAO {
 	}
 	
 	/*
+	* Get all the ancestors of a given view 
+	* 
+	* @param int view id
+	* @return array views
+	*/
+	public function fetchAncestory($intViewsId) {
+		
+		$arrViews = array();
+		while($intViewsId !== null && $objView = $this->fetchViewById($intViewsId)) {
+			array_unshift($arrViews,$intViewsId);
+			$intViewsId = $objView->parent_id;
+			
+		}
+		
+		return $arrViews;
+		
+	}
+	
+	/*
 	* Fetch a single view display by its ID
 	* 
 	* NOTE: This will fully resolve a view including
@@ -685,22 +704,35 @@ class MCPDAOView extends MCPDAO {
 	* 
 	* @param array view data
 	* @param int SQL offset for pagination
+	* @param obj module that made request - necessary to build URLs relative to current module/page taking into consideration modules
+	* may be nested.
 	* @return ?
 	*/
-	public function fetchRows($objView,$intOffset=null) {
+	public function fetchRows($objView,$intOffset=null,$objModule=null) {
 		
 		$arrReturn = array();
+		$arrBind = array();
+		$intBind = 0;
 		
 		/*
 		* Select handler -------------------------------------------------------------- 
 		*/
 		
 		foreach($objView->fields as $arrField) {
-			$arrReturn[ $arrField['path'] ]['select'] = true;
+			/*
+			* The field is needed so that options can be passed to the
+			* preprocess and postprocess select closures for a field
+			* when they exist. 
+			*/
+			$arrReturn[ $arrField['path'] ]['select'] = $arrField;
 		}
 		
 		/*
 		* Filter Handler --------------------------------------------------------------- 
+		* 
+		* NOTE: variable binding is used for filters only at this time. That seems to
+		* be where the highest security risk would lie anyway. In addition, there is not
+		* need to determine whether to escape items and what not.
 		*/
 		
 		foreach($objView->filters as $arrFilter) {
@@ -713,6 +745,16 @@ class MCPDAOView extends MCPDAO {
 			if(isset($arrFilter['values']) && !empty($arrFilter['values'])) {
 				
 				foreach($arrFilter['values'] as $arrValue) {
+					
+					/*
+					* @todo: Temporary fix to skip over arguments that don't exist. This makes
+					* all arguments optional though which isn't exactly what we want. Instead
+					* we need to make sure to skip over only filter valyes bound to arguments that have required 
+					* marked 0. Thiswill do for now though.
+					*/
+					if( strcmp('argument',$arrValue['type']) === 0 && $arrValue['actual_value'] === null ) {
+						continue;
+					}
 					
 					// @todo determine whether value needs to enclosed in quotes or use placehodlers w/ binding
 					
@@ -732,7 +774,13 @@ class MCPDAOView extends MCPDAO {
 							// negation edge case ie. LIKE and NOT LIKE
 							$strOperator = strcmp($arrFilter['conditional'],'none') === 0?' NOT LIKE ':' LIKE ';
 							
-							$arrParts[] = '{#column#}.'.$strOperator."'".str_replace('s',$arrValue['actual_value'],$strWildcard)."'";
+							/*
+							* I am pretty sure the correct way to do this is %?% - I may be wrong though 
+							*/
+							// $arrParts[] = '{#column#}.'.$strOperator."'".str_replace('s',$arrValue['actual_value'],$strWildcard)."'";
+							$arrParts[] = '{#column#}.'.$strOperator."'".str_replace('s',":bind_var_{++$intBind}",$strWildcard)."'";
+							$arrBind[":bind_var_$intBind"] = $arrValue['actual_value'];
+							
 							break;
 						
 						case 'regex':
@@ -748,13 +796,18 @@ class MCPDAOView extends MCPDAO {
 							// negation edge case ie. NOT REGEXP and REGEXP
 							$strOperator = strcmp($arrFilter['conditional'],'none') === 0?' NOT REGEXP ':' REGEXP ';
 							
+							/*
+							* @todo: Can a regular expression be bound? 
+							*/
 							$arrParts[] = '{#column#}.'.$strOperator."'".$strRegex."'";
 							break;
 							
 						case 'fulltext':
 							
 							// escape value for security reasons
-							$arrParts[] = "FULLTEXT({#column#},'{$this->_objMCP->escapeString($arrValue['actual_value'])}')";
+							// $arrParts[] = "FULLTEXT({#column#},'{$this->_objMCP->escapeString($arrValue['actual_value'])}')";
+							$arrParts[] = 'FULLTEXT({#column#},:bind_var_'.(++$intBind).')';
+							$arrBind[":bind_var_$intBind"] = $arrValue['actual_value'];
 							
 							break;
 						
@@ -767,28 +820,53 @@ class MCPDAOView extends MCPDAO {
 								$strOperator = '<>';
 							}
 							
-							$arrParts[] = '{#column#}'.' '.$strOperator.' '.(is_numeric($arrValue['actual_value'])?$arrValue['actual_value']:"'{$arrValue['actual_value']}'");
+							// $arrParts[] = '{#column#}'.' '.$strOperator.' '.(is_numeric($arrValue['actual_value'])?$arrValue['actual_value']:"'{$arrValue['actual_value']}'");
+							
+							/*
+							* This makes it possible to send a array of values back for an argument
+							* as an actual value and not break the the query. Each value is treated
+							* as a separate condtion.
+							* 
+							* Seems like this is the only hadnler that needs to support this case. So for
+							* now I will leave support for array actual values here.
+							*/
+							if( is_array($arrValue['actual_value']) ) {
+								foreach($arrValue['actual_value'] as $mixActualValue) {
+									$arrParts[] = '{#column#}'.' '.$strOperator.' :bind_var_'.(++$intBind);
+									$arrBind[":bind_var_$intBind"] = $mixActualValue;
+								}
+							} else {
+								$arrParts[] = '{#column#}'.' '.$strOperator.' :bind_var_'.(++$intBind);
+								$arrBind[":bind_var_$intBind"] = $arrValue['actual_value'];
+							}
+							
 					}
 				}
 			}
 			
 			// The conditional will determine the format of the values and separator ie. and | or
-			switch($arrFilter['conditional']) {
+			// If parts don't exist that means the filter has no values in which case doing the below would
+			// break the query ie. AND {space}
+			if( !empty($arrParts) ) {
+			
+				switch($arrFilter['conditional']) {
 				
-				case 'all':	
-					$arrReturn[ $arrFilter['path'] ]['filters'][] = implode(' AND ',$arrParts);
-					break;
+					case 'all':	
+						$arrReturn[ $arrFilter['path'] ]['filters'][] = '('.implode(' AND ',$arrParts).')';
+						break;
 				
-				case 'none':
-					$arrReturn[ $arrFilter['path'] ]['filters'][] = implode(' AND ',$arrParts);
-					break;
+					case 'none':
+						$arrReturn[ $arrFilter['path'] ]['filters'][] = '('.implode(' AND ',$arrParts).')';
+						break;
 					
-				case 'one':
-					$arrReturn[ $arrFilter['path'] ]['filters'][] = implode(' OR ',$arrParts);
-					break;
+					case 'one':
+						$arrReturn[ $arrFilter['path'] ]['filters'][] = '('.implode(' OR ',$arrParts).')';
+						break;
 					
-				default: // when none of them are met, there is a problem - error
+					default: // when none of them are met, there is a problem - error
 				
+				}
+			
 			}
 			
 			
@@ -890,7 +968,7 @@ class MCPDAOView extends MCPDAO {
 		// Add contextual where clause - this is responsible for limiting entities to the type
 		$this->_addQueryEntityContextFilter($objQuery,$objView->base_path);
 		
-		$toSQL = function($arrBranches,$objParent,$toSQL) use (&$intCounter,$objDAOView,$objQuery) {
+		$toSQL = function($arrBranches,$objParent,$toSQL) use (&$intCounter,&$objModule,$objDAOView,$objQuery) {
 			
 			// collected branches - necessary to rebuild result set as hierarchy of relations
 			$arrReturn = array();
@@ -940,7 +1018,44 @@ class MCPDAOView extends MCPDAO {
 					
 					// columns to select
 					if( isset($arrChildren['select']) ) {
-						$objQuery->select[] = "$strAlias.{$arrField['column']} {$strAlias}_{$strPiece}";
+						
+						/*
+						* This is some special sauce to mutate a given field at run time
+						* using a closure. This is mainly used for special fields such as;
+						* links and image urls. The column being selected may be the primary key
+						* but a translation can be applied to turn it into a URL either here
+						* or even at the collection stage (postprocess_select).
+						* 
+						* @see: _fetchSpecialNodeFields() or _fetchDynamicImageFields for usage reference
+						*/
+						if( !empty($arrField['preprocess_select']) ) {
+							
+							// -----------------------------------------------------------------------------------------
+							// Create associative array of all options for the field to send to preprocess_select closure
+							$arrOptions = array();
+							foreach( $arrField['options'] as &$arrOption) {
+								$arrOptions[$arrOption['name']] = null; // could use a default here
+								
+								// Get options actual value
+								if( isset($arrChildren['select']['options']) && !empty($arrChildren['select']['options']) ) {
+									foreach( $arrChildren['select']['options'] as &$arrOpt ) {
+										if( strcmp($arrOpt['name'],$arrOption['name']) === 0 ) {
+											$arrOptions[$arrOption['name']] = $arrOpt['actual_value'];
+										}
+									}
+								}
+								
+							}
+							// --------------------------------------------------------------------------------------
+
+							$objQuery->select[] = call_user_func($arrField['preprocess_select'],"$strAlias.{$arrField['column']}",$arrOptions,$objModule)." {$strAlias}_{$strPiece}";
+							
+						} else {
+							
+							$objQuery->select[] = "$strAlias.{$arrField['column']} {$strAlias}_{$strPiece}";
+							
+						}
+						
 					}
 					
 					// where clause parts
@@ -980,7 +1095,7 @@ class MCPDAOView extends MCPDAO {
 		};
 		
 		$arrNodes = $toSQL($tree,$objBase,$toSQL);	
-		//echo '<pre>',print_r($objQuery),'</pre>';
+		// echo '<pre>',print_r($objQuery),'</pre>';
 		
 		
 		//---------------------------------------------------------------------
@@ -999,12 +1114,25 @@ class MCPDAOView extends MCPDAO {
 		);
 		
 		// echo "<p>$strSQL</p>";
+		// echo '<pre>',print_r($arrBind),'</pre>';
 		// $this->_objMCP->addSystemStatusMessage("View Query: $strSQL");
 		
 		// ------------------------------------------------------------------
 		// fetch result set
 		// ------------------------------------------------------------------
-		$arrRows = $this->_objMCP->query($strSQL);
+		try {
+			
+			$arrRows = $this->_objMCP->query($strSQL,$arrBind);
+			
+		} catch( MCPDBException $e) {
+			
+			/*
+			* View query failure debug 
+			*/
+			$this->_objMCP->addSystemStatusMessage("View Query Failed: $strSQL");
+			return;
+			
+		}
 		
 		// Number of found rows
 		$intFoundRows = array_pop(array_pop($this->_objMCP->query('SELECT FOUND_ROWS()')));
@@ -1167,6 +1295,8 @@ class MCPDAOView extends MCPDAO {
 		$actions	= '';
 		$primary 	= false;
 		$options	= array();
+		$preprocess_select = null;
+		$postprocess_select = null;
 		
 		/*
 		* A bunch of translations for common column names that have the same meaning
@@ -1250,6 +1380,12 @@ class MCPDAOView extends MCPDAO {
 				
 			case 'node_content':
 				$label = 'Body';
+				
+				/*
+				* Options to truncate content 
+				*/
+				$options[] = array('name'=>'max_chars','type'=>'int');
+				
 				break;
 				
 			case 'node_url':
@@ -1307,7 +1443,7 @@ class MCPDAOView extends MCPDAO {
 			,'path'=>$path 
 			,'column'=>$column
 			,'type'=>$type
-			,'usedby'=>$compatible
+			,'compatible'=>$compatible
 			,'relation'=>$relation
 			,'relation_type'=>$relation_type
 			,'dynamic'=>false
@@ -1320,6 +1456,22 @@ class MCPDAOView extends MCPDAO {
 			,'entities_id'=>null 
 			,'sites_id'=>null 
 			,'entities_primary_key'=>null
+			
+			/*
+			* Closure that mutates column during query (query phase)
+			* @param column w/ alias
+			* @param options
+			* @param module (module that initiated fetchRows() call) - useful for building URls relative to page
+			*/
+			,'preprocess_select'=>$preprocess_select
+			
+			/*
+			* Closure that mutates column after query (collection phase)
+			* @param column w/ alias
+			* @param options
+			* @param module (module that initiated fetchRows() call) - useful for building URls relative to page 
+			*/
+			,'postprocess_select'=>$postprocess_select
 		);
 		
 	}
@@ -1369,6 +1521,10 @@ class MCPDAOView extends MCPDAO {
 			case 'Node':
 				$entity_type = 'MCP_NODE_TYPES';
 				$primaryKey = 'nodes_id';
+				
+				// Get special node fields such as; link builder, ect
+				$add = $this->_fetchSpecialNodeFields();
+				
 				break;
 				
 			case 'User':
@@ -1436,7 +1592,7 @@ class MCPDAOView extends MCPDAO {
 			 ,f.cfg_name `name`
 			 ,CONCAT('db_',f.db_value) `column`
 			 ,$type type
-			 ,'select,filter,sort' usedby
+			 ,'select,filter,sort' compatible
 			 ,$relation relation
 			 ,IF(cfg_multi = 1,'many','one') relation_type
 			 ,1 dynamic
@@ -1447,7 +1603,9 @@ class MCPDAOView extends MCPDAO {
 			 ,f.entity_type
 		     ,f.entities_id
 			 ,'$primaryKey' entities_primary_key
-			 ,f.db_ref_col" // NOTE: sites_id,entity_type, entities_id, entities_primary_key are necessary to build join for dynamic fields
+			 ,f.db_ref_col
+			 ,NULL preprocess_select
+			 ,NULL postprocess_select" // NOTE: sites_id,entity_type, entities_id, entities_primary_key are necessary to build join for dynamic fields
 		   ,sprintf(
 				"f.sites_id = %s AND f.entity_type = '%s' AND f.entities_id %s"
 				,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
@@ -1464,11 +1622,68 @@ class MCPDAOView extends MCPDAO {
 	}
 	
 	/*
+	*  Special: Extra node fields
+	*  
+	*  - node URL field
+	* 
+	*  @return array extra node fields
+	*/
+	private function _fetchSpecialNodeFields() {
+		
+		$mcp = $this->_objMCP;
+		
+		/*
+		* node_link:
+		* This is a fully URL to view the node page
+		* relative to the view (nested) with a provided
+		* back button to the view state (persistent args and pagination).
+		*/
+		return array(
+			array(
+				'label' 				=> '*Link'
+				,'path' 				=> 'node_link'
+				,'column'				=> 'nodes_id'
+				,'type'					=> null
+				,'compatible' 			=> 'select'
+				,'relation' 			=> null
+				,'relation_type' 		=> null
+				,'dynamic' 				=> false
+				,'actions'				=> ''
+				,'primary' 				=> false
+				,'options'				=> array(
+					 array('name'=>'friendly_url','type'=>'bool')
+				)
+				
+				// These columns are only used for dynamic fields
+				,'entity_type'=>null
+				,'entities_id'=>null 
+				,'sites_id'=>null 
+				,'entities_primary_key'=>null
+				
+				// first argument is the full column name including the alias
+				// second argument is the view module instance - use getBasePath() to get URL relative to current page for building
+				// pages that nest within one another.
+				,'preprocess_select'=>function($strColumn,$arrOptions,$objModule) use ($mcp) {
+					return "IF($strColumn IS NOT NULL,CONCAT('{$mcp->escapeString( $objModule->getBasePath() )}/View/',$strColumn),NULL)";
+				}
+				
+				,'postprocess_select'=>function($intNodesId) {
+					
+				}
+				
+			)
+		);
+		
+	}
+	
+	/*
 	*  Special: Extra image fields
 	* 
 	*  @return array extra image fields
 	*/
 	private function _fetchDynamicImageFields() {
+		
+		$mcp = $this->_objMCP;
 		
 		/*
 		* This "magical" field will display the image. When displaying
@@ -1503,6 +1718,39 @@ class MCPDAOView extends MCPDAO {
 				,'entities_id'=>null 
 				,'sites_id'=>null 
 				,'entities_primary_key'=>null
+				
+				/*
+				* The column being selected here is the images primary key. The translation
+				* below converts it to a image URL w/ options applied to transform
+				* the image as specified. The end result is a URL that can be printed
+				* out and displays the image with the option translations applied. 
+				*/
+				,'preprocess_select'=>function($strColumn,$arrOptions,$objModule) use ($mcp) {
+					
+					$strImageURL = '/img.php/';
+					$strMutation = '';
+					
+					// width resize
+					if( $arrOptions['width'] !== null ) {
+						$strMutation.= "/w/{$mcp->escapeString($arrOptions['width'])}";
+					}
+					
+					// height resize
+					if( $arrOptions['height'] !== null ) {
+						$strMutation.= "/h/{$mcp->escapeString($arrOptions['height'])}";
+					}
+					
+					// grayscale
+					if( $arrOptions['grayscale'] !== null ) {
+						$strMutation.= "/gs/{$mcp->escapeString( (int) ((bool) $arrOptions['grayscale'])) }";
+					}
+					
+					// @todo: b/w transformation
+					
+					return "IF($strColumn IS NOT NULL,CONCAT('/img.php/',$strColumn,'$strMutation'),NULL)";
+				}
+				
+				,'postprocess_select'=>null
 				
 			)
 		);
@@ -1553,6 +1801,10 @@ class MCPDAOView extends MCPDAO {
 				,'entities_id'=>null 
 				,'sites_id'=>null 
 				,'entities_primary_key'=>null
+				
+				,'preprocess_select'=>null
+				,'postprocess_select'=>null
+				
 			);
 			
 		}
@@ -1701,26 +1953,41 @@ class MCPDAOView extends MCPDAO {
 			
 		}
 		
-		// Cast the value to the correct type
-		switch($strType) {
+		/*
+		* Support for argument arrays 
+		*/
+		$rebuild = array();			
+		foreach( ( is_array($mixValue)?$mixValue:array($mixValue) ) as $value) {
 			
-			case 'int':
-				return (int) $mixValue;
+			if( $value === null ) continue;
+			
+			// Cast the value to the correct type
+			switch($strType) {
+			
+				case 'int':
+					$rebuild[] = (int) $value;
+					break;
 				
-			case 'string':
-				return (string) $mixValue;
+				case 'string':
+					$rebuild[] = (string) $value;
+					break;
 				
-			case 'float':
-				return (float) $mixValue;
+				case 'float':
+					$rebuild[] = (float) $value;
+					break;
 				
-			case 'bool':
-				// case to int because no bool value exists in SQL - uses 0 and 1
-				return (int) $mixValue;
+				case 'bool':
+					// case to int because no bool value exists in SQL - uses 0 and 1
+					$rebuild[] = (int) $value;
+					break;
 				
-			default: //error out
+				default: //error out
+			
+			}
 			
 		}
 		
+		return is_array($mixValue)?$rebuild:array_pop($rebuild);
 		
 	}
 	

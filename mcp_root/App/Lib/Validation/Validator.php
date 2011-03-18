@@ -78,7 +78,7 @@ class Validator {
 
 					case 'text':
 						$strError = $this->validateText($strValue,$strLabel);
-						break;	
+						break;
 	
 					default:
 						if(isset($this->_arrRules[$arrConfig['type']])) {

@@ -7,4 +7,5 @@
 	,'legend'=>$legend
 	,'idbase'=>'user-'
 	,'image_path'=>$this->_objMCP->getBaseUrl(false).'/img.php/%s/w/75'
+	,'recaptcha'=>$recaptcha
 )); ?>

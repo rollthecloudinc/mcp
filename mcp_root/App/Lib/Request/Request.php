@@ -105,10 +105,15 @@ class Request {
 	/*
 	* Get SERVER data
 	*
+	* @param key name
 	* @return array
 	*/
-	public function getServerData() {
-		return $_SERVER;
+	public function getServerData($strName=null) {
+		if($strName == null) {
+			return $_SERVER;
+		} else {
+			return isset($_SERVER[$strName])?$_SERVER[$strName]:null;
+		}
 	}
 	
 	/*

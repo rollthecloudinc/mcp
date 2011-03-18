@@ -121,4 +121,16 @@
 		<value>Component.Util.Module.Admin</value>
 		<type>component</type>
 	</site_admin_module>
+	
+	<recaptcha_privatekey>
+		<label>reCaptcha Private Key</label>
+		<value></value>
+		<type>text</type>
+	</recaptcha_privatekey>
+	<recaptcha_publickey>
+		<label>reCaptcha Public Key</label>
+		<value></value>
+		<type>text</type>
+	</recaptcha_publickey>
+	
 </config>

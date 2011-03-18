@@ -9,6 +9,11 @@ class MCPViewView extends MCPModule {
 	$_objDAOView
 	
 	/*
+	* Node data access layer 
+	*/
+	,$_objDAONode
+	
+	/*
 	* The view data that is being displayed
 	*/
 	,$_objView
@@ -33,6 +38,71 @@ class MCPViewView extends MCPModule {
 		// Get the view data access layer
 		$this->_objDAOView = $this->_objMCP->getInstance('Component.View.DAO.DAOView',array($this->_objMCP));
 		
+		// Get the node data access layer
+		$this->_objDAONode = $this->_objMCP->getInstance('Component.Node.DAO.DAONode',array($this->_objMCP));
+		
+	}
+	
+	/*
+	* Get URL to create base entity 
+	*/
+	protected function _getCreateBaseEntityURL() {
+		
+		switch( $this->_objView->base ) {
+			
+			case 'Node':
+				
+				// Get the node type
+				$arrNodeType = $this->_objDAONode->fetchNodeTypeById($this->_objView->base_id);
+				
+				// Get the type string
+				$strType = $this->_objDAONode->getNodeTypeName($arrNodeType);
+				
+				// reverse the type for creating a new node of that type that belongs to a package
+				if( strpos($strType,'::') !== false ) {
+					$arrPieces = explode('::',$strType,2);
+					$strType = "{$arrPieces[1]}::{$arrPieces[0]}";
+				}
+				
+				// Build the create node of node type URL
+				return $this->getBasePath(false)."/Create/$strType";
+				
+			case 'NodeType':
+				
+			case 'Term':
+				
+			case 'Vocabulary':
+				
+			case 'Site':
+				
+			case 'User':
+				
+			default:
+				return null;
+			
+		}
+		
+	}
+	
+	/*
+	* get label to sue with entity 
+	*/
+	protected function _getCreateBaseEntityLabel() {
+		
+		switch( $this->_objView->base ) {
+			
+			case 'Node':
+				
+				// Get the node type
+				$arrNodeType = $this->_objDAONode->fetchNodeTypeById($this->_objView->base_id);
+				
+				return 'Create '.$arrNodeType['human_name'];
+			
+			default:
+				return 'Create Item';
+			
+		}
+		
 	}
 	
 	/*
@@ -47,7 +117,7 @@ class MCPViewView extends MCPModule {
 	public function paginate($intOffset, $intLimit) {
 		
 		// Fetch views rows
-		$data = $this->_objDAOView->fetchRows( $this->_objView , $intOffset );
+		$data = $this->_objDAOView->fetchRows( $this->_objView , $intOffset , $this );
 		
 		// Assign row data
 		$this->_arrTemplateData['rows'] = array_shift( $data );
@@ -124,13 +194,13 @@ class MCPViewView extends MCPModule {
 				// URL to edit entity
 				$this->_arrTemplateData['edit'] = '';
 				if(isset($row['allow_edit']) && $row['allow_edit']) {
-					$this->_arrTemplateData['edit'] = "{$this->getBasePath(false)}/{$this->_intPage}/Edit/$id";
+					$this->_arrTemplateData['edit'] = "{$this->getBasePath(false)}/Edit/$id";
 				}
 				
 				// URL to view full, individual entity
 				$this->_arrTemplateData['read'] = '';
 				if(isset($row['allow_read']) && $row['allow_read']) {
-					$this->_arrTemplateData['read'] = "{$this->getBasePath(false)}/{$this->_intPage}/View/$id";
+					$this->_arrTemplateData['read'] = "{$this->getBasePath(false)}/View/$id";
 				}
 				
 				// -------------------------------------------------------------------------------
@@ -145,6 +215,10 @@ class MCPViewView extends MCPModule {
 			// Assign inner content
 			$this->_arrTemplateData['content'] = $content;
 			
+			// Assign URL to create base view entity and label to use
+			$this->_arrTemplateData['create'] = $this->_getCreateBaseEntityURL();
+			$this->_arrTemplateData['create_label'] = $this->_getCreateBaseEntityLabel();
+			
 			// When a wrapper template has been defined use that to wrap the content otherwise use default
 			$strTpl = $objView->template_wrap?$objView->template_wrap:$strTpl;
 			
@@ -154,7 +228,7 @@ class MCPViewView extends MCPModule {
 		$this->_arrTemplateData['back_label'] = 'Content';
 		
 		// Redirect back link
-		$this->_arrTemplateData['back_link'] = "{$this->getBasePath(false)}/{$this->_intPage}";
+		$this->_arrTemplateData['back_link'] = "{$this->getBasePath(false)}";
 		
 		
 		/*
@@ -215,6 +289,13 @@ class MCPViewView extends MCPModule {
 	*/
 	public function getBasePath($redirect=true) {
 		$strBasePath = parent::getBasePath();
+		
+		if( $this->_objView !== null ) {
+			// $strBasePath.= "/{$this->_objView->id}";
+		}
+		
+		// add the page
+		$strBasePath.= "/{$this->_intPage}";
 		
 		// add redirect flag
 		if($redirect === true && $this->_strRequest !== null) {

@@ -79,7 +79,7 @@ abstract class MCPDAO extends MCPResource {
 			,implode(',',$arrValues)
 			,$boolUpdate === true?' ON DUPLICATE KEY UPDATE '.implode(',',$arrUpdate):''
 		);
-		
+			
 		return $this->_objMCP->query($strSQL,$arrBind);
 		
 	}

@@ -3,7 +3,7 @@
 /*
 * Build alphabetization interface 
 */
-echo '<ol>';
+echo '<ol class="alphabetizer">';
 
 /*
 * Link to view all 

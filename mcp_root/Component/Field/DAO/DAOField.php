@@ -1252,7 +1252,7 @@ class MCPDAOField extends MCPDAO {
 			      ,MCP_FIELD_VALUES.db_bool = (
 			           CASE
 			               WHEN MCP_FIELDS.db_value = 'bool'
-			               THEN {$this->_objMCP->escapeString( (int) $mixValue )}
+			               THEN {$this->_objMCP->escapeString( (int) ((bool) $mixValue) )}
 			               ELSE NULL
 			           END
 			       )			      
@@ -1333,7 +1333,7 @@ class MCPDAOField extends MCPDAO {
 				          
 				         ,CASE
 				             WHEN db_value = 'bool'
-				             THEN {$this->_objMCP->escapeString( (int) $mixValue )}
+				             THEN {$this->_objMCP->escapeString( (int) ( (bool) $mixValue) )}
 				             ELSE NULL
 				          END db_bool
 				          

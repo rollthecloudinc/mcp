@@ -265,16 +265,42 @@ class MCPDAOUser extends MCPDAO {
 			,$boolUpdate === true?' ON DUPLICATE KEY UPDATE '.implode(',',$arrUpdate):''
 		);
 		
-		$intId = $this->_objMCP->query($strSQL);
+		/*
+		* Start transaction 
+		*/
+		$this->_objMCP->begin();
 		
-		// Get user
-		$user = $this->fetchById(isset($arrUser['users_id'])?$arrUser['users_id']:$intId);
+		try {
 		
-		// Save dynamic fields
-		$this->_objMCP->saveFieldValues($dynamic,$user['users_id'],'MCP_SITES',$user['sites_id']);
+			$intId = $this->_objMCP->query($strSQL);
 		
-		// update cache
-		$this->_setCachedUser( isset($arrUser['users_id'])?$arrUser['users_id']:$intId );
+			// Get user
+			$user = $this->fetchById(isset($arrUser['users_id'])?$arrUser['users_id']:$intId);
+		
+			// Save dynamic fields
+			$this->_objMCP->saveFieldValues($dynamic,$user['users_id'],'MCP_SITES',$user['sites_id']);
+		
+			// update cache
+			$this->_setCachedUser( isset($arrUser['users_id'])?$arrUser['users_id']:$intId );
+			
+			/*
+			* Commit transaction 
+			*/
+			$this->_objMCP->commit();
+			
+		} catch(MCPDBException $e) {
+			
+			/*
+			* If something went wrong rollback transaction 
+			*/
+			$this->_objMCP->rollback();
+			
+			/*
+			* Throw more refined/specific exception 
+			*/
+			throw new MCPDAOException( $e->getMessage() );
+			
+		}
 		
 		return $intId;
 		

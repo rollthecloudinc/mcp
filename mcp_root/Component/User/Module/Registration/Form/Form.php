@@ -82,7 +82,7 @@ class MCPUserRegistrationForm extends MCPModule {
 		/*
 		* Save form data 
 		*/
-		if($this->_arrFrmPost !== null && empty($this->_arrFrmErrors)) {
+		if($this->_arrFrmPost !== null && empty($this->_arrFrmErrors) && ( $this->_useRecaptcha() === false || $this->_objMCP->recaptchaValid() ) ) {
 			$this->_frmSave();
 		}
 		
@@ -225,6 +225,21 @@ class MCPUserRegistrationForm extends MCPModule {
 	}
 	
 	/*
+	* Use recaptcha ofr unauthenicated users
+	* 
+	* @return bool
+	*/
+	protected function _useRecaptcha() {
+		
+		if( $this->_objMCP->getUsersId() === null ) {
+			return true;
+		}
+		
+		return false;
+		
+	}
+	
+	/*
 	* Set user to edit
 	* 
 	* @param array user data
@@ -274,6 +289,9 @@ class MCPUserRegistrationForm extends MCPModule {
 		$this->_arrTemplateData['values'] = $this->_arrFrmValues;
 		$this->_arrTemplateData['errors'] = $this->_arrFrmErrors;
 		$this->_arrTemplateData['legend'] = $this->_getUser() === null?'Register':'Edit User';
+		
+		// recaptcha support
+		$this->_arrTemplateData['recaptcha'] = $this->_useRecaptcha()?$this->_objMCP->recaptchaDraw():null;
 		
 		return 'Form/Form.php';
 	}

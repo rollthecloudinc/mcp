@@ -12,6 +12,7 @@ if($total_pages <= $visible_pages) {
     $page_start = $page-(floor($visible_pages/2));
     $page_end = $page+(floor($visible_pages/2));
 }
+echo '<div class="pager">';
 printf(
     '<div class="summary"><p class="pages">%u %s</p><p class="total">%u %s</p></div>'
     ,$total_pages
@@ -56,4 +57,5 @@ printf(
     ,$page == $total_pages?'':'</a>'
 );
 printf('</ul>');
+echo '</div>';
 ?>

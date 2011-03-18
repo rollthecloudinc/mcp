@@ -44,4 +44,6 @@ $(document).ready(function() {
 	
 	// just for testing - make a node type column - specific form overrride
 	,'layout'=>$layout
+	
+	,'recaptcha'=>$recaptcha
 )); ?>

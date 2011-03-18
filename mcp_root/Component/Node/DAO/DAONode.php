@@ -515,23 +515,49 @@ class MCPDAONode extends MCPDAO {
 			}
 		}
 		
-		$intId = $this->_save(
-			$arrNode
-			,'MCP_NODES'
-			,'nodes_id'
-			,array('node_url','node_title','node_subtitle','node_content','content_type','intro_type','intro_content')
-			,'created_on_timestamp'
-		); 
-		
 		/*
-		* Save dynamic fields 
+		* Start transaction 
 		*/
-		$this->_objMCP->saveFieldValues($dynamic,(isset($arrNode['nodes_id'])?$arrNode['nodes_id']:$intId),'MCP_NODE_TYPES',$arrNode['node_types_id']);
+		$this->_objMCP->begin();
 		
-		/*
-		* Update node cache 
-		*/
-		$this->_setCachedNode( isset($arrNode['nodes_id'])?$arrNode['nodes_id']:$intId );
+		try {
+			
+			$intId = $this->_save(
+				$arrNode
+				,'MCP_NODES'
+				,'nodes_id'
+				,array('node_url','node_title','node_subtitle','node_content','content_type','intro_type','intro_content')
+				,'created_on_timestamp'
+			); 
+		
+			/*
+			* Save dynamic fields 
+			*/
+			$this->_objMCP->saveFieldValues($dynamic,(isset($arrNode['nodes_id'])?$arrNode['nodes_id']:$intId),'MCP_NODE_TYPES',$arrNode['node_types_id']);
+		
+			/*
+			* Update node cache 
+			*/
+			$this->_setCachedNode( isset($arrNode['nodes_id'])?$arrNode['nodes_id']:$intId );
+			
+			/*
+			* Commit transaction 
+			*/
+			$this->_objMCP->commit();
+			
+		} catch(MCPDBException $e) {
+			
+			/*
+			* If something went wrong rollback transaction 
+			*/
+			$this->_objMCP->rollback();
+			
+			/*
+			* Throw more refined/specific exception 
+			*/
+			throw new MCPDAOException( $e->getMessage() );
+			
+		}
 		
 		return $intId;
 		

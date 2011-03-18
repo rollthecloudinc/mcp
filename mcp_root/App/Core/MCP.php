@@ -1294,6 +1294,27 @@ class MCP {
 	}
 	
 	/*
+	* Start a transaction 
+ 	*/
+	public function begin() {
+		return $this->_objDB->beginTransaction();
+	}
+	
+	/*
+	* Commit a transaction 
+	*/
+	public function commit() {
+		return $this->_objDB->commit();
+	}
+	
+	/*
+	* Rollback a transaction 
+	*/
+	public function rollback() {
+		return $this->_objDB->rollback();
+	}
+	
+	/*
 	* Imports requested package
 	*
 	* @param str package
@@ -1662,6 +1683,47 @@ class MCP {
 		*/
 		return $objDAOField->saveFieldValues($arrFields,$intRowsId,$strEntityType,$intEntitiesId);
 		
+	}
+	
+	/*
+	* reCaptcha valid?
+	* 
+	* @param add system error message if invalid
+	* @return bool
+	*/
+	public function recaptchaValid($boolAddSystemErrorMessage=true) {
+		return true;
+		
+		require_once(ROOT.'/App/Lib/reCaptcha/v1.11/recaptchalib.php');	
+					
+  		$resp = recaptcha_check_answer(
+  			$this->getConfigValue('recaptcha_privatekey')
+  			,$this->_objRequest->getServerData('REMOTE_ADDR')
+  			,$this->getPost('recaptcha_challenge_field')
+  			,$this->getPost('recaptcha_response_field')
+  		);
+  		
+  		if($boolAddSystemErrorMessage === true && !$resp->is_valid) {
+  			echo 'invalid';
+  			$this->addSystemErrorMessage(
+  				"The reCAPTCHA wasn't entered correctly. Go back and try it again."
+  			);
+  		}
+  		
+		return $resp->is_valid;	
+		
+	}
+	
+	/*
+	* reCaptcha HTML
+	* 
+	* @return str reCaptcha HTML string
+	*/
+	public function recaptchaDraw() {
+		return null;
+		
+		require_once(ROOT.'/App/Lib/reCaptcha/v1.11/recaptchalib.php');
+		return recaptcha_get_html( $this->getConfigValue('recaptcha_publickey') );
 	}
 	
 	public function __destruct() {

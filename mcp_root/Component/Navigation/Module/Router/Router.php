@@ -72,7 +72,15 @@ class MCPNavigationRouter extends MCPModule {
 		$this->_arrTemplateData['edit_link'] = $this->_boolEdit;
 		$this->_arrTemplateData['link_path'] = $this->_getLinkPath(!$this->_boolEdit);
 		$this->_arrTemplateData['content_type'] = $this->_strContentType;
-		$this->_arrTemplateData['display_edit_link'] = $this->_objMCP->getUsersId()?1:0;
+		$this->_arrTemplateData['display_edit_link'] = false;
+		
+		/*
+		* Only show edit link for pages current user is able to edit 
+		*/
+		if( $this->_arrLink ) {
+			$perm = $this->_objMCP->getPermission(MCP::EDIT,'NavigationLink',$this->_arrLink['navigation_links_id']);
+			$this->_arrTemplateData['display_edit_link'] = $perm['allow'];
+		}
 		
 		return "Router/{$this->_strTpl}.php";
 		

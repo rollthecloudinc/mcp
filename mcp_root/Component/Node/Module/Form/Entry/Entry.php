@@ -44,7 +44,12 @@ class MCPNodeFormEntry extends MCPModule {
 	/*
 	* Cached config - proxy it in 
 	*/
-	,$_arrCachedFrmConfig;
+	,$_arrCachedFrmConfig
+	
+	/*
+	* Allows modules that extend this one to bypass permission check 
+	*/
+	,$_boolBypassPermissionCheck = false;
 	
 	public function __construct(MCP $objMCP,MCPModule $objParentModule=null,$arrConfig=null) {		
 		parent::__construct($objMCP,$objParentModule,$arrConfig);
@@ -110,11 +115,12 @@ class MCPNodeFormEntry extends MCPModule {
 		
 		/*
 		* Save form data to database 
+		* NOTE: supports recaptcha
 		*/
-		if($this->_arrFrmPost !== null && empty($this->_arrFrmErrors)) {
+		if($this->_arrFrmPost !== null && empty($this->_arrFrmErrors) && ( $this->_useRecaptcha() === false || $this->_objMCP->recaptchaValid() ) ) {
 			$this->_frmSave();
 		
-		} else if( $this->_arrFrmPost !== null ) {
+		} else if( $this->_arrFrmPost !== null && $this->_useRecaptcha() === false) {
 			
 			// add system message for errors
 			$this->_objMCP->addSystemErrorMessage('Some errors were found that prevented form from saving.');
@@ -294,8 +300,11 @@ class MCPNodeFormEntry extends MCPModule {
 		* Get config from MCP 
 		* 
 		* NEW: Adds in dynamic fields
+		* 
+		* Using $this->getPkg() causes issues when extending this module. The path MUST be hard-coded. This
+		* is probably a change that needs to be made to others also.
 		*/
-		$config = $this->_objMCP->getFrmConfig($this->getPkg(),'frm',true,array('entity_type'=>'MCP_NODE_TYPES','entities_id'=>$entity_id));
+		$config = $this->_objMCP->getFrmConfig('Component.Node.Module.Form.Entry'/*$this->getPkg()*/,'frm',true,array('entity_type'=>'MCP_NODE_TYPES','entities_id'=>$entity_id));
 		
 		/*
 		* Before dynamic fields and views were introduced the node tyoe could change with affecting anything. However, with
@@ -361,7 +370,7 @@ class MCPNodeFormEntry extends MCPModule {
 			$arrValues['nodes_id'] = $arrNode['nodes_id'];
 		} else {
 			$arrValues['sites_id'] = $this->_objMCP->getSitesId();
-			$arrValues['authors_id'] = $this->_objMCP->getUsersId();
+			$arrValues['authors_id'] = $this->_getAuthorsId();
 		}
 		
 		/*
@@ -418,16 +427,20 @@ class MCPNodeFormEntry extends MCPModule {
 			/*
 			* Add success message 
 			*/
-			$this->_objMCP->addSystemStatusMessage('Content '.($arrNode !== null?'Updated':'Created' ).'!');
+			$this->_objMCP->addSystemStatusMessage( $this->_getSaveSuccessMessage() );
 			
 		} catch(MCPDAOException $e) {
 			
 			$this->_objMCP->addSystemErrorMessage(
-				'An internal issue has prevented the content from being '.($arrNode !== null?'updated':'created' )
+				$this->_getSaveErrorMessage()
 				,$e->getMessage()
 			);
 			
+			return false;
+			
 		}
+		
+		return true;
 		
 	}
 	
@@ -473,6 +486,32 @@ class MCPNodeFormEntry extends MCPModule {
 	}
 	
 	/*
+	* When creating a new node get the authors ID. This is needed because
+	* in some cases users may not be logged in when creating nodes. Take for instance
+	* email subscriptions where the user will not likely be logged in but needs
+	* to be able to create a node. In that case its best to override this and
+	* author the node under the site creator. A creator is always required. 
+	* 
+	* @return int users id
+	*/
+	protected function _getAuthorsId() {
+		return $this->_objMCP->getUsersId();
+	}
+	
+	/*
+	* Message to be shown to user upon sucessful save of node
+	* 
+	* @param 
+	*/
+	protected function _getSaveSuccessMessage() {
+		return 'Content '.($this->_getNode() !== null?'Updated':'Created' ).'!';
+	}
+	
+	protected function _getSaveErrorMessage() {
+		return 'An internal issue has prevented the content from being '.($this->_getNode() !== null?'updated':'created' );
+	}
+	
+	/*
 	* Get layout to use for form
 	* 
 	* @return str layout file
@@ -508,6 +547,25 @@ class MCPNodeFormEntry extends MCPModule {
 		
 	}
 	
+	/*
+	* Determine whether form will use a recapctha 
+	*/
+	protected function _useRecaptcha() {
+		
+		/*
+		* always use recaptcha for unauthenticated users 
+		*/
+		if( $this->_objMCP->getUsersId() === null ) {
+			return true;
+		}
+		
+		/*
+		* Otherwise make it optional 
+		*/
+		return (bool) $this->getConfigValue('recaptcha');
+		
+	}
+	
 	public function execute($arrArgs) {
 		
 		/*
@@ -532,26 +590,28 @@ class MCPNodeFormEntry extends MCPModule {
 		* Can person edit or add node - based on node type?
 		* - person may be restricted to creating or editing nodes of type
 		*/
-		if($intNodeId !== null) {
-			$perm = $this->_objMCP->getPermission(MCP::EDIT,'Node',$intNodeId);
-			
-			if(!$perm['allow']) throw new MCPPermissionException($perm);
-		} else if($this->_strNodeTypeSelect !== null) {
-			
-			$name = $this->_strNodeTypeSelect;
-			
-			// node types belonging to package need have the URL argument reversed to use the fetchNodeTypeByName method
-			if(strpos($name,'::') !== false) {
-				$tmp = explode('::',$name);
-				$name = "{$tmp[1]}::{$tmp[0]}";
-			}
-			
-			$arrNodeType = $this->_objDAONode->fetchNodeTypeByName($name);
-			if($arrNodeType !== null) {
-				$perm = $this->_objMCP->getPermission(MCP::ADD,'Node',$arrNodeType['node_types_id']);
+		if( !$this->_boolBypassPermissionCheck ) {
+			if($intNodeId !== null) {
+				$perm = $this->_objMCP->getPermission(MCP::EDIT,'Node',$intNodeId);
+				
 				if(!$perm['allow']) throw new MCPPermissionException($perm);
-			}	
-
+			} else if($this->_strNodeTypeSelect !== null) {
+				
+				$name = $this->_strNodeTypeSelect;
+				
+				// node types belonging to package need have the URL argument reversed to use the fetchNodeTypeByName method
+				if(strpos($name,'::') !== false) {
+					$tmp = explode('::',$name);
+					$name = "{$tmp[1]}::{$tmp[0]}";
+				}
+				
+				$arrNodeType = $this->_objDAONode->fetchNodeTypeByName($name);
+				if($arrNodeType !== null) {
+					$perm = $this->_objMCP->getPermission(MCP::ADD,'Node',$arrNodeType['node_types_id']);
+					if(!$perm['allow']) throw new MCPPermissionException($perm);
+				}	
+	
+			}
 		}
 		
 		/*
@@ -574,6 +634,9 @@ class MCPNodeFormEntry extends MCPModule {
 		$this->_arrTemplateData['errors'] = $this->_arrFrmErrors;
 		$this->_arrTemplateData['legend'] = $this->_getLegend();
 		$this->_arrTemplateData['layout'] = $this->_getLayout();
+		
+		// recaptcha integration
+		$this->_arrTemplateData['recaptcha'] = $this->_useRecaptcha() === true?$this->_objMCP->recaptchaDraw():null;
 		
 		return 'Entry/Entry.php';
 	}
@@ -638,10 +701,10 @@ class MCPNodeFormEntry extends MCPModule {
 		* Build filter to locate node type primary key based on package, site and name 
 		*/
 		$strFilter = sprintf(
-			"t.sites_id = %s AND t.system_name = '%s' AND t.pkg %s"
+			"t.sites_id = %s AND t.system_name = '%s' AND t.pkg = %s"
 			,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
 			,$this->_objMCP->escapeString($nodeTypeName)
-			,empty($nodeTypePkg)?'IS NULL':"= '{$this->_objMCP->escapeString($nodeTypePkg)}'"
+			,empty($nodeTypePkg)?"''":"'{$this->_objMCP->escapeString($nodeTypePkg)}'"
 		);
 		
 		/*

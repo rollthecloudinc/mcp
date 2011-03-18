@@ -470,30 +470,56 @@ class MCPDAOTaxonomy extends MCPDAO {
 			}
 		}
 		
-		$intId = $this->_save(
-			$arrTerm
-			,'MCP_TERMS'
-			,'terms_id'
-			,array('system_name','human_name','description','parent_type')
-			,'created_on_timestamp'
-		);	
-		
 		/*
-		* Resolve the vocabulary 
+		* Start transaction 
 		*/
-		$pk = isset($arrTerm['terms_id'])?$arrTerm['terms_id']:$intId;
-		$vocab = $this->fetchTermsVocabulary($pk);
-		$entity_id = $vocab['vocabulary_id'];
+		$this->_objMCP->begin();
+		
+		try {
+		
+			$intId = $this->_save(
+				$arrTerm
+				,'MCP_TERMS'
+				,'terms_id'
+				,array('system_name','human_name','description','parent_type')
+				,'created_on_timestamp'
+			);	
+		
+			/*
+			* Resolve the vocabulary 
+			*/
+			$pk = isset($arrTerm['terms_id'])?$arrTerm['terms_id']:$intId;
+			$vocab = $this->fetchTermsVocabulary($pk);
+			$entity_id = $vocab['vocabulary_id'];
 
-		/*
-		* Save dynamic fields 
-		*/
-		$this->_objMCP->saveFieldValues($dynamic,$pk,'MCP_VOCABULARY',$entity_id);
+			/*
+			* Save dynamic fields 
+			*/
+			$this->_objMCP->saveFieldValues($dynamic,$pk,'MCP_VOCABULARY',$entity_id);
 		
-		/*
-		* Update cache 
-		*/
-		$this->_setCachedTerm( isset($arrTerm['terms_id'])?$arrTerm['terms_id']:$intId );
+			/*
+			* Update cache 
+			*/
+			$this->_setCachedTerm( isset($arrTerm['terms_id'])?$arrTerm['terms_id']:$intId );
+			
+			/*
+			* commit transaction 
+			*/
+			$this->_objMCP->commit();
+			
+		} catch(MCPDBException $e) {
+			
+			/*
+			* If something went wrong rollback transaction 
+			*/
+			$this->_objMCP->rollback();
+			
+			/*
+			* Throw more refined/specific exception 
+			*/
+			throw new MCPDAOException( $e->getMessage() );
+			
+		}
 		
 		return $intId;
 		
@@ -719,7 +745,7 @@ class MCPDAOTaxonomy extends MCPDAO {
 		/*
 		* Get current snapshot 
 		*/
-		$arrTerm = $this->fetchTermById($intId,'t.*',false);
+		$arrTerm = $this->fetchTermById($intId,false);
 		
 		/*
 		* Update the cache value 

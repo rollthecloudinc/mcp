@@ -31,7 +31,7 @@ class MCPUtilAdmin extends MCPModule {
 		,'Sites'						=>'Component.Site.Module.List'
 		
 		// manage roles
-		,'Roles'						=>'Component.Auth.Module.Role.List'
+		,'Roles'						=>'Component.Permission.Module.List.Role'
 		
 		// manage views
 		,'Schemas'						=>'Component.View.Module.List.Type'
