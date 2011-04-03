@@ -37,6 +37,11 @@ class MCPNavigationFormLink extends MCPModule {
 	,$_intDataSourcesRowId = null
 	
 	/*
+	* Cached config - proxy it in 
+	*/
+	,$_arrCachedFrmConfig
+	
+	/*
 	* parent may either be link or nav. This property
 	* is used to select a parent for the link. The submitted
 	* value for the parent will actually be used as the end parent. The
@@ -123,7 +128,7 @@ class MCPNavigationFormLink extends MCPModule {
 		/*
 		* Set DAO datasource arguments 
 		*/
-		$this->_arrFrmValues['datasource_dao_args'] = isset($this->_arrFrmPost['datasource_dao_args'])?$this->_arrFrmPost['datasource_dao_args']:null;
+		// $this->_arrFrmValues['datasource_dao_args'] = isset($this->_arrFrmPost['datasource_dao_args'])?$this->_arrFrmPost['datasource_dao_args']:null;
 		
 		/*
 	 	* Set modules config values --------------------------------------------------------------------------
@@ -135,19 +140,20 @@ class MCPNavigationFormLink extends MCPModule {
 		*/
 		if($arrModuleConfig !== null) {
 			foreach(array_keys($arrModuleConfig) as $strField) {
-				$this->_arrFrmValues['module_config'][$strField] = !isset($this->_arrFrmPost['module_config'],$this->_arrFrmPost['module_config'][$strField])?isset($arrModuleConfig[$strField]['default'])?$arrModuleConfig[$strField]['default']:'':$this->_arrFrmPost['module_config'][$strField];
+				// $this->_arrFrmValues['module_config'][$strField] = !isset($this->_arrFrmPost['module_config'],$this->_arrFrmPost['module_config'][$strField])?isset($arrModuleConfig[$strField]['default'])?$arrModuleConfig[$strField]['default']:'':$this->_arrFrmPost['module_config'][$strField];
+				$this->_arrFrmValues["module_config_$strField"] = !isset($this->_arrFrmPost["module_config_$strField"])?isset($arrModuleConfig[$strField]['default'])?$arrModuleConfig[$strField]['default']:'':$this->_arrFrmPost["module_config_$strField"];
 			}
 		}
 		
 		/*
 		* Add module args 
 		*/
-		$arrModArgs = isset($this->_arrFrmPost['target_module_args'])?$this->_arrFrmPost['target_module_args']:array('');
+		/*$arrModArgs = isset($this->_arrFrmPost['target_module_args'])?$this->_arrFrmPost['target_module_args']:array('');
 		
 		foreach($arrModArgs as $strArg) {
 			$this->_arrFrmValues['target_module_args'][] = $strArg;
 			if(strlen($strArg) == 0) break;
-		}
+		}*/
 		
 	}
 	
@@ -166,6 +172,16 @@ class MCPNavigationFormLink extends MCPModule {
 		*/
 		foreach($this->_getFrmFields() as $strField) {
 			switch($strField) {
+				
+				case 'target_module_args':
+					$arrModuleArgs = $arrLink['target_module_args'] === null?array(''):unserialize(base64_decode($arrLink['target_module_args']));
+					
+					foreach($arrModuleArgs as $strArg) {
+						$this->_arrFrmValues['target_module_args'][] = $strArg;
+						if(strlen($strArg) === 0) break;
+					}
+					
+					break;
 				
 				case 'parent_id':
 					$this->_arrFrmValues[$strField] = "{$arrLink['parent_type']}-{$arrLink['parent_id']}";
@@ -186,21 +202,22 @@ class MCPNavigationFormLink extends MCPModule {
 		* Unserialize links dao module arguments
 		*/
 		$arrLinkConfig = $arrLink['target_module_config']?unserialize(base64_decode($arrLink['target_module_config'])):array();
-		$arrDAOArgs = $arrLink['datasource_dao_args']?unserialize(base64_decode($arrLink['datasource_dao_args'])):array('','','','','');
+		// $arrDAOArgs = $arrLink['datasource_dao_args']?unserialize(base64_decode($arrLink['datasource_dao_args'])):array('','','','','');
 		
 		/*
 		* transfer config values to form values
 		*/
 		if($arrModuleConfig !== null) {
 			foreach(array_keys($arrModuleConfig) as $strField) {
-				$this->_arrFrmValues['module_config'][$strField] = !isset($arrLinkConfig[$strField])?isset($arrModuleConfig[$strField]['default'])?$arrModuleConfig[$strField]['default']:'':$arrLinkConfig[$strField];
+				//$this->_arrFrmValues['module_config'][$strField] = !isset($arrLinkConfig[$strField])?isset($arrModuleConfig[$strField]['default'])?$arrModuleConfig[$strField]['default']:'':$arrLinkConfig[$strField];
+				$this->_arrFrmValues["module_config_$strField"] = !isset($arrLinkConfig[$strField])?isset($arrModuleConfig[$strField]['default'])?$arrModuleConfig[$strField]['default']:'':$arrLinkConfig[$strField];
 			}
 		}
 		
 		/*
 		* Transfer datasource dao arguments 
 		*/
-		$this->_arrFrmValues['datasource_dao_args'] = $arrDAOArgs;
+		// $this->_arrFrmValues['datasource_dao_args'] = $arrDAOArgs;
 		
 		/*
 		* Add module arguments 
@@ -239,8 +256,8 @@ class MCPNavigationFormLink extends MCPModule {
 		/*
 		* Add inputs for five DAO arguments and three module arguments
 		*/
-		$this->_arrFrmValues['datasource_dao_args'] = array('','','','','');
-		$this->_arrFrmValues['target_module_args'] = array('');
+		//$this->_arrFrmValues['datasource_dao_args'] = array('','','','','');
+		// $this->_arrFrmValues['target_module_args'] = array('');
 		
 	}
 	
@@ -258,10 +275,13 @@ class MCPNavigationFormLink extends MCPModule {
 			/*
 			* Module config assigned directly and remaped to true db column
 			*/
-			if(strcmp('module_config',$strField) == 0) {
-				$arrSave["target_$strField"] = $strValue;
-			} else if(strcmp('datasource_dao_args',$strField) == 0) {
-				$arrSave[$strField] = $strValue;
+			if( strpos($strField,'module_config_') === 0 ) {
+				
+				$arrSave['target_module_config'][substr($strField,14)] = $strValue;
+				
+			/*} else if(strcmp('datasource_dao_args',$strField) == 0) { removed concept
+				$arrSave[$strField] = $strValue;*/
+				
 			} else if(strcmp('target_module_args',$strField) == 0) {
 				
 				foreach($strValue as $strArg) {
@@ -287,15 +307,16 @@ class MCPNavigationFormLink extends MCPModule {
 		list($arrSave['parent_type'],$arrSave['parent_id']) = explode('-',$arrSave['parent_id'],2);
 		
 		/*
-		* Format data for dubalicate key update or insert 
+		* Format data for dubalicate key update or insert  - concept removed
 		*/
-		if($arrLink !== null && $this->_intDataSourcesRowId !== null) {
+		/*if($arrLink !== null && $this->_intDataSourcesRowId !== null) {
 			$arrSave['datasources_id'] = $arrLink['navigation_links_id'];
 			$arrSave['datasources_row_id'] = $this->_intDataSourcesRowId;
 			
 			// unset datasource identifier
 			unset($arrSave['datasource_query'],$arrSave['datasource_dao'],$arrSave['datasource_dao_method'],$arrSave['datasource_dao_args']);
-		} else if($arrLink !== null) {
+		} else*/ 
+		if($arrLink !== null) {
 			$arrSave['navigation_links_id'] = $arrLink['navigation_links_id'];
 		} else {			
 			$arrSave['creators_id'] = $this->_objMCP->getUsersId();
@@ -310,7 +331,16 @@ class MCPNavigationFormLink extends MCPModule {
 		/*
 		* Save link to database 
 		*/
-		$this->_objDAONavigation->saveLink($arrSave);
+		//echo '<pre>',print_r($arrSave),'</pre>';
+		try {
+			
+			$this->_objDAONavigation->saveLink($arrSave);
+			
+		} catch( MCPDBException $e) {
+			
+			echo '<pre>',print_r($arrSave),'</pre>';
+			
+		}
 		
 		/*
 		* fire navigation link update 
@@ -334,10 +364,39 @@ class MCPNavigationFormLink extends MCPModule {
 	* @return array form config
 	*/
 	private function _getFrmConfig() {
+		
+		if( $this->_arrCachedFrmConfig !== null ) {
+			return $this->_arrCachedFrmConfig;
+		}
+		
 		/*
 		* Get base form configuration from MCP 
 		*/
-		return $this->_objMCP->getFrmConfig($this->getPkg());
+		$config = $this->_objMCP->getFrmConfig($this->getPkg());
+		
+		/*
+		* Ad target module configuration 
+		*/
+		$arrLink = $this->_getLink();
+		if( $arrLink !== null && $arrLink['target_module'] ) {
+			
+			$mod = $this->_objMCP->getModConfig($arrLink['target_module']);
+			
+			if($mod) {
+				foreach($mod as $name=>$mix) {
+					$config["module_config_$name"] = $mix;
+				}
+			}
+			
+		}
+		
+		/*
+		* Build parent menu list 
+		*/
+		
+		$this->_arrCachedFrmConfig = $config;
+		return $config;
+		
 	}
 	
 	/*
@@ -367,60 +426,17 @@ class MCPNavigationFormLink extends MCPModule {
 		$this->_arrLink = $arrLink;
 	}
 	
-	/*
-	* Get targets drop down
-	* 
-	* @return aray target drop down
-	*/
-	private function _getTargetWindows() {
-		
-		$arrTargets = array('values'=>array(),'output'=>array(),'selected'=>$this->_arrFrmValues['target_window']);
-		
-		foreach($this->_objDAONavigation->fetchLinksTargetWindows() as $strTarget) {
-			$arrTargets['values'][] = $strTarget;
-			$arrTargets['output'][] = $strTarget;
-		}
-		
-		return $arrTargets;
-		
-	}
-	
-	/*
-	* Get content types drop down
-	* 
-	* @param str content field
-	* @return array content types drop down
-	*/
-	private function _getContentTypes($strField) {
-		$arrReturn = array('values'=>array(),'output'=>array(),'selected'=>$this->_arrFrmValues[$strField]);
-		
-		/*
-		* Fetch content types from Navigation DAO 
-		*/
-		$arrTypes = $this->_objDAONavigation->fetchLinksContentTypes($strField);
-		foreach($arrTypes as $strType) {
-			$arrReturn['values'][] = $strType;
-			$arrReturn['output'][] = $strType;
-		}
-		
-		return $arrReturn;
-		
-	}
-	
 	public function execute($arrArgs) {
-		
-		// login access required to create links
-		if(!$this->_objMCP->getUsersId()) return;
 		
 		// link to edit
 		$intLinkId = !empty($arrArgs) && is_numeric($arrArgs[0])?array_shift($arrArgs):null;
 		
 		// dynamic link without placholder yet
-		if(!empty($arrArgs) && strpos($arrArgs[0],'-') !== false) {
+		/*if(!empty($arrArgs) && strpos($arrArgs[0],'-') !== false) { removed concept for now
 			$arrPieces = explode('-',array_shift($arrArgs));
 			$intLinkId = $arrPieces[0];
 			$this->_intDataSourcesRowId = $arrPieces[1];
-		}
+		}*/
 		
 		// parent of new link either nav or link
 		$this->_strParentType = !empty($arrArgs) && in_array($arrArgs[0],array('Link','Nav'))?strtolower(array_shift($arrArgs)):null;
@@ -434,9 +450,9 @@ class MCPNavigationFormLink extends MCPModule {
 			// fetch current link data
 			$arrLink = $this->_objDAONavigation->fetchLinkById($intLinkId);
 			
-			if($arrLink['datasources_row_id'] !== null) {
+			/*if($arrLink['datasources_row_id'] !== null) { removed concept for now
 				$arrLink = $this->_objDAONavigation->fetchDynamicLinkById($arrLink['datasources_id'],$arrLink['datasources_row_id']);
-			}
+			}*/
 			
 			// set the current link
 			if($arrLink !== null) {
@@ -450,13 +466,10 @@ class MCPNavigationFormLink extends MCPModule {
 		* Can user add/ edit navigation link - based on menu?
 		* - Users may be resricted to editing or adding links belonging to specific menu
 		*/
-		/*$perm = $this->_objMCP->getPermission('MCP_NAVIGATION_LINK',$intLinkId,array(
-			'parent_id'=>$this->_intParentId
-			,'parent_type'=>$this->_strParentType
-		));
-		if(!$perm->allowed()) {
+		$perm = $this->_objMCP->getPermission( ($intLinkId===null?MCP::ADD:MCP::EDIT) ,'NavigationLink', ($intLinkId===null?$this->_intParentId:$intLinkId) );
+		if(!$perm['allow']) {
 			throw new MCPPermissionException($perm);
-		}*/
+		}
 		
 		/*
 		* Handle form data 
@@ -476,50 +489,9 @@ class MCPNavigationFormLink extends MCPModule {
 		$this->_arrTemplateData['config'] = $this->_getFrmConfig();
 		$this->_arrTemplateData['values'] = $this->_arrFrmValues;
 		$this->_arrTemplateData['errors'] = $this->_arrFrmErrors;
-		$this->_arrTemplateData['target_windows'] = $this->_getTargetWindows();
-		$this->_arrTemplateData['header_content_types'] = $this->_getContentTypes('header_content_type');
-		$this->_arrTemplateData['body_content_types'] = $this->_getContentTypes('body_content_type');
-		$this->_arrTemplateData['footer_content_types'] = $this->_getContentTypes('footer_content_type');
+		//$this->_arrTemplateData['layout'] = ROOT.'/Component/Navigation/Template/Form/Link/Layout.php';
 		
-		/*
-		* Load target module config 
-		*/
-		$arrLink = $this->_getLink();
-		$this->_arrTemplateData['module_config'] = $arrLink !== null && $arrLink['target_module']?$this->_objMCP->getModConfig($arrLink['target_module']):null;
-		
-		/*
-		* On template load execute and assign target module config data 
-		*/
-		$this->_objMCP->subscribe(
-			$this
-			,'TEMPLATE_LOAD'
-			,array($this,'onTemplateLoad')
-		);
-		
-		return 'Link/Link.php';
-	}
-	
-	public function onTemplateLoad() {
-		
-		/*
-		* unsubscribe event handler 
-		*/
-		$this->_objMCP->unsubscribe(
-			$this
-			,'TEMPLATE_LOAD'
-			,array($this,'onTemplateLoad')
-		);
-		
-		/*
-		* Module config template 
-		*/
-		$this->_arrTemplateData['MODULE_CONFIG_TPL'] = $this->_objMCP->fetch($this->getTemplatePath().'/ModuleConfig.php',$this);
-		
-		/*
-		* reassign template data 
-		*/
-		$this->_objMCP->assign($this->getName(),$this->_arrTemplateData);
-		
+		return 'Link/LinkNew.php';
 	}
 	
 	/*

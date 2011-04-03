@@ -366,28 +366,32 @@ class Form implements \UI\Element {
 						// multi_select and checkbox don't need/support sorting controls
 						if( !in_array($widget,array('multi_select','checkbox_group')) ) {
 							
-							// Create controls to sort multiple values - render as a list / tree
-							$element.= $ui->draw('Common.Listing.Tree',array(
-								'value_key'=>'control'
-								,'data'=>array(
-									array(
-										'control'=>$ui->draw('Common.Form.Input',array(
-											'type'=>'submit'
-											,'value'=>'up'
-											,'id'=>$idbase.strtolower(str_replace('_','-',$field)).'-'.($i+1).'-up'
-											,'name'=>"{$name}[action][up][{$field}][{$i}]"
-										))
+							if( !isset($data['sortable']) || $data['sortable'] != 0 ) {
+							
+								// Create controls to sort multiple values - render as a list / tree
+								$element.= $ui->draw('Common.Listing.Tree',array(
+									'value_key'=>'control'
+									,'data'=>array(
+										array(
+											'control'=>$ui->draw('Common.Form.Input',array(
+												'type'=>'submit'
+												,'value'=>'up'
+												,'id'=>$idbase.strtolower(str_replace('_','-',$field)).'-'.($i+1).'-up'
+												,'name'=>"{$name}[action][up][{$field}][{$i}]"
+											))
+										)
+										,array(
+											'control'=>$ui->draw('Common.Form.Input',array(
+												'type'=>'submit'
+												,'value'=>'down'
+												,'id'=>$idbase.strtolower(str_replace('_','-',$field)).'-'.($i+1).'-down'
+												,'name'=>"{$name}[action][down][{$field}][{$i}]"
+											))
+										)
 									)
-									,array(
-										'control'=>$ui->draw('Common.Form.Input',array(
-											'type'=>'submit'
-											,'value'=>'down'
-											,'id'=>$idbase.strtolower(str_replace('_','-',$field)).'-'.($i+1).'-down'
-											,'name'=>"{$name}[action][down][{$field}][{$i}]"
-										))
-									)
-								)
-							));	
+								));	
+							
+							}
 							
 							$element.= '</li>';
 						

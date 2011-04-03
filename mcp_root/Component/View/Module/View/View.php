@@ -215,6 +215,9 @@ class MCPViewView extends MCPModule {
 			// Assign inner content
 			$this->_arrTemplateData['content'] = $content;
 			
+			// Assign bool value that specifies whether user may create item of base entity
+			$this->_arrTemplateData['allow_create'] = $this->_objView->create;
+			
 			// Assign URL to create base view entity and label to use
 			$this->_arrTemplateData['create'] = $this->_getCreateBaseEntityURL();
 			$this->_arrTemplateData['create_label'] = $this->_getCreateBaseEntityLabel();

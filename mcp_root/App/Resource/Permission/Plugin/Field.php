@@ -1,6 +1,6 @@
 <?php
-$this->import('App.Core.DAO');
-$this->import('App.Core.Permission');
+// abstract base class
+$this->import('App.Resource.Permission.PermissionBase');
 
 /*
 * Get permissions for dynamic fields
@@ -16,7 +16,7 @@ $this->import('App.Core.Permission');
 * are likely to have a drastic impact if someone doesn't know what they
 * are doing.
 */
-class MCPPermissionField extends MCPDAO implements MCPPermission {
+class MCPPermissionField extends MCPPermissionBase {
 	
 	/*
 	* Create a new dynamic field for entity type

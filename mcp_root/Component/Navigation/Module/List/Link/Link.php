@@ -103,10 +103,12 @@ class MCPNavigationListLink extends MCPModule {
 			
 			/*
 			* Create hard link for dynamic link action
+			* 
+			* - Remove dynamic link functionality for now - not worth the trouble at this time
 			*/
-			if(!is_numeric($this->_intActionsId) && strpos($this->_intActionsId,'-') !== false) {
+			/*if(!is_numeric($this->_intActionsId) && strpos($this->_intActionsId,'-') !== false) {
 				$this->_intActionsId = call_user_func_array(array($this->_objDAONavigation,'createHardLinkFromDynamic'),explode('-',$this->_intActionsId));
-			}
+			}*/
 			
 			/*
 			* Fire event 

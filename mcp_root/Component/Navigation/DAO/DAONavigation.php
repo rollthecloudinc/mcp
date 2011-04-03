@@ -52,83 +52,27 @@ class MCPDAONavigation extends MCPDAO {
 	}
 	
 	/*
-	* Get datasources dynamic link data
-	* 
-	* @param int navigation links id
-	* @return array dynamic link data
-	*/
-	public function fetchDynamicLinks($intNavigationLinksId) {
-		
-		/*
-		* Get navigation link datasource info 
-		*/
-		$arrLink = $this->fetchLinkById($intNavigationLinksId);
-		
-		/*
-		* Get all dynamic hard links 
-		*/
-		$arrRows = $this->_objMCP->query(sprintf(
-			'SELECT * FROM MCP_NAVIGATION_LINKS WHERE datasources_id = %s'
-			,$this->_objMCP->escapeString($arrLink['navigation_links_id'])
-		));
-		
-		$arrData = array();
-		foreach($arrRows as $arrRow) {
-			$arrData["{$arrRow['datasources_id']}-{$arrRow['datasources_row_id']}"] = $arrRow;
-		}
-				
-		if(!empty($arrLink['datasource_query'])) {
-				
-			/*
-			* Run raw SQL query for data
-			*/
-			$arrDynamicLinks = $this->_objMCP->query(str_replace(array('SITES_ID'),array($this->_objMCP->escapeString($this->_objMCP->getSitesId())),$arrLink['datasource_query']));
-			
-		} else {
-				
-			/*
-			* Replace argument magical constants such as; SITES_ID and transform empty string to null
-			*/
-			$args = $arrLink['datasource_dao_args'] === null?array():unserialize(base64_decode($arrLink['datasource_dao_args']));
-			array_walk(
-				$args
-				,create_function('&$item,$key,$mcp','if($item == \'\') { $item=null; return; } $item = str_replace(array(\'SITES_ID\'),array($mcp->escapeString($mcp->getSitesId())),$item);')
-				,$this->_objMCP
-			);
-				
-			/*
-			* Get DAO instance and call binding 
-			*/
-			$arrDynamicLinks = call_user_func_array(
-					array(
-					$this->_objMCP->getInstance($arrLink['datasource_dao'],array($this->_objMCP))
-					,$arrLink['datasource_dao_method']
-				)
-				,$args
-			);
-			
-		}
-		
-		/*
-		* Convert links 
-		*/
-		return empty($arrDynamicLinks)?array():$this->_convertDataSourceOutputToLinks($arrDynamicLinks,$arrLink,$arrData,($arrLink['parent_type'] == 'link'?$this->fetchLinkById($arrLink['parent_id']):null),$arrLink);
-	}
-	
-	/*
 	* Fetch menu by id
 	* 
 	* @param int navigation id
-	* @param str select
 	* @return arr navigation data
 	*/
-	public function fetchNavById($intId,$strSelect='*') {
-		$strSQL = sprintf(
+	public function fetchNavById($intId) {
+		
+		/*$strSQL = sprintf(
 			'SELECT %s FROM MCP_NAVIGATION WHERE navigation_id = %s'
 			,$strSelect
 			,$this->_objMCP->escapeString($intId)
-		);
-		return array_pop($this->_objMCP->query($strSQL));
+		);*/
+		
+		$strSQL = 'SELECT * FROM MCP_NAVIGATION WHERE navigation_id = :navigation_id';
+		
+		return array_pop($this->_objMCP->query(
+			$strSQL
+			,array(	
+				':navigation_id'=>(int) $intId
+			)
+		));
 	}
 	
 	/*
@@ -138,12 +82,21 @@ class MCPDAONavigation extends MCPDAO {
 	* @param str columns to select
 	*/
 	public function fetchLinkById($intId,$strSelect='*') {
-		$strSQL = sprintf(
+		
+		/*$strSQL = sprintf(
 			'SELECT %s FROM MCP_NAVIGATION_LINKS WHERE navigation_links_id = %s'
 			,$strSelect
 			,$this->_objMCP->escapeString($intId)
-		);
-		return array_pop($this->_objMCP->query($strSQL));		
+		);*/
+		
+		$strSQL = 'SELECT * FROM MCP_NAVIGATION_LINKS WHERE navigation_links_id = :navigation_links_id';
+		
+		return array_pop($this->_objMCP->query(
+			$strSQL
+			,array(
+				':navigation_links_id'=>(int) $intId
+			)
+		));		
 	}
 	
 	/*
@@ -154,35 +107,22 @@ class MCPDAONavigation extends MCPDAO {
 	* @return array route data 
 	*/
 	public function fetchRoute($strSitesInternalUrl,$intSitesId) {
-		$strSQL = sprintf(
+		
+		/*$strSQL = sprintf(
 			"SELECT * FROM MCP_NAVIGATION_LINKS WHERE sites_internal_url = '%s' AND sites_id = %s AND deleted = 0"
 			,$this->_objMCP->escapeString($strSitesInternalUrl)
 			,$this->_objMCP->escapeString($intSitesId)
-		);
+		);*/
 		
-		return array_pop($this->_objMCP->query($strSQL));
-	}
-	
-	/*
-	* Get dynamic link by id [datasource,datasource row id]
-	* 
-	* @param int datasources id
-	* @param int datasources row id
-	* @return array dynamic link data
-	*/
-	public function fetchDynamicLinkById($intDataSourcesId,$intDataSourcesRowId) {
+		$strSQL = 'SELECT * FROM MCP_NAVIGATION_LINKS WHERE sites_internal_url = :sites_internal_url AND sites_id = :sites_id AND deleted = 0';
 		
-		/*
-		* Fetch all dynamic links for data source 
-		*/
-		$arrData = $this->fetchDynamicLinks($intDataSourcesId);
-		
-		/*
-		* Locate link 
-		*/
-		$arrFound = $this->_locateDynamicLink($arrData,$intDataSourcesRowId);
-		return $arrFound;
-		
+		return array_pop($this->_objMCP->query(
+			$strSQL
+			,array(
+				 ':sites_internal_url'=>(string) $strSitesInternalUrl
+				,':sites_id'=>(int) $intSitesId
+			)
+		));
 	}
 	
 	/*
@@ -193,12 +133,19 @@ class MCPDAONavigation extends MCPDAO {
 	* @return array navigation menu data
 	*/
 	public function fetchNavBySiteLocation($strLocation,$intSitesId=null) {
+		
 		$strSQL = sprintf(
-			"SELECT * FROM MCP_NAVIGATION WHERE menu_location = '%s' AND sites_id %s AND deleted = 0"
-			,$this->_objMCP->escapeString($strLocation)
-			,$intSitesId == null?' IS NULL':"= {$this->_objMCP->escapeString($intSitesId)}"
+			"SELECT * FROM MCP_NAVIGATION WHERE menu_location = :menu_location AND sites_id %s :sites_id AND deleted = 0"
+			,$intSitesId === null?'IS':'='
 		);
-		return array_pop($this->_objMCP->query($strSQL));
+		
+		return array_pop($this->_objMCP->query(
+			$strSQL
+			,array(
+				 ':sites_id'=>$intSitesId === null?null:intval($intSitesId)
+				,':menu_location'=>$strLocation
+			)
+		));
 	}
 	
 	/*
@@ -225,70 +172,103 @@ class MCPDAONavigation extends MCPDAO {
 		/*
 		* Locate all real navigation links 
 		*/
-		$strSQL = sprintf(
+		/*$strSQL = sprintf(
 			"SELECT * FROM MCP_NAVIGATION_LINKS WHERE parent_type = '%s' AND parent_id = %s AND deleted = 0 ORDER BY sort_order ASC"
 			,$this->_objMCP->escapeString($strParentType)
 			,$this->_objMCP->escapeString($intParentId)
+		);*/
+		
+		$strSQL = "SELECT 
+		                * 
+		             FROM 
+		                MCP_NAVIGATION_LINKS 
+		            WHERE 
+		                parent_type = :parent_type 
+		              AND 
+		                parent_id = :parent_id 
+		              AND
+		                datasource_dao IS NULL
+		              AND
+		                datasource_query IS NULL
+		              AND
+		                datasources_row_id IS NULL
+		              AND 
+		                deleted = 0 
+		            ORDER 
+		               BY 
+		                sort_order ASC";
+		
+		$arrNavigationLinks = $this->_objMCP->query(
+			$strSQL
+			,array(
+				':parent_type'=>(string) $strParentType
+				,':parent_id'=>(int) $intParentId
+			)
 		);
 		
-		$arrNavigationLinks = $this->_objMCP->query($strSQL);
-		
-		$arrParentLink = strpos($strParentType,'link') === 0?$this->fetchLinkById($intParentId):null;
-		$arrDynamicLinks = array();
-		$arrDataSources = array();
-		$arrPlaceholders = array();
-		
 		/*
-		* Locate all dynamic links for parent link 
+		* Data source capabilities are not worth the trouble right now. Will be revisited at a later date. 
 		*/
-		if($arrParentLink !== null && $arrParentLink['datasources_row_id'] !== null) {
-			$arrDynamicLinks = $this->fetchDynamicLinkById($arrParentLink['datasources_id'],$arrParentLink['datasources_row_id']);
-			$arrDynamicLinks = $arrDynamicLinks?$arrDynamicLinks['navigation_links']:array();
-		}
+		if( 1 == 2 ) {
 		
-		/*
-		* Replace all real navigation links placeholders with real-time data 
-		*/
-		foreach($arrNavigationLinks as &$arrLink) {
-			if($arrLink['datasources_row_id'] !== null) {
-				$arrLink = $this->fetchDynamicLinkById($arrLink['datasources_id'],$arrLink['datasources_row_id']);
-				$arrPlaceholders["{$arrLink['datasources_id']}-{$arrLink['datasources_row_id']}"] = $arrLink;
-			}
-		}
-		
-		/*
-		* Parse out datasource links 
-		*/
-		foreach($arrNavigationLinks as $intIndex=>&$arrLink) {
-			if(isset($arrLink['datasource_dao']) || isset($arrLink['datasource_query'])) {
-				$arrDynamicLinks = array_merge($arrDynamicLinks,$this->fetchDynamicLinks($arrLink['navigation_links_id']));
-				array_unshift($arrDataSources,$intIndex);
-			}
-		}
-		
-		/*
-		* Add dynamic links without hard link reference to end of navigation link array 
-		*/
-		foreach($arrDynamicLinks as $arrDynamicLink) {
-			
-			$strId = "{$arrDynamicLink['datasources_id']}-{$arrDynamicLink['datasources_row_id']}";
-			$boolDataSource = $arrParentLink && (isset($arrParentLink['datasource_dao']) || isset($arrParentLink['datasource_query']))?true:false;
+			$arrParentLink = strpos($strParentType,'link') === 0?$this->fetchLinkById($intParentId):null;
+			$arrDynamicLinks = array();
+			$arrDataSources = array();
+			$arrPlaceholders = array();
 			
 			/*
-			* Support moving dynamic navigation links to new parent 
+			* Locate all dynamic links for parent link 
 			*/
-			if(!isset($arrPlaceholders[$strId]) && 
-			   ($arrParentLink === null || ($boolDataSource === false && $arrDynamicLink['parent_id'] == $arrParentLink['navigation_links_id']) || ($boolDataSource === false && $arrDynamicLink['parent_id'] == $arrParentLink['parent_id']))
-			) {
-				$arrNavigationLinks[] = $arrDynamicLink;
+			if($arrParentLink !== null && $arrParentLink['datasources_row_id'] !== null) {
+				$arrDynamicLinks = $this->fetchDynamicLinkById($arrParentLink['datasources_id'],$arrParentLink['datasources_row_id']);
+				$arrDynamicLinks = $arrDynamicLinks?$arrDynamicLinks['navigation_links']:array();
 			}
-		}
+			
+			/*
+			* Replace all real navigation links placeholders with real-time data 
+			*/
+			foreach($arrNavigationLinks as &$arrLink) {
+				if($arrLink['datasources_row_id'] !== null) {
+					$arrLink = $this->fetchDynamicLinkById($arrLink['datasources_id'],$arrLink['datasources_row_id']);
+					$arrPlaceholders["{$arrLink['datasources_id']}-{$arrLink['datasources_row_id']}"] = $arrLink;
+				}
+			}
+			
+			/*
+			* Parse out datasource links 
+			*/
+			foreach($arrNavigationLinks as $intIndex=>&$arrLink) {
+				if(isset($arrLink['datasource_dao']) || isset($arrLink['datasource_query'])) {
+					$arrDynamicLinks = array_merge($arrDynamicLinks,$this->fetchDynamicLinks($arrLink['navigation_links_id']));
+					array_unshift($arrDataSources,$intIndex);
+				}
+			}
+			
+			/*
+			* Add dynamic links without hard link reference to end of navigation link array 
+			*/
+			foreach($arrDynamicLinks as $arrDynamicLink) {
+				
+				$strId = "{$arrDynamicLink['datasources_id']}-{$arrDynamicLink['datasources_row_id']}";
+				$boolDataSource = $arrParentLink && (isset($arrParentLink['datasource_dao']) || isset($arrParentLink['datasource_query']))?true:false;
+				
+				/*
+				* Support moving dynamic navigation links to new parent 
+				*/
+				if(!isset($arrPlaceholders[$strId]) && 
+				   ($arrParentLink === null || ($boolDataSource === false && $arrDynamicLink['parent_id'] == $arrParentLink['navigation_links_id']) || ($boolDataSource === false && $arrDynamicLink['parent_id'] == $arrParentLink['parent_id']))
+				) {
+					$arrNavigationLinks[] = $arrDynamicLink;
+				}
+			}
+			
+			/*
+			* Remove all datasource links 
+			*/
+			foreach($arrDataSources as $intIndex) {
+				array_splice($arrNavigationLinks,$intIndex,1);
+			}
 		
-		/*
-		* Remove all datasource links 
-		*/
-		foreach($arrDataSources as $intIndex) {
-			array_splice($arrNavigationLinks,$intIndex,1);
 		}
 		
 		// when not recursive return links without parsing children
@@ -315,9 +295,9 @@ class MCPDAONavigation extends MCPDAO {
 		$arrLinks = array();
 		while($arrLink = $this->fetchLinkById($intLinksId)) {
 			
-			if($arrLink['datasources_row_id'] !== null) {
+			/*if($arrLink['datasources_row_id'] !== null) {
 				$arrLink = $this->fetchDynamicLinkById($arrLink['datasources_id'],$arrLink['datasources_row_id']);
-			}
+			}*/
 			
 			array_unshift($arrLinks,$arrLink);
 			$intLinksId = strcmp($arrLink['parent_type'],'link') == 0?$arrLink['parent_id']:0;
@@ -379,15 +359,23 @@ class MCPDAONavigation extends MCPDAO {
 	* @return array navigation links targets
 	*/
 	public function fetchLinksTargetWindows() {
+		
+		$targets = array();
+		
 		$arrResult = $this->_objMCP->query('DESCRIBE MCP_NAVIGATION_LINKS');
 		
 		foreach($arrResult as $arrColumn) {
 			if(strcmp('target_window',$arrColumn['Field']) == 0) {
-				return explode(',',str_replace("'",'',trim(trim($arrColumn['Type'],'enum('),')')));
+				foreach( explode(',',str_replace("'",'',trim(trim($arrColumn['Type'],'enum('),')'))) as $target ) {
+					$targets[] = array(
+						 'value'=>$target
+						,'label'=>$target
+					);
+				}
 			}
 		}
 		
-		return array();
+		return $targets;
 	}
 	
 	/*
@@ -398,15 +386,22 @@ class MCPDAONavigation extends MCPDAO {
 	*/
 	public function fetchLinksContentTypes($strField) {
 		
+		$types = array();
+		
 		$arrResult = $this->_objMCP->query('DESCRIBE MCP_NAVIGATION_LINKS');
 		
 		foreach($arrResult as $arrColumn) {
 			if(strcmp($strField,$arrColumn['Field']) == 0) {
-				return explode(',',str_replace("'",'',trim(trim($arrColumn['Type'],'enum('),')')));
+				foreach( explode(',',str_replace("'",'',trim(trim($arrColumn['Type'],'enum('),')'))) as $type) {
+					$types[] = array(
+						 'value'=>$type
+						,'label'=>$type
+					);			
+				}
 			}
 		}
 		
-		return array();
+		return $types;
 	}
 	
 	/*
@@ -434,6 +429,7 @@ class MCPDAONavigation extends MCPDAO {
 			,array('parent_type','link_title','browser_title','page_heading','link_url','sites_internal_url','target_module','target_template','target_window','new_window_name','header_content','body_content','footer_content','header_content_type','body_content_type','footer_content_type','datasource_query','datasource_dao','datasource_dao_method')
 			,'created_on_timestamp'
 			,array('target_module_args','target_module_config','links_data','datasource_dao_args')
+			,array('link_title')
 		);
 
 		// ---- Update the nvaigation menu cache -----------------------------------------
@@ -453,70 +449,6 @@ class MCPDAONavigation extends MCPDAO {
 		*/
 		$this->_setCachedNav($arrNav['navigation_id']);
 		
-	}
-	
-	/*
-	* Create hard link to represent dynamic link
-	* 
-	* @param int datasources id
-	* @param int datasources row id
-	*/
-	public function createHardLinkFromDynamic($intDatasourcesId,$intDatasourcesRowId) {
-		
-		/*
-		* Get dynamic link info
-		*/
-		$arrDataSource = $this->fetchDynamicLinkById($intDatasourcesId,$intDatasourcesRowId);//$this->fetchLinkById($intDatasourcesId);
-		
-		/*
-		* Copy datasources information 
-		*/
-		$arrSave = $arrDataSource;
-		
-		/*
-		* Set datasources id and row id for dynamic link
-		*/
-		//$arrSave['datasources_id'] = $arrDataSource['navigation_links_id'];
-		//$arrSave['datasources_row_id'] = $intDatasourcesRowId;		
-		$arrSave['link_title'] = '';
-		
-		/*
-		* This info will be resolved dynamically for null values at menu request time
-		*/
-		unset(
-		    $arrSave['navigation_links_id']
-		    ,$arrSave['browser_heading']
-		    ,$arrSave['page_heading']
-		    ,$arrSave['link_url']
-		    ,$arrSave['sites_internal_url']
-		    ,$arrSave['target_module']
-		    ,$arrSave['target_module_template']
-		    ,$arrSave['target_module_args']
-		    ,$arrSave['target_module_config']
-		    ,$arrSave['header_content']
-		    ,$arrSave['body_content']
-		    ,$arrSave['footer_content']
-		    ,$arrSave['header_content_type']
-		    ,$arrSave['body_content_type']
-		    ,$arrSave['footer_content_type']
-		    ,$arrSave['target_window']
-		    ,$arrSave['new_window_name']
-		    ,$arrSave['links_data']
-			,$arrSave['datasource_query']
-			,$arrSave['datasource_dao']
-			,$arrSave['datasource_dao_method']
-			,$arrSave['datasource_dao_args']
-			,$arrSave['updated_on_timestamp']
-			,$arrSave['created_on_timestamp']
-			,$arrSave['navigation_links']
-			,$arrSave['dynamic_vars']
-		);
-		
-		/*
-		* Create new link 
-		*/
-		return $this->saveLink($arrSave);
-	
 	}
 	
 	/*
@@ -585,12 +517,12 @@ class MCPDAONavigation extends MCPDAO {
 	* @param int navigation links id
 	* @return affected rows
 	*/
-	public function moveLinkUp($intLinksId) {
+	public function moveLinkUp($mixLinksId) {
 		
 		/*
 		* Get links data 
 		*/
-		$arrTarget = $this->fetchLinkById($intLinksId);
+		$arrTarget = $this->fetchLinkById($mixLinksId);
 		
 		/*
 		* Get all links 
@@ -633,7 +565,7 @@ class MCPDAONavigation extends MCPDAO {
 		/*
 		* Update the nav cache 
 		*/
-		$arrNav = $this->fetchNavByLinkId($intLinksId);
+		$arrNav = $this->fetchNavByLinkId($mixLinksId);
 		$this->_setCachedNav($arrNav['navigation_id']);
 		
 		return 1;
@@ -647,11 +579,6 @@ class MCPDAONavigation extends MCPDAO {
 	* @return int affected rows
 	*/
 	public function deleteLink($intLinksId) {
-		
-		/*
-		* Get links data 
-		*/
-		$arrTarget = $this->fetchLinkById($intLinksId);
 		
 		/*
 		* Get all links 
@@ -820,6 +747,215 @@ class MCPDAONavigation extends MCPDAO {
 	}
 	
 	/*
+	* Get cached navigation menu
+	* 
+	* @param int navigation id
+	* @return array complete navigation menu
+	*/
+	private function _getCachedNav($intId) {
+		return $this->_objMCP->getCacheDataValue("nav_{$intId}",$this->getPkg());	
+	}
+	
+	/*
+	* Update the navigation menu cache with a new value 
+	* 
+	* @param int navigation id
+	* @param array navigation menu
+	* @return bool
+	*/
+	private function _setCachedNav($intId) {
+		
+		/*
+		* Bypass caching and build complete menu from current state
+		*/
+		$arrMenu = $this->fetchMenu($intId,'nav',true,false);
+		
+		/*
+		* Cache the menu 
+		*/
+		return $this->_objMCP->setCacheDataValue("nav_{$intId}",$arrMenu,$this->getPkg());
+	}
+	
+	
+	
+	
+	
+	
+	/*
+	* -----------------------------------------------------------------------------------------------------------
+	* Everything below this line is part of the "dynamic link" feature. The dynamic link feature
+	* should not be used. It is not deprecated byut buggy and not really worth looking into right now. It
+	* just raises more questions than what it is worth. So for now I am removing it entirely. 
+	*/
+	
+	
+	
+	/*
+	* Get datasources dynamic link data
+	* 
+	* @param int navigation links id
+	* @return array dynamic link data
+	*/
+	public function fetchDynamicLinks($intNavigationLinksId) {
+		
+		/*
+		* Get navigation link datasource info 
+		*/
+		$arrLink = $this->fetchLinkById($intNavigationLinksId);
+		
+		/*
+		* Get all dynamic hard links 
+		*/
+		/*$arrRows = $this->_objMCP->query(sprintf(
+			'SELECT * FROM MCP_NAVIGATION_LINKS WHERE datasources_id = %s'
+			,$this->_objMCP->escapeString($arrLink['navigation_links_id'])
+		));*/
+		
+		$arrRows = $this->_objMCP->query(
+			'SELECT * FROM MCP_NAVIGATION_LINKS WHERE datasources_id = :datasources_id'
+			,array(
+				':datasources_id'=>(int) $arrLink['navigation_links_id']
+			)
+		);
+		
+		$arrData = array();
+		foreach($arrRows as $arrRow) {
+			$arrData["{$arrRow['datasources_id']}-{$arrRow['datasources_row_id']}"] = $arrRow;
+		}
+				
+		if(!empty($arrLink['datasource_query'])) {
+				
+			/*
+			* Run raw SQL query for data
+			*/
+			$arrDynamicLinks = $this->_objMCP->query(str_replace(array('SITES_ID'),array($this->_objMCP->escapeString($this->_objMCP->getSitesId())),$arrLink['datasource_query']));
+			
+		} else {
+				
+			/*
+			* Replace argument magical constants such as; SITES_ID and transform empty string to null
+			*/
+			$args = $arrLink['datasource_dao_args'] === null?array():unserialize(base64_decode($arrLink['datasource_dao_args']));
+			array_walk(
+				$args
+				,create_function('&$item,$key,$mcp','if($item == \'\') { $item=null; return; } $item = str_replace(array(\'SITES_ID\'),array($mcp->escapeString($mcp->getSitesId())),$item);')
+				,$this->_objMCP
+			);
+				
+			/*
+			* Get DAO instance and call binding 
+			*/
+			$arrDynamicLinks = call_user_func_array(
+					array(
+					$this->_objMCP->getInstance($arrLink['datasource_dao'],array($this->_objMCP))
+					,$arrLink['datasource_dao_method']
+				)
+				,$args
+			);
+			
+		}
+		
+		/*
+		* Convert links 
+		*/
+		return empty($arrDynamicLinks)?array():$this->_convertDataSourceOutputToLinks($arrDynamicLinks,$arrLink,$arrData,($arrLink['parent_type'] == 'link'?$this->fetchLinkById($arrLink['parent_id']):null),$arrLink);
+	}
+	
+	/*
+	* Get dynamic link by id [datasource,datasource row id]
+	* 
+	* @param int datasources id
+	* @param int datasources row id
+	* @return array dynamic link data
+	*/
+	public function fetchDynamicLinkById($intDataSourcesId,$intDataSourcesRowId) {
+		
+		/*
+		* Fetch all dynamic links for data source 
+		*/
+		$arrData = $this->fetchDynamicLinks($intDataSourcesId);
+		
+		/*
+		* Locate link 
+		*/
+		$arrFound = $this->_locateDynamicLink($arrData,$intDataSourcesRowId);
+		return $arrFound;
+		
+	}
+	
+	/*
+	* Create hard link to represent dynamic link
+	* 
+	* @param int datasources id
+	* @param int datasources row id
+	*/
+	public function createHardLinkFromDynamic($intDatasourcesId,$intDatasourcesRowId) {
+		
+		/*
+		* Get dynamic link info
+		*/
+		$arrDataSource = $this->fetchDynamicLinkById($intDatasourcesId,$intDatasourcesRowId);//$this->fetchLinkById($intDatasourcesId);
+		
+		/*
+		* Copy datasources information 
+		*/
+		$arrSave = $arrDataSource;
+		
+		/*
+		* Set datasources id and row id for dynamic link
+		*/
+		//$arrSave['datasources_id'] = $arrDataSource['navigation_links_id'];
+		//$arrSave['datasources_row_id'] = $intDatasourcesRowId;		
+		$arrSave['link_title'] = '';
+		
+		//echo '<pre>',var_dump($arrDataSource),'</pre>';
+		//exit;
+		
+		/*
+		* This info will be resolved dynamically for null values at menu request time
+		*/
+		unset(
+		    $arrSave['navigation_links_id']
+		    ,$arrSave['browser_heading']
+		    ,$arrSave['page_heading']
+		    ,$arrSave['link_url']
+		    ,$arrSave['sites_internal_url']
+		    ,$arrSave['target_module']
+		    ,$arrSave['target_module_template']
+		    ,$arrSave['target_module_args']
+		    ,$arrSave['target_module_config']
+		    ,$arrSave['header_content']
+		    ,$arrSave['body_content']
+		    ,$arrSave['footer_content']
+		    ,$arrSave['header_content_type']
+		    ,$arrSave['body_content_type']
+		    ,$arrSave['footer_content_type']
+		    ,$arrSave['target_window']
+		    ,$arrSave['new_window_name']
+		    ,$arrSave['links_data']
+			,$arrSave['datasource_query']
+			,$arrSave['datasource_dao']
+			,$arrSave['datasource_dao_method']
+			,$arrSave['datasource_dao_args']
+			,$arrSave['updated_on_timestamp']
+			,$arrSave['created_on_timestamp']
+			,$arrSave['navigation_links']
+			,$arrSave['dynamic_vars']
+		);
+		
+		/*
+		* Create new link 
+		*/
+		try {
+		return $this->saveLink($arrSave);
+		} catch(MCPDBException $e) {
+			echo "<p>{$e->getMessage()}</p>";
+			exit;
+		}
+	
+	}
+	
+	/*
 	* Converts data source data to dynamic links recursive
 	* 
 	* @param array data
@@ -938,35 +1074,6 @@ class MCPDAONavigation extends MCPDAO {
 		
 	}
 	
-	/*
-	* Get cached navigation menu
-	* 
-	* @param int navigation id
-	* @return array complete navigation menu
-	*/
-	private function _getCachedNav($intId) {
-		return $this->_objMCP->getCacheDataValue("nav_{$intId}",$this->getPkg());	
-	}
-	
-	/*
-	* Update the navigation menu cache with a new value 
-	* 
-	* @param int navigation id
-	* @param array navigation menu
-	* @return bool
-	*/
-	private function _setCachedNav($intId) {
-		
-		/*
-		* Bypass caching and build complete menu from current state
-		*/
-		$arrMenu = $this->fetchMenu($intId,'nav',true,false);
-		
-		/*
-		* Cache the menu 
-		*/
-		return $this->_objMCP->setCacheDataValue("nav_{$intId}",$arrMenu,$this->getPkg());
-	}
 	
 }
 ?>

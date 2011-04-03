@@ -1,11 +1,11 @@
 <?php
-$this->import('App.Core.DAO');
-$this->import('App.Core.Permission');
+// abstract base class
+$this->import('App.Resource.Permission.PermissionBase');
 
 /*
 * Node type permission data access layer 
 */
-class MCPPermissionNodeType extends MCPDAO implements MCPPermission {
+class MCPPermissionNodeType extends MCPPermissionBase {
 	
 	/*
 	* Determine whether user is allowed to create node type 
@@ -309,7 +309,7 @@ class MCPPermissionNodeType extends MCPDAO implements MCPPermission {
 			,$this->_objMCP->escapeString($intUser === null?0:$intUser)
 		);*/
 		
-		$strSQL = sprintf(
+		/*$strSQL = sprintf(
 			"SELECT
 			      CASE
 			     
@@ -358,11 +358,24 @@ class MCPPermissionNodeType extends MCPDAO implements MCPPermission {
 			   AND
 			      r.roles_id = pr.roles_id
 			 WHERE
-			      u.users_id = %s"
+			      u.users_id = %s
+			 GROUP
+			    BY
+			      u.users_id"
 			,$this->_objMCP->escapeString($intUser === null?0:$intUser)
-		);
+		);*/
 		
-		$arrPerms = $this->_objMCP->query($strSQL);
+		// $arrPerms = $this->_objMCP->query($strSQL);
+		
+		$arrPerms = $this->_objMCP->query(
+			 $this->_getTopLevelEntityCreateSQLTemplate()
+			,array(
+				 ':users_id'=>$intUser === null?0:$intUser
+				,':entity_type'=>'MCP_NODE_TYPES'
+				,':deny_add_msg_dev'=>''
+				,':deny_add_msg_user'=>''
+			)
+		);
 		
 		return array_pop($arrPerms);
      

@@ -1,11 +1,11 @@
 <?php
-$this->import('App.Core.DAO');
-$this->import('App.Core.Permission');
+// abstract base class
+$this->import('App.Resource.Permission.PermissionBase');
 
 /*
 * Role permissions data access layer
 */
-class MCPPermissionRole extends MCPDAO implements MCPPermission {
+class MCPPermissionRole extends MCPPermissionBase {
 	
 	/*
 	* Can user read roles (see FULL configuration)
@@ -315,7 +315,7 @@ class MCPPermissionRole extends MCPDAO implements MCPPermission {
 			   ON
 			    rpp.item_type = 'MCP_ROLES'
 			  AND
-			    b.roles_id = rpp.item_id
+			    rpp.item_id = 0
 			  AND
 			    r2.roles_id = rpp.roles_id
 			WHERE
@@ -342,72 +342,23 @@ class MCPPermissionRole extends MCPDAO implements MCPPermission {
 	/*
 	* Determine whether user is allowed to create a role for the current site
 	* 
+	* NOTE: Role creation can be controlled using roles. It is possible
+	* and a very likely case that roles will be necessary to manage role
+	* creation.
+	* 
 	* @param int sites ids
 	* @param int users id (defaults to current user)
 	* @return array permissions
 	*/
 	private function _c($intUser=null) {
 		
-		/*
-		* NOTE: Role creation can be controlled using roles. It is possible
-		* and a very likely case that roles will be necessary to manage role
-		* creation.
-		*/
-		$strSQL =
-			"SELECT
-			      CASE
-			     
-					WHEN pu.add IS NOT NULL
-					THEN pu.add
-			     
-			     	WHEN MAX(pr.add) IS NOT NULL
-			     	THEN MAX(pr.add)
-			     	
-			     	ELSE 0   	
-			     END allow_add
-			  FROM
-			     MCP_USERS u
-			     
-			  #user permission resolution#
-			  LEFT OUTER
-			  JOIN
-				  MCP_PERMISSIONS_USERS pu
-			    ON
-				  pu.item_type = 'MCP_ROLES'
-			   AND
-			      pu.item_id = 0
-			   AND
-				  u.users_id = pu.users_id
-				  
-			  # role management resolution#
-			  LEFT OUTER
-			  JOIN
-			      MCP_USERS_ROLES u2r
-			    ON
-			      u.users_id = u2r.users_id
-			  LEFT OUTER
-			  JOIN
-			      MCP_ROLES r
-			    ON
-			      u2r.roles_id = r.roles_id
-			   AND
-			      r.deleted = 0
-			  LEFT OUTER
-			  JOIN
-			      MCP_PERMISSIONS_ROLES pr #role permissions#
-			    ON
-			      pr.item_type = 'MCP_ROLES'
-			   AND
-			      pr.item_id = 0
-			   AND
-			      r.roles_id = pr.roles_id
-			 WHERE
-			      u.users_id = :users_id";
-		
 		$arrPerms = $this->_objMCP->query(
-			$strSQL
+			 $this->_getTopLevelEntityCreateSQLTemplate()
 			,array(
-				':users_id'=>$intUser === null?0:$intUser
+				 ':users_id'=>$intUser === null?0:$intUser
+				,':entity_type'=>'MCP_ROLES'
+				,':deny_add_msg_dev'=>''
+				,':deny_add_msg_user'=>''
 			)
 		);
 		

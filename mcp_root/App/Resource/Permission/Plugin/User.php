@@ -1,11 +1,11 @@
 <?php
-$this->import('App.Core.DAO');
-$this->import('App.Core.Permission');
+// abstract base class
+$this->import('App.Resource.Permission.PermissionBase');
 
 /*
 * User permission data access layer 
 */
-class MCPPermissionUser extends MCPDAO implements MCPPermission {
+class MCPPermissionUser extends MCPPermissionBase {
 	
 	/*
 	* Determine whether user is allowed to create a new user

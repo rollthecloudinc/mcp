@@ -1,11 +1,11 @@
 <?php
-$this->import('App.Core.DAO');
-$this->import('App.Core.Permission');
+// abstract base class
+$this->import('App.Resource.Permission.PermissionBase');
 
 /*
 * Navigation link permissions data access layer
 */
-class MCPPermissionNavigationLink extends MCPDAO implements MCPPermission {
+class MCPPermissionNavigationLink extends MCPPermissionBase {
 	
 	private 
 	
@@ -288,7 +288,7 @@ class MCPPermissionNavigationLink extends MCPDAO implements MCPPermission {
 	*/
 	private function _c($arrMenuIds,$intUser=null) {
 
-		$strSQL = sprintf(
+		/* $strSQL = sprintf(
 			"SELECT
 			      m.navigation_id item_id
 			      ,CASE
@@ -323,7 +323,18 @@ class MCPPermissionNavigationLink extends MCPDAO implements MCPPermission {
 			,$this->_objMCP->escapeString(implode(',',$arrMenuIds))
 		);
 		
-		$arrPerms = $this->_objMCP->query($strSQL);
+		$arrPerms = $this->_objMCP->query($strSQL);*/
+		
+		$arrPerms = $this->_objMCP->query(
+			$this->_getChildLevelEntityCreateSQLTemplate('MCP_NAVIGATION','navigation_id',$arrMenuIds,'users_id')
+			,array(
+				 ':item_type'=>'MCP_NAVIGATION'
+				,':users_id'=>(int) ( $intUser === null?0:$intUser )
+				,':default_allow_add'=>0
+				,':deny_add_msg_dev'=>''
+				,':deny_add_msg_user'=>''
+			)
+		);
 		
 		return $arrPerms;
       

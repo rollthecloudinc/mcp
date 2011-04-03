@@ -1,4 +1,7 @@
 <?php 
+// abstract base class
+$this->import('App.Resource.Permission.PermissionBase');
+
 /*
 * Allow and deny access to pages based on specific routes such as; 
 * 
@@ -8,7 +11,7 @@
 * 
 * This permission only implements read all others deny.
 */
-class MCPPermissionRoute extends MCPDAO implements MCPPermission {
+class MCPPermissionRoute extends MCPPermissionBase {
 
 	/*
 	* Determine whether user is able to access given routes (pages) associated
@@ -23,7 +26,7 @@ class MCPPermissionRoute extends MCPDAO implements MCPPermission {
 		
 		foreach($ids as $id) {
 
-			$strSQL = sprintf(
+			$strSQL =
 				"SELECT
 				       u.users_id item_id
 				      ,pu.read allow_read
@@ -37,14 +40,14 @@ class MCPPermissionRoute extends MCPDAO implements MCPPermission {
 				    AND
 				      pu.item_id = 0
 				    AND
-				      pu.item_type = 'MCP_ROUTE:%s'
+				      pu.item_type = :item_type
 				  WHERE
-				      u.users_id = %s"
-				,$this->_objMCP->escapeString( $id )
-				,$this->_objMCP->escapeString( $this->_objMCP->getUsersId()?$this->_objMCP->getUsersId():0 )
-			);
+				      u.users_id = :users_id";
 			
-			$perm = array_pop( $this->_objMCP->query($strSQL) );
+			$perm = array_pop( $this->_objMCP->query($strSQL,array(
+				 ':item_type'=>"MCP_ROUTE:$id"
+				,':users_id'=>$this->_objMCP->getUsersId()?$this->_objMCP->getUsersId():0
+			)));
 			
 			$return[$id] = array(
 				'allow'=>(bool) $perm?$perm['allow_read']:false

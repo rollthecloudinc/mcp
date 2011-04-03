@@ -88,7 +88,7 @@
 				</fieldset>
 				<?php echo $MODULE_CONFIG_TPL; ?>	
 			</fieldset>
-			<fieldset>
+			<fieldset style="display: none;">
 				<legend>Custom Page</legend>
 				<ul class="navigation-links-body-content">
 					<li class="navigation-links-body-content-type">
@@ -104,7 +104,7 @@
 				</ul>	
 			</fieldset>
 		</fieldset>	
-		<fieldset>
+		<fieldset style="display: none;">
 			<legend>Header &amp; Footer</legend>
 			<ul class="navigation-links-header-content">
 				<li class="navigation-links-header-content-type">
@@ -131,7 +131,7 @@
 				</li>
 			</ul>
 		</fieldset>
-		<fieldset>
+		<fieldset style="display: none;">
 			<legend>DataSource</legend>
 			<fieldset>
 				<legend>Query</legend>

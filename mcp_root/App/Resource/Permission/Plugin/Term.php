@@ -1,11 +1,11 @@
 <?php
-$this->import('App.Core.DAO');
-$this->import('App.Core.Permission');
+// abstract base class
+$this->import('App.Resource.Permission.PermissionBase');
 
 /*
 * Vocabulary term permissions data access layer
 */
-class MCPPermissionTerm extends MCPDAO implements MCPPermission {
+class MCPPermissionTerm extends MCPPermissionBase {
 	
 	private 
 	
@@ -279,7 +279,7 @@ class MCPPermissionTerm extends MCPDAO implements MCPPermission {
 	*/
 	private function _c($arrVocabIds,$intUser=null) {
 
-		$strSQL = sprintf(
+		/*$strSQL = sprintf(
 			"SELECT
 			      m.vocabulary_id item_id
 			      ,CASE
@@ -314,7 +314,18 @@ class MCPPermissionTerm extends MCPDAO implements MCPPermission {
 			,$this->_objMCP->escapeString(implode(',',$arrVocabIds))
 		);
 		
-		$arrPerms = $this->_objMCP->query($strSQL);
+		$arrPerms = $this->_objMCP->query($strSQL);*/
+		
+		$arrPerms = $this->_objMCP->query(
+			$this->_getChildLevelEntityCreateSQLTemplate('MCP_VOCABULARY','vocabulary_id',$arrVocabIds)
+			,array(
+				 ':item_type'=>'MCP_VOCABULARY'
+				,':users_id'=>(int) ( $intUser === null?0:$intUser )
+				,':default_allow_add'=>0
+				,':deny_add_msg_dev'=>''
+				,':deny_add_msg_user'=>''
+			)
+		);
 		
 		return $arrPerms;
       

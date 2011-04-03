@@ -88,8 +88,8 @@ class MCPSiteForm extends MCPModule {
 		// validate site directory as unique and following proper format
 		$this->_objValidator->addRule('site_directory',function($value,$label) use (&$site,$dao,$mcp) {
 				
-			if(!preg_match('/^[A-Za-z0-9_]*?$/',$value)) {
-				return "$label may only contain alpha-numeric characters and underscores.";
+			if(!preg_match('/^[A-Za-z0-9_-]*?$/',$value)) {
+				return "$label may only contain alpha-numeric characters, hypths and underscores.";
 			}
 				
 			$filter = sprintf(

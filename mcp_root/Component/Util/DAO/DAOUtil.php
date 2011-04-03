@@ -121,5 +121,43 @@ class MCPDAOUtil extends MCPDAO {
 		));
 	}
 	
+	/*
+	* List all content types
+	* 
+	* @param str select columns
+	* @param str where clause
+	* @param str order by clause
+	* @param str limit clause
+	* @return array content types
+	*/
+	public function listContentTypes($strSelect='ct.*',$strWhere=null,$strSort=null,$strLimit=null) {
+		
+		$strSQL = sprintf(
+			'SELECT 
+			      %s %s 
+			   FROM 
+			      MCP_ENUM_CONTENT_TYPES ct
+			      %s 
+			      %s 
+			      %s'
+			,$strLimit === null?'':'SQL_CALC_FOUND_ROWS'
+			,$strSelect
+			,$strWhere === null?'':"WHERE $strWhere"
+			,$strSort === null?'':"ORDER BY $strSort"
+			,$strLimit === null?'':"LIMIT $strLimit"
+		);
+		
+		$arrRows = $this->_objMCP->query($strSQL);
+		
+		if($strLimit === null) {
+			return $arrRows;
+		} else {
+			return array(
+				$arrRows
+				,array_pop(array_pop($this->_objMCP->query('SELECT FOUND_ROWS()')))
+			);
+		}
+	}
+	
 }
 ?>

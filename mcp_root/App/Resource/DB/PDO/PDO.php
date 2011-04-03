@@ -191,21 +191,21 @@ class MCPPDO extends MCPResource implements MCPDB {
 	* Begin a transaction 
 	*/
 	public function beginTransaction() {
-		
+		$this->_objPDO->beginTransaction();
 	}
 	
 	/*
 	* Rollback a transaction 
 	*/
 	public function rollback() {
-		
+		$this->_objPDO->rollback();
 	}
 	
 	/*
 	* Commit a transaction 
 	*/
 	public function commit() {
-		
+		$this->_objPDO->commit();
 	}
 	
 	/*

@@ -59,7 +59,7 @@ class MCPMySQL extends MCPResource implements MCPDB {
 		$objResult = mysql_query($strSQL,$this->_objLink);
 		
 		if( mysql_error($this->_objLink) ) {
-			throw new MCPDBException('Query failed');
+			throw new MCPDBException("Query failed: $strSQL");
 		}
 		
 		$arrRows = array();

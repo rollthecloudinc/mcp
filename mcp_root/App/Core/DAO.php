@@ -55,7 +55,7 @@ abstract class MCPDAO extends MCPResource {
 			} else if(in_array($strField,$arrStrings)) {
 				$mixValue = (string) $mixValue;
 			} else if(in_array($strField,$arrSerialized)) {
-				$mixValue = base64_encode(serialize($mixValue));
+				$mixValue = (string) base64_encode(serialize($mixValue));
 			} else {
 				$mixValue = (int) $this->_objMCP->escapeString($mixValue);
 			}
@@ -79,6 +79,9 @@ abstract class MCPDAO extends MCPResource {
 			,implode(',',$arrValues)
 			,$boolUpdate === true?' ON DUPLICATE KEY UPDATE '.implode(',',$arrUpdate):''
 		);
+		
+		//echo "<p>$strSQL</p>";
+		//echo '<pre>',print_r($arrBind),'</pre>';
 			
 		return $this->_objMCP->query($strSQL,$arrBind);
 		

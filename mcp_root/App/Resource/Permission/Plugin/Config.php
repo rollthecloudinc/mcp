@@ -1,6 +1,6 @@
 <?php
-$this->import('App.Core.DAO');
-$this->import('App.Core.Permission');
+// abstract base class
+$this->import('App.Resource.Permission.PermissionBase');
 
 /*
 * MCP_CONFIG 0 (all site configs)
@@ -8,7 +8,7 @@ $this->import('App.Core.Permission');
 * MCP_CONFIG:name_of_field - 1
 * MCP_CONFIGLname_of_field - 0 
 */
-class MCPPermissionConfig extends MCPDAO implements MCPPermission {
+class MCPPermissionConfig extends MCPPermissionBase {
 	
 	public function add($ids) {
 		

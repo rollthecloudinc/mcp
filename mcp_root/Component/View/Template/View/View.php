@@ -7,7 +7,9 @@ echo $pager;
 /*
 * Create base entity URL 
 */
-printf('<a href="%s">%s</a>',(string) $create,(string) $create_label);
+if( $allow_create === true ) {
+	printf('<a href="%s">%s</a>',(string) $create,(string) $create_label);
+}
 
 /*
 * Row data

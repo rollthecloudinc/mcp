@@ -32,8 +32,10 @@ CREATE TABLE `MCP_CACHED_DATA` (
   `updated_on_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `created_on_timestamp` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`sites_id`,`cache_name`,`pkg`),
-  KEY `sites_id` (`sites_id`,`cache_name`,`pkg`,`flush_cache`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  KEY `sites_id` (`sites_id`,`cache_name`,`pkg`,`flush_cache`),
+  KEY `sites_id_2` (`sites_id`),
+  CONSTRAINT `mcp_cached_data_ibfk_1` FOREIGN KEY (`sites_id`) REFERENCES `mcp_sites` (`sites_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -47,7 +49,7 @@ CREATE TABLE `MCP_CACHED_IMAGES` (
   `cached_images_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `base_images_id` blob NOT NULL,
   PRIMARY KEY (`cached_images_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=158 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=232 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -64,8 +66,9 @@ CREATE TABLE `MCP_CACHED_IMAGES_OPTIONS` (
   `images_value` varchar(128) DEFAULT NULL,
   PRIMARY KEY (`cached_images_options_id`),
   UNIQUE KEY `cached_images_id` (`cached_images_id`,`images_option`,`images_value`),
-  KEY `cached_images_id_2` (`cached_images_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=179 DEFAULT CHARSET=utf8;
+  KEY `cached_images_id_2` (`cached_images_id`),
+  CONSTRAINT `mcp_cached_images_options_ibfk_1` FOREIGN KEY (`cached_images_id`) REFERENCES `mcp_cached_images` (`cached_images_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=256 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -85,7 +88,7 @@ CREATE TABLE `MCP_COMMENTS` (
   `commenter_first_name` varchar(24) DEFAULT NULL,
   `commenter_last_name` varchar(24) DEFAULT NULL,
   `commenter_email` varchar(128) DEFAULT NULL,
-  `content_type` enum('php','html','text') NOT NULL DEFAULT 'html',
+  `content_type` varchar(25) NOT NULL DEFAULT 'html',
   `comment_published` tinyint(3) unsigned NOT NULL DEFAULT '1',
   `comment_content` longtext NOT NULL,
   `updated_on_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -99,8 +102,13 @@ CREATE TABLE `MCP_COMMENTS` (
   KEY `commenter_id` (`commenter_id`),
   KEY `comment_published` (`comment_published`),
   KEY `commenter_email` (`commenter_email`),
-  KEY `deleted` (`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
+  KEY `deleted` (`deleted`),
+  KEY `content_type` (`content_type`),
+  CONSTRAINT `mcp_comments_ibfk_4` FOREIGN KEY (`commenter_id`) REFERENCES `mcp_users` (`users_id`),
+  CONSTRAINT `mcp_comments_ibfk_1` FOREIGN KEY (`content_type`) REFERENCES `mcp_enum_content_types` (`system_name`),
+  CONSTRAINT `mcp_comments_ibfk_2` FOREIGN KEY (`parent_id`) REFERENCES `mcp_comments` (`comments_id`),
+  CONSTRAINT `mcp_comments_ibfk_3` FOREIGN KEY (`sites_id`) REFERENCES `mcp_sites` (`sites_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -127,8 +135,26 @@ CREATE TABLE `MCP_CONFIG` (
   `sites_id` bigint(20) unsigned NOT NULL,
   `config_name` varchar(48) NOT NULL,
   `config_value` text NOT NULL,
-  PRIMARY KEY (`sites_id`,`config_name`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  PRIMARY KEY (`sites_id`,`config_name`),
+  KEY `sites_id` (`sites_id`),
+  CONSTRAINT `mcp_config_ibfk_1` FOREIGN KEY (`sites_id`) REFERENCES `mcp_sites` (`sites_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `MCP_ENUM_CONTENT_TYPES`
+--
+
+DROP TABLE IF EXISTS `MCP_ENUM_CONTENT_TYPES`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `MCP_ENUM_CONTENT_TYPES` (
+  `system_name` varchar(25) NOT NULL,
+  `human_name` varchar(128) NOT NULL,
+  `description` longtext,
+  PRIMARY KEY (`system_name`),
+  UNIQUE KEY `human_name` (`human_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Content types are shared between all sites';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -146,6 +172,7 @@ CREATE TABLE `MCP_FIELDS` (
   `entities_id` bigint(20) unsigned DEFAULT NULL COMMENT 'optional ID of entity row such as; specified node type for node type extensions',
   `cfg_name` varchar(128) NOT NULL COMMENT 'Unique dynamic field internal reference name',
   `cfg_label` varchar(128) NOT NULL COMMENT 'Label that will be shown next to form input',
+  `cfg_widget` varchar(57) DEFAULT NULL,
   `cfg_description` text COMMENT 'Description shown to user about form purpose, contents, etc',
   `cfg_required` enum('Y','N') NOT NULL DEFAULT 'N' COMMENT 'whether the field is required ie. not allowed to be empty',
   `cfg_default` text COMMENT 'Default value for the field',
@@ -169,10 +196,17 @@ CREATE TABLE `MCP_FIELDS` (
   `db_ref_col` varchar(128) DEFAULT NULL COMMENT 'Foreign key reference table column',
   `db_ref_context` varchar(128) DEFAULT NULL,
   `db_ref_context_id` bigint(20) unsigned DEFAULT NULL,
+  `db_varchar` varchar(255) DEFAULT NULL,
+  `db_text` longtext,
+  `db_int` bigint(20) DEFAULT NULL,
+  `db_price` decimal(20,2) DEFAULT NULL,
+  `db_bool` tinyint(3) unsigned DEFAULT NULL,
+  `db_timestamp` timestamp NULL DEFAULT NULL,
+  `db_date` date DEFAULT NULL,
   PRIMARY KEY (`fields_id`),
   UNIQUE KEY `sites_id` (`sites_id`,`entity_type`,`entities_id`,`cfg_name`),
   KEY `entity_type` (`entity_type`,`entities_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=46 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=80 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -202,10 +236,8 @@ CREATE TABLE `MCP_FIELD_VALUES` (
   KEY `fields_id` (`fields_id`,`rows_id`),
   KEY `weight` (`weight`),
   KEY `db_timestamp` (`db_timestamp`),
-  KEY `db_date` (`db_date`),
-  FULLTEXT KEY `db_text` (`db_text`),
-  FULLTEXT KEY `db_varchar_2` (`db_varchar`)
-) ENGINE=MyISAM AUTO_INCREMENT=214 DEFAULT CHARSET=utf8;
+  KEY `db_date` (`db_date`)
+) ENGINE=InnoDB AUTO_INCREMENT=453 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -229,8 +261,10 @@ CREATE TABLE `MCP_MEDIA_FILES` (
   KEY `sites_id` (`sites_id`),
   KEY `creators_id` (`creators_id`),
   KEY `sites_id_2` (`sites_id`,`creators_id`),
-  KEY `deleted` (`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+  KEY `deleted` (`deleted`),
+  CONSTRAINT `mcp_media_files_ibfk_2` FOREIGN KEY (`creators_id`) REFERENCES `mcp_users` (`users_id`),
+  CONSTRAINT `mcp_media_files_ibfk_1` FOREIGN KEY (`sites_id`) REFERENCES `mcp_sites` (`sites_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -257,8 +291,95 @@ CREATE TABLE `MCP_MEDIA_IMAGES` (
   KEY `sites_id` (`sites_id`),
   KEY `creators_id` (`creators_id`),
   KEY `sites_id_2` (`sites_id`,`creators_id`),
-  KEY `deleted` (`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=156 DEFAULT CHARSET=utf8;
+  KEY `deleted` (`deleted`),
+  CONSTRAINT `mcp_media_images_ibfk_2` FOREIGN KEY (`sites_id`) REFERENCES `mcp_sites` (`sites_id`),
+  CONSTRAINT `mcp_media_images_ibfk_1` FOREIGN KEY (`creators_id`) REFERENCES `mcp_users` (`users_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=187 DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `MCP_MENU_LINKS`
+--
+
+DROP TABLE IF EXISTS `MCP_MENU_LINKS`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `MCP_MENU_LINKS` (
+  `menu_links_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `menus_id` bigint(20) unsigned NOT NULL,
+  `parent_id` bigint(20) unsigned DEFAULT NULL,
+  `creators_id` bigint(20) unsigned DEFAULT NULL,
+  `path` varchar(255) NOT NULL,
+  `display_title` varchar(128) NOT NULL,
+  `browser_title` varchar(255) NOT NULL,
+  `page_title` varchar(255) NOT NULL,
+  `mod_path` varchar(255) DEFAULT NULL,
+  `mod_tpl` varchar(255) DEFAULT NULL,
+  `mod_args` blob,
+  `mod_cfg` blob,
+  `absolute_url` longtext,
+  `content_header` longtext,
+  `content_header_type` varchar(25) DEFAULT NULL,
+  `content_footer` longtext,
+  `content_footer_type` varchar(25) DEFAULT NULL,
+  `global_data` blob,
+  `weight` tinyint(4) NOT NULL DEFAULT '0',
+  `updated_on_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `created_on_timestamp` timestamp NULL DEFAULT NULL,
+  `deleted_on_timestamp` timestamp NULL DEFAULT NULL,
+  `deleted` tinyint(3) unsigned DEFAULT '0',
+  PRIMARY KEY (`menu_links_id`),
+  KEY `menus_id` (`menus_id`),
+  KEY `parent_id` (`parent_id`),
+  KEY `content_header_type` (`content_header_type`),
+  KEY `content_footer_type` (`content_footer_type`),
+  KEY `path` (`path`),
+  KEY `deleted` (`deleted`),
+  KEY `creators_id` (`creators_id`),
+  CONSTRAINT `mcp_menu_links_ibfk_5` FOREIGN KEY (`creators_id`) REFERENCES `mcp_users` (`users_id`),
+  CONSTRAINT `mcp_menu_links_ibfk_1` FOREIGN KEY (`menus_id`) REFERENCES `mcp_navigation` (`navigation_id`),
+  CONSTRAINT `mcp_menu_links_ibfk_2` FOREIGN KEY (`parent_id`) REFERENCES `mcp_menu_links` (`menu_links_id`),
+  CONSTRAINT `mcp_menu_links_ibfk_3` FOREIGN KEY (`content_header_type`) REFERENCES `mcp_enum_content_types` (`system_name`),
+  CONSTRAINT `mcp_menu_links_ibfk_4` FOREIGN KEY (`content_footer_type`) REFERENCES `mcp_enum_content_types` (`system_name`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COMMENT='New version of navigation component';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `MCP_MENU_LINKS_DATASOURCES`
+--
+
+DROP TABLE IF EXISTS `MCP_MENU_LINKS_DATASOURCES`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `MCP_MENU_LINKS_DATASOURCES` (
+  `menu_links_id` bigint(20) unsigned NOT NULL,
+  `dao` varchar(255) NOT NULL COMMENT 'Application pkg path to DAO',
+  `method` varchar(255) NOT NULL COMMENT 'Name of method to call',
+  `args` blob COMMENT 'Optional arguments to pass to method call to derive dynamic links',
+  `description` longtext,
+  PRIMARY KEY (`menu_links_id`),
+  CONSTRAINT `mcp_menu_links_datasources_ibfk_1` FOREIGN KEY (`menu_links_id`) REFERENCES `mcp_menu_links` (`menu_links_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Menu link extension that represents a datasource to derive d';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `MCP_MENU_LINKS_DYNAMIC`
+--
+
+DROP TABLE IF EXISTS `MCP_MENU_LINKS_DYNAMIC`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `MCP_MENU_LINKS_DYNAMIC` (
+  `menu_links_id` bigint(20) unsigned NOT NULL,
+  `datasources_id` bigint(20) unsigned NOT NULL COMMENT 'datasource that derived the link',
+  `dynamic_id` varchar(128) NOT NULL,
+  `context` varchar(128) DEFAULT NULL COMMENT 'context of polymorphic dynamic_id',
+  PRIMARY KEY (`menu_links_id`),
+  UNIQUE KEY `datasources_id_2` (`datasources_id`,`dynamic_id`),
+  KEY `datasources_id` (`datasources_id`),
+  CONSTRAINT `mcp_menu_links_dynamic_ibfk_1` FOREIGN KEY (`menu_links_id`) REFERENCES `mcp_menu_links` (`menu_links_id`),
+  CONSTRAINT `mcp_menu_links_dynamic_ibfk_2` FOREIGN KEY (`datasources_id`) REFERENCES `mcp_menu_links_datasources` (`menu_links_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Menu links extension links represent concrete dynamic link o';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -285,7 +406,7 @@ CREATE TABLE `MCP_NAVIGATION` (
   KEY `menu_location` (`menu_location`),
   KEY `sites_id` (`sites_id`),
   KEY `users_id` (`users_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=7 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -336,7 +457,7 @@ CREATE TABLE `MCP_NAVIGATION_LINKS` (
   KEY `parent_type` (`parent_type`,`parent_id`),
   KEY `creators_id` (`creators_id`),
   KEY `deleted` (`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=109 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=116 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -351,8 +472,8 @@ CREATE TABLE `MCP_NODES` (
   `sites_id` bigint(20) unsigned NOT NULL,
   `authors_id` bigint(20) unsigned NOT NULL,
   `node_types_id` bigint(20) unsigned NOT NULL,
-  `content_type` enum('html','php','text') NOT NULL DEFAULT 'html',
-  `intro_type` enum('html','php','text') NOT NULL DEFAULT 'html',
+  `content_type` varchar(25) NOT NULL DEFAULT 'html',
+  `intro_type` varchar(25) NOT NULL DEFAULT 'html',
   `node_published` tinyint(3) unsigned NOT NULL DEFAULT '1',
   `node_url` varchar(128) NOT NULL,
   `node_title` varchar(128) NOT NULL,
@@ -369,8 +490,15 @@ CREATE TABLE `MCP_NODES` (
   KEY `node_published` (`node_published`),
   KEY `authors_id` (`authors_id`),
   KEY `deleted` (`deleted`),
-  KEY `node_types_id` (`node_types_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=68 DEFAULT CHARSET=utf8;
+  KEY `node_types_id` (`node_types_id`),
+  KEY `content_type` (`content_type`),
+  KEY `intro_type` (`intro_type`),
+  CONSTRAINT `mcp_nodes_ibfk_5` FOREIGN KEY (`node_types_id`) REFERENCES `mcp_node_types` (`node_types_id`),
+  CONSTRAINT `mcp_nodes_ibfk_1` FOREIGN KEY (`content_type`) REFERENCES `mcp_enum_content_types` (`system_name`),
+  CONSTRAINT `mcp_nodes_ibfk_2` FOREIGN KEY (`intro_type`) REFERENCES `mcp_enum_content_types` (`system_name`),
+  CONSTRAINT `mcp_nodes_ibfk_3` FOREIGN KEY (`sites_id`) REFERENCES `mcp_sites` (`sites_id`),
+  CONSTRAINT `mcp_nodes_ibfk_4` FOREIGN KEY (`authors_id`) REFERENCES `mcp_users` (`users_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=99 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -388,6 +516,7 @@ CREATE TABLE `MCP_NODE_TYPES` (
   `system_name` varchar(128) NOT NULL,
   `human_name` varchar(128) NOT NULL,
   `theme_tpl` varchar(255) DEFAULT NULL,
+  `form_tpl` varchar(255) DEFAULT NULL,
   `description` longtext,
   `updated_on_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `created_on_timestamp` timestamp NULL DEFAULT NULL,
@@ -396,8 +525,11 @@ CREATE TABLE `MCP_NODE_TYPES` (
   PRIMARY KEY (`node_types_id`),
   UNIQUE KEY `sites_id` (`sites_id`,`pkg`,`system_name`,`deleted`),
   UNIQUE KEY `sites_id_2` (`sites_id`,`pkg`,`human_name`,`deleted`),
-  KEY `creators_id` (`creators_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=26 DEFAULT CHARSET=utf8;
+  KEY `creators_id` (`creators_id`),
+  KEY `sites_id_3` (`sites_id`),
+  CONSTRAINT `mcp_node_types_ibfk_2` FOREIGN KEY (`sites_id`) REFERENCES `mcp_sites` (`sites_id`),
+  CONSTRAINT `mcp_node_types_ibfk_1` FOREIGN KEY (`creators_id`) REFERENCES `mcp_users` (`users_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -429,8 +561,10 @@ CREATE TABLE `MCP_PERMISSIONS_ROLES` (
   `delete_own_child` tinyint(3) unsigned DEFAULT NULL,
   `read_own_child` tinyint(3) unsigned DEFAULT NULL,
   PRIMARY KEY (`permissions_id`),
-  UNIQUE KEY `item_type` (`item_type`,`item_id`,`roles_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+  UNIQUE KEY `item_type` (`item_type`,`item_id`,`roles_id`),
+  KEY `roles_id` (`roles_id`),
+  CONSTRAINT `mcp_permissions_roles_ibfk_1` FOREIGN KEY (`roles_id`) REFERENCES `mcp_roles` (`roles_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -462,8 +596,10 @@ CREATE TABLE `MCP_PERMISSIONS_USERS` (
   `delete_own_child` tinyint(3) unsigned DEFAULT NULL,
   `read_own_child` tinyint(3) unsigned DEFAULT NULL,
   PRIMARY KEY (`permissions_id`),
-  UNIQUE KEY `item_type` (`item_type`,`item_id`,`users_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=22 DEFAULT CHARSET=utf8;
+  UNIQUE KEY `item_type` (`item_type`,`item_id`,`users_id`),
+  KEY `users_id` (`users_id`),
+  CONSTRAINT `mcp_permissions_users_ibfk_1` FOREIGN KEY (`users_id`) REFERENCES `mcp_users` (`users_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -490,8 +626,10 @@ CREATE TABLE `MCP_ROLES` (
   UNIQUE KEY `sites_id_2` (`sites_id`,`pkg`,`human_name`,`deleted`),
   KEY `sites_id_3` (`sites_id`),
   KEY `roles_id` (`roles_id`,`deleted`),
-  FULLTEXT KEY `description` (`description`)
-) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+  KEY `creators_id` (`creators_id`),
+  CONSTRAINT `mcp_roles_ibfk_2` FOREIGN KEY (`creators_id`) REFERENCES `mcp_users` (`users_id`),
+  CONSTRAINT `mcp_roles_ibfk_1` FOREIGN KEY (`sites_id`) REFERENCES `mcp_sites` (`sites_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -511,8 +649,10 @@ CREATE TABLE `MCP_SESSIONS` (
   `deleted` timestamp NULL DEFAULT NULL,
   `session_data` blob,
   PRIMARY KEY (`sessions_id`),
-  UNIQUE KEY `sid` (`sid`)
-) ENGINE=MyISAM AUTO_INCREMENT=1588 DEFAULT CHARSET=utf8;
+  UNIQUE KEY `sid` (`sid`),
+  KEY `users_id` (`users_id`),
+  CONSTRAINT `mcp_sessions_ibfk_1` FOREIGN KEY (`users_id`) REFERENCES `mcp_users` (`users_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2662 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -535,8 +675,10 @@ CREATE TABLE `MCP_SITES` (
   PRIMARY KEY (`sites_id`),
   UNIQUE KEY `site_name` (`site_name`,`deleted`),
   UNIQUE KEY `site_directory` (`site_directory`,`deleted`),
-  UNIQUE KEY `site_module_prefix` (`site_module_prefix`,`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=20 DEFAULT CHARSET=utf8;
+  UNIQUE KEY `site_module_prefix` (`site_module_prefix`,`deleted`),
+  KEY `creators_id` (`creators_id`),
+  CONSTRAINT `mcp_sites_ibfk_1` FOREIGN KEY (`creators_id`) REFERENCES `mcp_users` (`users_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -563,7 +705,7 @@ CREATE TABLE `MCP_TERMS` (
   UNIQUE KEY `parent_type` (`parent_type`,`parent_id`,`system_name`,`deleted`),
   UNIQUE KEY `parent_type_2` (`parent_type`,`parent_id`,`human_name`,`deleted`),
   KEY `creators_id` (`creators_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=331 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=366 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -589,8 +731,9 @@ CREATE TABLE `MCP_USERS` (
   `deleted` tinyint(3) unsigned DEFAULT '0',
   PRIMARY KEY (`users_id`),
   UNIQUE KEY `sites_id` (`sites_id`,`username`,`deleted`),
-  UNIQUE KEY `sites_id_2` (`sites_id`,`email_address`,`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=18 DEFAULT CHARSET=utf8;
+  UNIQUE KEY `sites_id_2` (`sites_id`,`email_address`,`deleted`),
+  KEY `sites_id_3` (`sites_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -605,8 +748,12 @@ CREATE TABLE `MCP_USERS_ROLES` (
   `users_id` bigint(20) unsigned NOT NULL COMMENT 'mcp_user foreign key',
   `roles_id` bigint(20) unsigned NOT NULL COMMENT 'mcp_role foreign key',
   PRIMARY KEY (`users_roles_id`),
-  UNIQUE KEY `users_id` (`users_id`,`roles_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+  UNIQUE KEY `users_id` (`users_id`,`roles_id`),
+  KEY `roles_id` (`roles_id`),
+  KEY `users_id_2` (`users_id`),
+  CONSTRAINT `mcp_users_roles_ibfk_2` FOREIGN KEY (`users_id`) REFERENCES `mcp_users` (`users_id`),
+  CONSTRAINT `mcp_users_roles_ibfk_1` FOREIGN KEY (`roles_id`) REFERENCES `mcp_roles` (`roles_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -638,7 +785,7 @@ CREATE TABLE `MCP_VIEW_ARGUMENTS` (
   UNIQUE KEY `displays_id` (`displays_id`,`system_name`,`deleted`),
   UNIQUE KEY `displays_id_2` (`displays_id`,`human_name`,`deleted`),
   KEY `displays_id_3` (`displays_id`,`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COMMENT='Contains arguments that may be referenced via select options';
+) ENGINE=MyISAM AUTO_INCREMENT=5 DEFAULT CHARSET=utf8 COMMENT='Contains arguments that may be referenced via select options';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -669,7 +816,7 @@ CREATE TABLE `MCP_VIEW_DISPLAYS` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `parent_type` (`parent_type`,`parent_id`,`system_name`,`deleted`),
   UNIQUE KEY `parent_type_2` (`parent_type`,`parent_id`,`human_name`,`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=9 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=11 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -694,7 +841,7 @@ CREATE TABLE `MCP_VIEW_FIELDS` (
   `deleted` tinyint(3) unsigned DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `displays_id` (`displays_id`,`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=27 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=40 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -719,7 +866,7 @@ CREATE TABLE `MCP_VIEW_FIELD_OPTIONS` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `fields_id` (`fields_id`,`option_name`,`deleted`),
   KEY `fields_id_2` (`fields_id`,`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -746,7 +893,7 @@ CREATE TABLE `MCP_VIEW_FILTERS` (
   `deleted` tinyint(3) unsigned DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `displays_id` (`displays_id`,`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=9 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=13 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -771,7 +918,7 @@ CREATE TABLE `MCP_VIEW_FILTER_VALUES` (
   `deleted` tinyint(3) unsigned DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `filters_id` (`filters_id`,`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=9 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=13 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -846,8 +993,11 @@ CREATE TABLE `MCP_VOCABULARY` (
   PRIMARY KEY (`vocabulary_id`),
   UNIQUE KEY `sites_id` (`sites_id`,`pkg`,`system_name`,`deleted`),
   UNIQUE KEY `sites_id_2` (`sites_id`,`pkg`,`human_name`,`deleted`),
-  KEY `creators_id` (`creators_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=8 DEFAULT CHARSET=utf8;
+  KEY `creators_id` (`creators_id`),
+  KEY `sites_id_3` (`sites_id`),
+  KEY `creators_id_2` (`creators_id`),
+  CONSTRAINT `mcp_vocabulary_ibfk_1` FOREIGN KEY (`creators_id`) REFERENCES `mcp_users` (`users_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -859,4 +1009,4 @@ CREATE TABLE `MCP_VOCABULARY` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2011-02-20 17:28:44
+-- Dump completed on 2011-04-03 18:31:25

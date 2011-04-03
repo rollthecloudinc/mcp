@@ -1,11 +1,11 @@
 <?php
-$this->import('App.Core.DAO');
-$this->import('App.Core.Permission');
+// abstract base class
+$this->import('App.Resource.Permission.PermissionBase');
 
 /*
 * Node permissions data access layer
 */
-class MCPPermissionNode extends MCPDAO implements MCPPermission {
+class MCPPermissionNode extends MCPPermissionBase {
 	
 	/*
 	* Determine whether user is allowed to create node of specified type(s)
@@ -284,7 +284,7 @@ class MCPPermissionNode extends MCPDAO implements MCPPermission {
 			,$this->_objMCP->escapeString(implode(',',$arrNodeIds))
 		);*/
 		
-		$strSQL = sprintf(
+		/*$strSQL = sprintf(
 			"SELECT
 			 	 b.nodes_id item_id #base item unique id#
 			 	 
@@ -485,7 +485,19 @@ class MCPPermissionNode extends MCPDAO implements MCPPermission {
 			,$this->_objMCP->escapeString(implode(',',$arrNodeIds))
 		);
 		
-		$arrPerms = $this->_objMCP->query($strSQL);
+		$arrPerms = $this->_objMCP->query($strSQL);*/
+		
+		$arrPerms = $this->_objMCP->query(
+			$this->_getChildLevelEntityEditSQLTemplate('MCP_NODES','nodes_id','node_types_id',$arrNodeIds,'authors_id')
+			,array(
+				 ':users_id'=>($intUser === null?0:$intUser)
+				,':default_allow_delete'=>0
+				,':default_allow_edit'=>0
+				,':default_allow_read'=>1
+				,':item_type'=>'MCP_NODES'
+				,':item_type_parent'=>'MCP_NODE_TYPES'
+			)
+		);
 		
 		return $arrPerms;
      
@@ -552,7 +564,7 @@ class MCPPermissionNode extends MCPDAO implements MCPPermission {
 			,$this->_objMCP->escapeString(implode(',',$arrNodeTypeIds))
 		);*/
 		
-		$strSQL = sprintf(
+		/*$strSQL = sprintf(
 			"SELECT
 			     b.node_types_id item_id #the generic entity id#
 				 ,CASE
@@ -621,9 +633,20 @@ class MCPPermissionNode extends MCPDAO implements MCPPermission {
 				  b.node_types_id"
 			,$this->_objMCP->escapeString($intUser === null?0:$intUser)
 			,$this->_objMCP->escapeString(implode(',',$arrNodeTypeIds))
-		);
+		);*/
 		
-		$arrPerms = $this->_objMCP->query($strSQL);
+		// $arrPerms = $this->_objMCP->query($strSQL);
+		
+		$arrPerms = $this->_objMCP->query(
+			$this->_getChildLevelEntityCreateSQLTemplate('MCP_NODE_TYPES','node_types_id',$arrNodeTypeIds)
+			,array(
+				 ':item_type'=>'MCP_NODE_TYPES'
+				,':users_id'=>(int) ( $intUser === null?0:$intUser )
+				,':default_allow_add'=>0
+				,':deny_add_msg_dev'=>''
+				,':deny_add_msg_user'=>''
+			)
+		);
 		
 		return $arrPerms;
       

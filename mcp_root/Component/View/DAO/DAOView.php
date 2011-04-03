@@ -689,6 +689,34 @@ class MCPDAOView extends MCPDAO {
 			}
 		}
 		
+		/*
+		* -----------------------------------------------------------------------------
+		* Resolve permission to create items of base view type 
+		* -----------------------------------------------------------------------------
+		*/
+		switch( $view->base ) {
+			
+			case 'Node':
+				
+				$perm = $this->_objMCP->getPermission(MCP::ADD,'Node',$view->base_id);
+				$view->create = $perm['allow'];
+				break;
+				
+			case 'NodeType':
+				
+			case 'Term':
+				
+			case 'Vocabulary':
+				
+			case 'Site':
+				
+			case 'User':
+				
+			default:
+				$view->create = false;
+			
+		}
+		
 		// echo '<pre>',print_r($view),'</pre>';
 		
 		return $view;

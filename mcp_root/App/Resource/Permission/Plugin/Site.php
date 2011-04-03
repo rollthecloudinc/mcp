@@ -1,11 +1,11 @@
 <?php
-$this->import('App.Core.DAO');
-$this->import('App.Core.Permission');
+// abstract base class
+$this->import('App.Resource.Permission.PermissionBase');
 
 /*
 * Site permission data access layer 
 */
-class MCPPermissionSite extends MCPDAO implements MCPPermission {
+class MCPPermissionSite extends MCPPermissionBase {
 	
 	/*
 	* Determine whether user is allowed to create a new site 
@@ -284,7 +284,7 @@ class MCPPermissionSite extends MCPDAO implements MCPPermission {
 	*/
 	private function _c($intUser=null) {
 		
-		$strSQL = sprintf(
+		/*$strSQL = sprintf(
 			"SELECT
 			     amp.item_id
 			     ,CASE
@@ -307,10 +307,19 @@ class MCPPermissionSite extends MCPDAO implements MCPPermission {
 			   AND
 			     amp.item_type = 'MCP_SITES'"
 			,$this->_objMCP->escapeString($intUser === null?0:$intUser)
+		);*/
+		
+		//$arrPerms = $this->_objMCP->query($strSQL);
+		
+		$arrPerms = $this->_objMCP->query(
+			 $this->_getTopLevelEntityCreateSQLTemplate()
+			,array(
+				 ':users_id'=>$intUser === null?0:$intUser
+				,':entity_type'=>'MCP_SITES'
+				,':deny_add_msg_dev'=>''
+				,':deny_add_msg_user'=>''
+			)
 		);
-		
-		$arrPerms = $this->_objMCP->query($strSQL);
-		
 		
 		return array_pop($arrPerms);
      

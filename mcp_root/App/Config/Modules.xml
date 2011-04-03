@@ -291,86 +291,212 @@
 			<target_window>
 				<label>Target Window</label>
 				<required>Y</required>
-				<max>10</max>
-				<min>1</min>
 				<default>_self</default>
+				<dao>
+					<pkg>Component.Navigation.DAO.DAONavigation</pkg>
+					<method>fetchLinksTargetWindows</method>
+				</dao>
 			</target_window>
-			<link_url>
-				<label>URL</label>
-				<required>N</required>
-				<max>255</max>
-				<min>1</min>
-			</link_url>
 			<sites_internal_url>
 				<label>URL</label>
 				<required>N</required>
 				<max>255</max>
 				<min>1</min>
 			</sites_internal_url>
+			<link_url>
+				<label>External URL</label>
+				<required>N</required>
+				<max>255</max>
+				<min>1</min>
+			</link_url>
 			<target_module>
 				<label>Mod.</label>
 				<required>N</required>
 				<max>255</max>
 				<min>1</min>
 			</target_module>
+			<target_module_args>
+				<label>Mod Args</label>
+				<required>N</required>
+				<multi>3</multi>
+				<type>text</type>
+				<min>1</min>
+				<max>255</max>
+			</target_module_args>
 			<target_template>
-				<label>Tpl.</label>
+				<label>Mod Tpl.</label>
 				<required>N</required>
 				<max>255</max>
 				<min>1</min>
 			</target_template>
 			<header_content>
-				<label>Header</label>
+				<label>Page Header</label>
 				<required>N</required>
 				<min>1</min>
+				<textarea>1</textarea>
 			</header_content>
-			<body_content>
-				<label>Body</label>
-				<required>N</required>
-				<min>1</min>
-			</body_content>
-			<footer_content>
-				<label>Footer</label>
-				<required>N</required>
-				<min>1</min>
-			</footer_content>
 			<header_content_type>
-				<label>Type</label>
+				<label>Page Header Type</label>
 				<required>N</required>
-				<min>1</min>
-				<max>10</max>
 				<default>html</default>
+				<dao>
+					<pkg>Component.Navigation.DAO.DAONavigation</pkg>
+					<method>fetchLinksContentTypes</method>
+					<args>
+						<arg>header_content_type</arg>
+					</args>
+				</dao>
 			</header_content_type>
-			<body_content_type>
-				<label>Type</label>
+			<footer_content>
+				<label>Page Footer</label>
 				<required>N</required>
 				<min>1</min>
-				<max>10</max>
-				<default>html</default>
-			</body_content_type>
+				<textarea>1</textarea>
+			</footer_content>
 			<footer_content_type>
-				<label>Type</label>
+				<label>Page Footer Type</label>
 				<required>N</required>
-				<min>1</min>
-				<max>10</max>
 				<default>html</default>
+				<dao>
+					<pkg>Component.Navigation.DAO.DAONavigation</pkg>
+					<method>fetchLinksContentTypes</method>
+					<args>
+						<arg>footer_content_type</arg>
+					</args>
+				</dao>
 			</footer_content_type>
-			<datasource_query>
-				<label>SQL</label>
+		</frm>
+	</mod>
+	<mod pkg="Component.Menu.Module.Form.Link">
+		<frm>	
+			<display_title>
+				<label>Link Name</label>
+				<required>Y</required>
+				<min>1</min>
+				<max>128</max>
+			</display_title>
+			<browser_title>
+				<label>Browser Title</label>
+				<required>Y</required>
+				<min>1</min>
+				<max>255</max>
+			</browser_title>
+			<page_title>
+				<label>Page Heading</label>
+				<required>Y</required>
+				<min>1</min>
+				<max>255</max>
+			</page_title>
+			<parent_id>
+				<label>Links Parent</label>
+				<required>Y</required>
+				<size>5</size>
+			</parent_id>
+			<path>
+				<label>URL</label>
+				<required>Y</required>
+				<min>1</min>
+				<max>255</max>
+			</path>
+			<absolute_url>
+				<label>External URL</label>
 				<required>N</required>
-			</datasource_query>
+			</absolute_url>
+			<mod_path>
+				<label>Mod.</label>
+				<required>N</required>
+				<max>255</max>
+				<min>1</min>
+			</mod_path>
+			<mod_args>
+				<label>Mod Args</label>
+				<required>N</required>
+				<multi>3</multi>
+				<type>text</type>
+				<min>1</min>
+				<max>255</max>
+				<sortable>0</sortable>
+			</mod_args>
+			<mod_tpl>
+				<label>Mod Tpl.</label>
+				<required>N</required>
+				<max>255</max>
+				<min>1</min>
+			</mod_tpl>
+			<content_header>
+				<label>Header Content</label>
+				<required>N</required>
+				<textarea>1</textarea>
+			</content_header>
+			<content_header_type>
+				<label>Page Header Type</label>
+				<required>N</required>
+				<default>html</default>
+				<dao>
+					<pkg>Component.Util.DAO.DAOUtil</pkg>
+					<method>listContentTypes</method>
+					<args>
+						<arg>ct.system_name value,ct.human_name label</arg>
+					</args>
+				</dao>
+			</content_header_type>
+			<content_footer>
+				<label>Footer Content</label>
+				<required>N</required>
+				<textarea>1</textarea>
+			</content_footer>
+			<content_footer_type>
+				<label>Page Footer Type</label>
+				<required>N</required>
+				<default>html</default>
+				<dao>
+					<pkg>Component.Util.DAO.DAOUtil</pkg>
+					<method>listContentTypes</method>
+					<args>
+						<arg>ct.system_name value,ct.human_name label</arg>
+					</args>
+				</dao>
+			</content_footer_type>
+			<datasource>
+				<label>Datasource?</label>
+				<required>N</required>
+				<type>bool</type>
+			</datasource>
 			<datasource_dao>
-				<label>Pkg.</label>
+				<label>DAO</label>
 				<required>N</required>
-				<min>1</min>
-				<max>255</max>
+				<type>dao</type>
 			</datasource_dao>
-			<datasource_dao_method>
-				<label>Call</label>
+			<datasource_method>
+				<label>Method</label>
 				<required>N</required>
-				<min>1</min>
-				<max>255</max>
-			</datasource_dao_method>
+				<type>dao_method</type>
+			</datasource_method>
+			<datasource_args>
+				<label>Arguments</label>
+				<required>N</required>
+				<type>text</type>
+				<multi>3</multi>
+				<sortable>0</sortable>
+			</datasource_args>
+			<target>
+				<label>Target</label>
+				<required>N</required>
+				<values>
+					<value>
+						<label>None</label>
+						<value></value>
+					</value>
+					<value>
+						<label>URL</label>
+						<value>URL</value>
+					</value>
+					<value>
+						<label>Module</label>
+						<value>MODULE</value>
+					</value>
+				</values>
+			</target>
 		</frm>
 	</mod>
 	<mod pkg="Component.Navigation.Module.Form.Menu">
@@ -470,10 +596,10 @@
 				<required>Y</required>
 				<default>html</default>
 				<dao>
-					<pkg>Component.Node.DAO.DAONode</pkg>
-					<method>fetchContentTypes</method>
+					<pkg>Component.Util.DAO.DAOUtil</pkg>
+					<method>listContentTypes</method>
 					<args>
-						<arg>content_type</arg>
+						<arg>ct.system_name value,ct.human_name label</arg>
 					</args>
 				</dao>
 			</content_type>
@@ -482,10 +608,10 @@
 				<required>Y</required>
 				<default>html</default>
 				<dao>
-					<pkg>Component.Node.DAO.DAONode</pkg>
-					<method>fetchContentTypes</method>
+					<pkg>Component.Util.DAO.DAOUtil</pkg>
+					<method>listContentTypes</method>
 					<args>
-						<arg>intro_type</arg>
+						<arg>ct.system_name value,ct.human_name label</arg>
 					</args>
 				</dao>
 			</intro_type>
@@ -813,68 +939,6 @@
 				<max>128</max>
 				<type>human_name</type>
 			</human_name>
-		</frm>
-	</mod>
-	<mod pkg="Component.Auth.Module.Role.Form">
-		<frm>
-			<role_name>
-				<label>Name</label>
-				<min>5</min>
-				<max>128</max>
-				<required>Y</required>
-				<type>role_name</type>
-			</role_name>
-			<role_label>
-				<label>Label</label>
-				<min>5</min>
-				<max>128</max>
-				<required>Y</required>
-				<type>role_label</type>
-			</role_label>
-			<pkg>
-				<label>Pkg.</label>
-				<max>128</max>
-				<required>N</required>
-				<type>role_pkg</type>
-			</pkg>
-		</frm>
-	</mod>
-	<mod pkg="Component.Auth.Module.Permission.Form">
-		<frm>
-			<entity>
-				<label>Item</label>
-				<required>Y</required>
-				<size>10</size>
-				<dao>
-					<pkg>Component.Auth.DAO.DAOAuth</pkg>
-					<method>fetchPermissionEntities</method>
-				</dao>
-			</entity>
-			<pread>
-				<label>Read</label>
-				<required>N</required>
-				<type>bool</type>
-			</pread>
-			<pwrite>
-				<label>Write</label>
-				<required>N</required>
-				<type>bool</type>
-			</pwrite>
-			<padd>
-				<label>Create</label>
-				<required>N</required>
-				<type>bool</type>
-			</padd>
-			<pedit>
-				<label>Edit</label>
-				<required>N</required>
-				<type>bool</type>
-			</pedit>
-			<pdelete>
-				<label>Delete</label>
-				<required>N</required>
-				<type>bool</type>
-			</pdelete>
 		</frm>
 	</mod>
 	<mod pkg="Component.Util.Module.Email">
