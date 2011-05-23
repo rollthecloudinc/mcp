@@ -23,13 +23,13 @@ printf(
 printf('<ul class="pagination">');
 printf(
     '<li class="first">%s%s%s</li>'
-    ,$page == 1?'':sprintf('<a href="%s/%u/">',$base_path,1)
+    ,$page == 1?'':sprintf('<a href="%s/%u/%s">',$base_path,1,$query_string)
     ,'First'
     ,$page == 1?'':'</a>'
 );    
 printf(
     '<li class="previous">%s%s%s</li>'
-    ,$page == 1?'':sprintf('<a href="%s/%u/">',$base_path,($page-1))
+    ,$page == 1?'':sprintf('<a href="%s/%u/%s">',$base_path,($page-1),$query_string)
     ,'Previous'
     ,$page == 1?'':'</a>'
 );
@@ -38,7 +38,7 @@ foreach(range($page_start,$page_end,1) as $i) {
     printf(
         '<li%s>%s%s%s</li>'
         ,$page == $i?' class="current"':''
-        ,$page == $i?'':sprintf('<a href="%s/%u/">',$base_path,$i)
+        ,$page == $i?'':sprintf('<a href="%s/%u/%s">',$base_path,$i,$query_string)
         ,$i
         ,$page == $i?'':'</a>'
     );
@@ -46,13 +46,13 @@ foreach(range($page_start,$page_end,1) as $i) {
 }
 printf(
 	'<li class="next">%s%s%s</li>'
-	,$page == $total_pages?'':sprintf('<a href="%s/%u/">',$base_path,($page+1))
+	,$page == $total_pages?'':sprintf('<a href="%s/%u/%s">',$base_path,($page+1),$query_string)
     ,'Next'
     ,$page == $total_pages?'':'</a>'
 );
 printf(
     '<li class="last">%s%s%s</li>'
-    ,$page == $total_pages?'':sprintf('<a href="%s/%u/">',$base_path,$total_pages)
+    ,$page == $total_pages?'':sprintf('<a href="%s/%u/%s">',$base_path,$total_pages,$query_string)
     ,'Last'
     ,$page == $total_pages?'':'</a>'
 );

@@ -253,15 +253,22 @@ class MCPMenuFormLink extends MCPModule {
 		
 		//echo '<pre>',print_r($arrMenu),'</pre>';
 		
-		$arrLinks = $this->_objDAOMenu->fetchMenu($arrMenu['menus_id'],null,true,false,array(
-			 'select'=>'l.menu_links_id value,l.display_title label,l.menu_links_id'
-			,'child_key'=>'children'
+		/*$arrLinks = $this->_objDAOMenu->fetchMenu($arrMenu['menus_id'],null,true,false,array(
+			 'select'=>'l.menu_links_id value,l.display_title label,l.menu_links_id,l.menus_id'
+			,'child_key'=>'values'
+		));*/
+		
+		$arrLinks = $this->_objDAOMenu->fetchMenuImproved($arrMenu['menus_id'],array(
+			 'select'=>'l.menu_links_id value,l.display_title label'
+			,'child_key'=>'values'
 		));
+		
+		// echo '<pre>',print_r($arrLinks),'</pre>';
 		
 		$this->_arrCachedFrmConfig['parent_id']['values'][] = array(
 			 'label'=>$arrMenu['menu_title']
 			,'value'=>"menu-{$arrMenu['menus_id']}"
-			,'children'=>$arrLinks
+			,'values'=>$arrLinks
 		);
 		
 		return $this->_arrCachedFrmConfig;
@@ -372,6 +379,9 @@ class MCPMenuFormLink extends MCPModule {
 			$this->_setMenu( $this->_objDAOMenu->fetchMenuById($arrLink['menus_id']) );
 			
 		}
+		
+		$arrMenu =  $this->_getMenu();
+		$this->_objDAOMenu->fetchMenuImproved($arrMenu['menus_id']);
 		
 		// handle form processing
 		$this->_frmHandle();

@@ -930,6 +930,25 @@ class MCP {
 	}
 	
 	/*
+	* Get query string
+	* 
+	* @return str query string
+	*/
+	public function getQueryString() {
+		
+		// fetch query string data
+		$strQueryString = $this->_objRequest->getServerData('QUERY_STRING');
+		
+		// make it easy to call this method when building URLs
+		if( strlen($strQueryString) === 0 ) {
+			return '';
+		}
+		
+		return strpos($strQueryString,'?') === 1?$strQueryString:"?$strQueryString";
+		
+	}
+	
+	/*
 	* Get POST data
 	*
 	* [@param] str key name

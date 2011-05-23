@@ -12,22 +12,21 @@ class MCPDAOImage extends MCPDAO {
 	* @return str mime type
 	*/
 	public function fetchMimeByExt($ext) {
-		switch($ext) {
-			case 'jpg':
-				return 'image/jpg';
-				
-			case 'jpeg':
-				return 'image/jpeg';
-				
-			case 'gif':
-				return 'image/gif';
-					
-			case 'png':
-				return 'image/png';
-					
-			case 'bmp':
-				return 'image/bmp';
+		
+		// @todo: temporary work-around for multiple image/jpeg mimes
+		if( $ext == 'jpeg' ) {
+			return 'image/jpeg';
 		}
+
+		$arrMime = array_pop($this->_objMCP->query(
+			"SELECT CONCAT(type,'/',subtype) mime FROM MCP_ENUM_MIME_TYPES WHERE type = 'image' AND ext = :ext"
+			,array(
+				 ':ext'=>(string) $ext
+			)
+		));
+		
+		return $arrMime !== null?$arrMime['mime']:null;
+		
 	}
 	
 	/*
@@ -37,22 +36,22 @@ class MCPDAOImage extends MCPDAO {
 	* @return str extension
 	*/
 	public function fetchExtByMime($mime) {
-			switch($mime) {
-			case 'image/jpg':
-				return 'jpg';
-				
-			case 'image/jpeg':
-				return 'jpeg';
-				
-			case 'image/gif':
-				return 'gif';
-					
-			case 'image/png':
-				return 'png';
-					
-			case 'image/bmp':
-				return 'bmp';
-		}		
+		
+		// @todo: temporary work-around for multiple image/jpeg mimes
+		if( $mime == 'image/jpeg' ) {
+			return 'jpeg';
+		}
+
+		list($type,$subtype) = explode('/',$mime);
+		$arrMime = array_pop($this->_objMCP->query(
+			"SELECT ext FROM MCP_ENUM_MIME_TYPES WHERE type = 'image' AND subtype = :subtype"
+			,array(
+				':subtype'=>(string) $subtype
+			)
+		));
+		
+		return $arrMime !== null?$arrMime['ext']:null;
+		
 	}
 	
 	/*

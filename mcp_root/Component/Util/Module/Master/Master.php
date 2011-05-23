@@ -212,7 +212,23 @@ class MCPUtilMaster extends MCPModule {
 		/*
 		* Make file path 
 		*/
-		$strFilePath = $this->_objMCP->getDownloadFolder().DS.implode(DS,$arrArgs);
+		if( count($arrArgs) === 1 && is_numeric($arrArgs[0]) ) {
+			
+			// Get the file data access layer
+			$objDAOFile = $this->_objMCP->getInstance('App.Resource.File.DAO.DAOFile',array($this->_objMCP));
+			
+			// Fetch the file info
+			$arrFile = $objDAOFile->fetchById($arrArgs[0]);
+			
+			// create path to file
+			$strFilePath = $arrFile['file_path'];
+			
+		} else {
+			// file stored in site folder
+			$strFilePath = $this->_objMCP->getDownloadFolder().DS.implode(DS,$arrArgs);
+		}
+		
+		// echo "<p>$strFilePath</p>"; exit;
 		
 		/*
 		* Validate that file exists 
@@ -423,7 +439,21 @@ class MCPUtilMaster extends MCPModule {
 		/*
 		* Make file path 
 		*/
-		$strFilePath = $this->_objMCP->getPublicFolder().DS.implode(DS,$arrArgs);
+		if( count($arrArgs) === 1 && is_numeric($arrArgs[0]) ) {
+			
+			// Get the file data access layer
+			$objDAOFile = $this->_objMCP->getInstance('App.Resource.File.DAO.DAOFile',array($this->_objMCP));
+			
+			// Fetch the file info
+			$arrFile = $objDAOFile->fetchById($arrArgs[0]);
+			
+			// create path to file
+			$strFilePath = $arrFile['file_path'];
+			
+		} else {
+			// file stored in site folder
+			$strFilePath = $this->_objMCP->getPublicFolder().DS.implode(DS,$arrArgs);
+		}
 		
 		/*
 		* Validate that file exists 

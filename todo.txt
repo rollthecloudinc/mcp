@@ -17,9 +17,18 @@
 - Re-design navigation area breadcrumb system, its a bit awkward
 - make sure view algorithm ignores deleted items automatically with tables supoorting soft delete
 - account for default field values with view SQL builder algorithm
-- add short-cut/magical type to assign field to system entities such as; site, user, node of type x
+- DONE: add short-cut/magical type to assign field to system entities such as; site, user, node of type x
   ,node type, term of vocabulary x, vocabulary, etc. This can be done with the DAO call but
   really it needs to be easy to do though the DAO can be used the back-end to derive the values
   still. perhaps just hide the DAO for now in user interface.
   - dao arg multi-dimensional numeric and associative support
+  
+  
+  
+  
+  - keep dynamic links simple
+    - can't edit via admin
+    - can't sort
+    - This will solve the majority of issues
+    - leave developers responsibility to do sorting, customization programmtaically
   

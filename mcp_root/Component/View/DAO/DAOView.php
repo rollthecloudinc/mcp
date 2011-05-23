@@ -1692,7 +1692,7 @@ class MCPDAOView extends MCPDAO {
 				// second argument is the view module instance - use getBasePath() to get URL relative to current page for building
 				// pages that nest within one another.
 				,'preprocess_select'=>function($strColumn,$arrOptions,$objModule) use ($mcp) {
-					return "IF($strColumn IS NOT NULL,CONCAT('{$mcp->escapeString( $objModule->getBasePath() )}/View/',$strColumn),NULL)";
+					return "IF($strColumn IS NOT NULL,CONCAT('{$mcp->escapeString( $objModule->getBasePath(true,true) )}/View/',$strColumn,'{$mcp->getQueryString()}'),NULL)";
 				}
 				
 				,'postprocess_select'=>function($intNodesId) {

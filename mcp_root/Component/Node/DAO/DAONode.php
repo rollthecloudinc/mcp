@@ -51,7 +51,7 @@ class MCPDAONode extends MCPDAO {
 			,$strSelect
 			,$strWhere === null?'':" WHERE $strWhere"
 			,$strSort === null?'':" ORDER BY $strSort"
-			,$strLimit === null?'':"LIMIT $strLimit"
+			,empty($strLimit) ? '' :"LIMIT $strLimit"
 		);
 		
 		$arrNodes = $this->_objMCP->query($strSQL,$arrBound);

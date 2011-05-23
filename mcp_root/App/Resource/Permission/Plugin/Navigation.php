@@ -127,7 +127,7 @@ class MCPPermissionNavigation extends MCPPermissionBase {
 	*/
 	private function _rud($arrMenuIds,$intUser=null) {
 		
-		$strSQL = sprintf(
+		/*$strSQL = sprintf(
 			"SELECT
 			     m.navigation_id item_id
 			     ,CASE
@@ -273,6 +273,19 @@ class MCPPermissionNavigation extends MCPPermissionBase {
 		// echo "<p>$strSQL</p>";
 		
 		$arrPerms = $this->_objMCP->query($strSQL);
+		
+		return $arrPerms;*/
+		
+		$arrPerms = $this->_objMCP->query(
+			 $this->_getTopLevelEntityEditSQLTemplate('MCP_NAVIGATION','navigation_id',$arrMenuIds,'users_id')
+			,array(
+				 ':users_id'=>$intUser === null?0:$intUser
+				,':item_type'=>'MCP_NAVIGATION'
+				,':default_allow_delete'=>0
+				,':default_allow_edit'=>0
+				,':default_allow_read'=>1
+			)
+		);
 		
 		return $arrPerms;
      

@@ -275,6 +275,20 @@ class MCPPermissionNavigationLink extends MCPPermissionBase {
 		$arrPerms = $this->_objMCP->query($strSQL);
 		
 		return array_pop($arrPerms);
+		
+		/*$arrPerms = $this->_objMCP->query(
+			$this->_getChildLevelEntityEditSQLTemplate('MCP_NAVIGATION_LINKS','navigation_links_id','navigation_id',array($intLink),'creators_id')
+			,array(
+				 ':users_id'=>($intUser === null?0:$intUser)
+				,':default_allow_delete'=>0
+				,':default_allow_edit'=>0
+				,':default_allow_read'=>1
+				,':item_type'=>'MCP_NAVIGATION_LINK'
+				,':item_type_parent'=>'MCP_NAVIGATION'
+			)
+		);
+		
+		return $arrPerms;*/
      
 	}
 	

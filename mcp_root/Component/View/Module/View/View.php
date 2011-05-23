@@ -65,7 +65,7 @@ class MCPViewView extends MCPModule {
 				}
 				
 				// Build the create node of node type URL
-				return $this->getBasePath(false)."/Create/$strType";
+				return $this->getBasePath(false,true)."/Create/$strType{$this->_objMCP->getQueryString()}";
 				
 			case 'NodeType':
 				
@@ -194,13 +194,13 @@ class MCPViewView extends MCPModule {
 				// URL to edit entity
 				$this->_arrTemplateData['edit'] = '';
 				if(isset($row['allow_edit']) && $row['allow_edit']) {
-					$this->_arrTemplateData['edit'] = "{$this->getBasePath(false)}/Edit/$id";
+					$this->_arrTemplateData['edit'] = "{$this->getBasePath(false,true)}/Edit/$id{$this->_objMCP->getQueryString()}";
 				}
 				
 				// URL to view full, individual entity
 				$this->_arrTemplateData['read'] = '';
 				if(isset($row['allow_read']) && $row['allow_read']) {
-					$this->_arrTemplateData['read'] = "{$this->getBasePath(false)}/View/$id";
+					$this->_arrTemplateData['read'] = "{$this->getBasePath(false,true)}/View/$id{$this->_objMCP->getQueryString()}";
 				}
 				
 				// -------------------------------------------------------------------------------
@@ -231,7 +231,7 @@ class MCPViewView extends MCPModule {
 		$this->_arrTemplateData['back_label'] = 'Content';
 		
 		// Redirect back link
-		$this->_arrTemplateData['back_link'] = "{$this->getBasePath(false)}";
+		$this->_arrTemplateData['back_link'] = "{$this->getBasePath(false,true)}{$this->_objMCP->getQueryString()}";
 		
 		
 		/*
@@ -290,7 +290,7 @@ class MCPViewView extends MCPModule {
 	* 
 	* @return str base path
 	*/
-	public function getBasePath($redirect=true) {
+	public function getBasePath($redirect=true,$page=false) {
 		$strBasePath = parent::getBasePath();
 		
 		if( $this->_objView !== null ) {
@@ -298,7 +298,7 @@ class MCPViewView extends MCPModule {
 		}
 		
 		// add the page
-		$strBasePath.= "/{$this->_intPage}";
+		if($page) $strBasePath.= "/{$this->_intPage}";
 		
 		// add redirect flag
 		if($redirect === true && $this->_strRequest !== null) {

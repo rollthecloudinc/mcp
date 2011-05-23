@@ -38,6 +38,7 @@ class MCPUtilPagination extends MCPModule {
 		$this->_arrTemplateData['visible_pages'] = $this->getConfigValue('visible_pages');
 		$this->_arrTemplateData['base_path'] = $this->_objParentModule->getBasePath(false);
 		$this->_arrTemplateData['label'] = $intFoundRows == 1?$this->getConfigValue('items_label_singular'):$this->getConfigValue('items_label_plural');
+		$this->_arrTemplateData['query_string'] = $this->_objMCP->getQueryString();
 		
 		/*
 		* Return the pagination template 

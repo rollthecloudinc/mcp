@@ -21,6 +21,11 @@ class MCPDAOMenu extends MCPDAO {
 		           %s
 		       FROM 
 		           MCP_MENU_LINKS l
+		        LEFT OUTER
+		        JOIN
+		           MCP_MENU_LINKS_DATASOURCES d
+		          ON
+		           l.menu_links_id = d.menu_links_id
 		       WHERE 
 		           l.menus_id = :menus_id 
 		        AND
@@ -40,7 +45,7 @@ class MCPDAOMenu extends MCPDAO {
 		);
 		
 		// when not recursive return links without parsing children
-		if($boolR) {
+		if(!$boolR) {
 			return $arrMenuLinks;
 		}
 		
@@ -51,6 +56,84 @@ class MCPDAOMenu extends MCPDAO {
 		}
 		
 		return $arrMenuLinks;
+		
+	}
+	
+	/*
+	* @param int menus id
+	* @param array options 
+	* @return array menu
+	*/
+	public function fetchMenuImproved($intMenusId,$arrOptions=array()) {
+		
+		// get all links for the menu
+		$strSQL = sprintf(
+			'SELECT 
+		           l.*      
+		           #datasource info#
+		           ,CASE
+		               WHEN d.menu_links_id IS NOT NULL
+		               THEN 1
+		               
+		               ELSE 0
+		            END datasource
+		           ,d.dao datasource_dao
+		           ,d.method datasource_method
+		           ,d.args datasource_args
+		           ,d.description datasource_description
+		           %s
+		       FROM 
+		           MCP_MENU_LINKS l
+		        LEFT OUTER
+		        JOIN
+		           MCP_MENU_LINKS_DATASOURCES d
+		          ON
+		           l.menu_links_id = d.menu_links_id
+		        LEFT OUTER
+		        JOIN
+		           MCP_MENU_LINKS_DYNAMIC v
+		          ON
+		           l.menu_links_id = v.menu_links_id
+		       WHERE 
+		           l.menus_id = :menus_id
+		        AND
+		           v.menu_links_id IS NULL
+		        AND
+		           l.deleted = 0'      
+			,isset($arrOptions['select'])?",{$arrOptions['select']}":''
+		);
+		
+		$arrLinks = $this->_objMCP->query(
+			$strSQL
+			,array(
+				':menus_id'=>(int) $intMenusId
+			)
+		);
+		
+		if( !empty($arrLinks) ) {
+			
+			// @todo: expand data sources
+			foreach($arrLinks as &$arrLink) {
+				if($arrLink['datasource'] == 0) continue;
+				
+				// expand the datasource
+				$this->_expandDataSource($arrLink);		
+			}
+			
+			// parses menu into tree w/o multiple trips to the db
+			$arrLinks = $this->_toTree(
+				 null
+				,$arrLinks
+				,'menu_links_id'
+				,'parent_id'
+				,(isset($arrOptions['child_key'])?$arrOptions['child_key']:'menu_links')
+			);
+		
+		}
+		
+		// echo '<pre>',print_r($arrLinks),'</pre>';
+		return $arrLinks;
+		
 		
 	}
 	
@@ -247,28 +330,8 @@ class MCPDAOMenu extends MCPDAO {
 		// Get datasource info
 		$arrDataSource = $this->fetchLinkById($intDatasourcesId);
 		
-		// Get the dynamic links associated with the data source
-		$mcp = $this->_objMCP;
-		$arrRawDynamicLinks = call_user_func_array(
-			array(
-				 $this->_objMCP->getInstance($arrDataSource['datasource_dao'],array($this->_objMCP))
-				,$arrDataSource['datasource_method']
-			)
-			,$arrDataSource['datasource_args'] === null?array():array_map(
-			
-				// arguments may contain magical keyword SITES_ID - replace with current site ID
-				function($arg) use ($mcp) {
-					return str_replace(
-						 array('SITES_ID')
-						,array( $mcp->getSitesId() )
-						,$arg
-					);
-				}
-				
-				,base64_decode(unserialize($arrDataSource['datasource_args']))
-				
-			)
-		);
+		// expand the data source
+		$arrRawDynamicLinks = $this->_expandDataSource($arrDataSource);
 		
 		// Locate the single need we need to fetch
 		$arrDynamicLink = $this->_fetchDynamicLinkFromDatasourceResultSet($mixBundleId,$arrRawDynamicLinks);
@@ -307,26 +370,137 @@ class MCPDAOMenu extends MCPDAO {
 	}
 	
 	/*
-	* Makes a dynamic link look like a concrete one
+	* Converts dynamic links to concrete ones
 	* 
-	* @param array raw dynamic link 
+	* @param array raw dynamic links 
 	* @param array datasource link data
 	* @return array converted link
  	*/
-	private function _convertDynamicLinkToConcrete($arrRawDynamicLink,$arrDatasourceLink) {
+	private function _convertDynamicLinkToConcrete($arrRawDynamicLinks,$arrDatasourceLink) {
 		
 		$arrRebuild = array();
-		foreach($arrDatasourceLink as $strColumn=>$mixValue) {
+		
+		foreach( $arrRawDynamicLinks as $intIndex=>$arrDynamicLink) {
+		
+			foreach($arrDatasourceLink as $strColumn=>$mixValue) {
 			
-			// skip over datasource only columns
-			if( in_array($strColumn,array('datasource','datasource_dao','datasource_method','datasource_args')) ) continue;
+				// skip over datasource only columns
+				if( in_array($strColumn,array('datasource','datasource_dao','datasource_method','datasource_args')) ) continue;
 			
-			$arrRebuild[$strColumn] = $mixValue;
+				$arrRebuild[$intIndex][$strColumn] = $mixValue;
 			
+			}
+		
 		}
 		
 		return $arrRebuild;
 		
+	}
+	
+	/*
+	* Get all the dynamic links for a specific datasource  
+	* 
+	* @param array data source link
+	* @return array dynamic links
+	*/
+	private function _expandDataSource($arrDataSource) {
+		
+		// Get the dynamic links associated with the data source
+		$mcp = $this->_objMCP;
+		$arrRawDynamicLinks = call_user_func_array(
+			array(
+				 $this->_objMCP->getInstance($arrDataSource['datasource_dao'],array($this->_objMCP))
+				,$arrDataSource['datasource_method']
+			)
+			,$arrDataSource['datasource_args'] === null?array():array_map(
+			
+				// arguments may contain magical keyword SITES_ID - replace with current site ID
+				function($arg) use ($mcp) {
+					return str_replace(
+						 array('SITES_ID')
+						,array( $mcp->getSitesId() )
+						,$arg
+					);
+				}
+				
+				,unserialize(base64_decode($arrDataSource['datasource_args']))
+				
+			)
+		);
+		
+		// echo '<pre>',print_r($arrRawDynamicLinks),'</pre>';
+		
+		// Collect all bundle ids to map dynamic link to one that could be stored in the db
+		$func = function($link,$func) {
+		
+			if(!isset($link['menu_links']) || empty($link['menu_links'])) {
+				return array();
+			}
+			
+			$children = array();
+			
+			foreach($link['menu_links'] as $child) {
+				$children[] = $child['id'];
+				$children = array_merge($children,$func($child,$func));
+			}
+			
+			return $children;
+		};
+		
+		$arrBundleIds = $func(array('menu_links'=>$arrRawDynamicLinks),$func);
+		
+		// Go no farther if nothing was found
+		if(empty($arrBundleIds)) return array();
+		
+		// Collect all dynamic links physically represented in db
+		$arrMenuLinksDynamic = $this->_objMCP->query(
+			'SELECT 
+			       l.*
+			       ,d.datasources_id
+			       ,d.dynamic_id bundle_id
+			       ,d.context
+			   FROM 
+			       MCP_MENU_LINKS_DYNAMIC d
+			  INNER 
+			   JOIN
+			       MCP_MENU_LINKS l
+			     ON
+			       d.menu_links_id = l.menu_links_id
+			  WHERE 
+			       d.datasources_id = ? 
+			    AND 
+			       d.dynamic_id IN ('.implode(',',array_fill(0,count($arrBundleIds),'?')).')'
+			,array_merge(array($arrDataSource['menu_links_id']),$arrBundleIds)
+		);
+
+		echo '<pre>',print_r($arrMenuLinksDynamic),'</pre>';
+		
+		return $arrRawDynamicLinks;
+		
+	}
+	
+	public function testDatasource() {
+		return array(
+			array(
+				'id'=>78
+			)
+			,array(
+				'id'=>23
+			)
+			,array(
+				'id'=>12
+				,'menu_links'=>array(
+					array(
+						'id'=>786
+						,'menu_links'=>array(
+							array(
+								'id'=>907
+							)
+						)
+					)
+				)
+			)
+		);
 	}
 	
 }

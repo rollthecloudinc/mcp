@@ -136,7 +136,7 @@ class MCPPermissionRole extends MCPPermissionBase {
 	*/
 	private function _rud($intRoleIds,$intUser=null) {
 		
-		$strSQL = sprintf(
+		/*$strSQL = sprintf(
 		   "SELECT
 			 	 b.roles_id item_id #base item unique id#
 			 	 
@@ -334,6 +334,21 @@ class MCPPermissionRole extends MCPPermissionBase {
 				':users_id'=>$intUser === null?0:$intUser
 			)
 		);
+		
+		return $arrPerms;*/
+		
+		$arrPerms = $this->_objMCP->query(
+			 $this->_getTopLevelEntityEditSQLTemplate('MCP_ROLES','roles_id',$intRoleIds,'creators_id')
+			,array(
+				 ':users_id'=>$intUser === null?0:$intUser
+				,':item_type'=>'MCP_ROLES'
+				,':default_allow_delete'=>0
+				,':default_allow_edit'=>0
+				,':default_allow_read'=>1
+			)
+		);
+		
+		// echo '<pre>',print_r($arrPerms),'</pre>';
 		
 		return $arrPerms;
 		

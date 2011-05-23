@@ -100,6 +100,213 @@ abstract class MCPPermissionBase extends MCPDAO implements MCPPermission {
 	}
 	
 	/*
+	* @param str base table name 
+	* @param str base table primary key column
+	* @param int[] items ids
+	* [@param] str base table creator column name
+	* @return str SQL template
+	* 
+	* palceholders:
+	* 
+	* - :users_id
+	* - :default_allow_delete
+	* - :default_allow_edit
+	* - :default_allow_read
+	* - :item_type
+	*/
+	protected function _getTopLevelEntityEditSQLTemplate($strBaseTable,$strPrimaryKey,$arrIds,$strCreator='creators_id') {
+		
+		return 
+		   "SELECT
+			 	 b.{$this->_objMCP->escapeString($strPrimaryKey)} item_id #base item unique id#
+			 	 
+			 	 #can user delete role#
+				 ,CASE 
+						
+					#user permission resolution (priority)#
+					WHEN upe.`delete` IS NOT NULL
+					THEN upe.`delete`
+					
+					WHEN b.`{$this->_objMCP->escapeString($strCreator)}` = upe.users_id AND upe.`delete_own` IS NOT NULL
+					THEN upe.`delete_own`
+					
+					WHEN upp.`delete` IS NOT NULL
+					THEN upp.delete
+					
+					WHEN b.`{$this->_objMCP->escapeString($strCreator)}` = upp.users_id AND upp.`delete_own` IS NOT NULL
+					THEN upp.`delete_own`
+					
+					#role permission resolution#
+					WHEN MAX(rpe.`delete`) IS NOT NULL
+					THEN MAX(rpe.`delete`)
+					
+					WHEN b.`{$this->_objMCP->escapeString($strCreator)}` = :users_id AND MAX(rpe.`delete_own`) IS NOT NULL
+					THEN MAX(rpe.`delete_own`)
+					
+					WHEN MAX(rpp.`delete`) IS NOT NULL
+					THEN MAX(rpp.`delete`)
+					
+					WHEN b.`{$this->_objMCP->escapeString($strCreator)}` = :users_id AND MAX(rpp.`delete_own`) IS NOT NULL
+					THEN MAX(rpp.`delete_own`)
+					
+					#by default the creator of the node is allowed to delete it#
+					WHEN b.`{$this->_objMCP->escapeString($strCreator)}` = :users_id
+					THEN 1
+					
+					#by default if user has no permissions to delete deny#
+					ELSE
+					:default_allow_delete
+						      
+				END allow_delete
+				
+				#can the user edit role#		      
+				,CASE 
+						
+					#user permission resolution (priority)#
+					WHEN upe.`edit` IS NOT NULL
+					THEN upe.`edit`
+					
+					WHEN b.`{$this->_objMCP->escapeString($strCreator)}` = upe.users_id AND upe.`edit_own` IS NOT NULL
+					THEN upe.`edit_own`
+					
+					WHEN upp.`edit` IS NOT NULL
+					THEN upp.`edit`
+					
+					WHEN b.`{$this->_objMCP->escapeString($strCreator)}` = upp.users_id AND upp.`edit_own` IS NOT NULL
+					THEN upp.`edit_own`
+					
+					#role permission resolution#
+					WHEN MAX(rpe.`edit`) IS NOT NULL
+					THEN MAX(rpe.`edit`)
+					
+					WHEN b.`{$this->_objMCP->escapeString($strCreator)}` = :users_id AND MAX(rpe.`edit_own`) IS NOT NULL
+					THEN MAX(rpe.`edit_own`)
+					
+					WHEN MAX(rpp.`edit`) IS NOT NULL
+					THEN MAX(rpp.`edit`)
+					
+					WHEN b.`{$this->_objMCP->escapeString($strCreator)}` = :users_id AND MAX(rpp.`edit_own`) IS NOT NULL
+					THEN MAX(rpp.`edit_own`)
+						      
+					#by default creator of role is allowed to edit it#
+					WHEN b.`{$this->_objMCP->escapeString($strCreator)}` = :users_id
+					THEN 1
+						 
+					#deny edit for everyone else#
+					ELSE
+					:default_allow_edit
+						      
+				END allow_edit	
+				
+				#can the user read role#		      
+				,CASE 
+						
+					#user permission resolution (priority)#
+					WHEN upe.`read` IS NOT NULL
+					THEN upe.`read`
+					
+					WHEN b.`{$this->_objMCP->escapeString($strCreator)}` = upe.users_id AND upe.`read_own` IS NOT NULL
+					THEN upe.`read_own`
+					
+					WHEN upp.`read` IS NOT NULL
+					THEN upp.`read`
+					
+					WHEN b.`{$this->_objMCP->escapeString($strCreator)}` = upp.users_id AND upp.`read_own` IS NOT NULL
+					THEN upp.`read_own`
+					
+					#role permission resolution#
+					WHEN MAX(rpe.`read`) IS NOT NULL
+					THEN MAX(rpe.`read`)
+					
+					WHEN b.`{$this->_objMCP->escapeString($strCreator)}` = :users_id AND MAX(rpe.`read_own`) IS NOT NULL
+					THEN MAX(rpe.`read_own`)
+					
+					WHEN MAX(rpp.`read`) IS NOT NULL
+					THEN MAX(rpp.`read`)
+					
+					WHEN b.`{$this->_objMCP->escapeString($strCreator)}` = :users_id AND MAX(rpp.`read_own`) IS NOT NULL
+					THEN MAX(rpp.`read_own`)
+					
+					#by default author may read role#
+					WHEN b.`{$this->_objMCP->escapeString($strCreator)}` = :users_id
+					THEN 1
+						
+					#by default restrict read#
+					ELSE
+					:default_allow_read
+						      
+				END allow_read
+			FROM
+			   {$this->_objMCP->escapeString($strBaseTable)} b #base entity table#
+			LEFT OUTER
+			JOIN 
+			   MCP_PERMISSIONS_USERS upe #user permission entity#
+			  ON
+			   b.{$this->_objMCP->escapeString($strPrimaryKey)} = upe.item_id
+			 AND
+			   upe.users_id = :users_id
+			 AND
+			   upe.item_type = :item_type
+			LEFT OUTER
+			JOIN
+			   MCP_PERMISSIONS_USERS upp #user parent permission entity#
+			  ON
+			   upp.item_id = 0
+			 AND
+			   upp.users_id = :users_id
+			 AND
+			    upp.item_type = :item_type
+			 LEFT OUTER
+			 JOIN
+			    MCP_USERS_ROLES u2r #roles user is assigned to#
+			   ON
+			    u2r.users_id = :users_id
+			 LEFT OUTER
+			 JOIN
+			    MCP_ROLES r #roles#
+			   ON
+			    u2r.roles_id = r.roles_id
+			  AND
+			    r.deleted = 0
+			 LEFT OUTER
+			 JOIN
+			    MCP_PERMISSIONS_ROLES rpe #role permission entity#
+			   ON
+			    b.{$this->_objMCP->escapeString($strPrimaryKey)} = rpe.item_id
+			  AND
+			    rpe.item_type = :item_type
+			  AND
+			    r.roles_id = rpe.roles_id 
+			 LEFT OUTER
+			 JOIN
+			    MCP_USERS_ROLES u2r2 #parent role permission#
+			   ON
+			    u2r2.users_id = :users_id
+			 LEFT OUTER
+			 JOIN
+			    MCP_ROLES r2 #roles - resolving parent relationship#
+			   ON
+			    u2r2.roles_id = r2.roles_id
+			  AND
+			    r2.deleted = 0
+			 LEFT OUTER
+			 JOIN
+			    MCP_PERMISSIONS_ROLES rpp #role permission parent#
+			   ON
+			    rpp.item_type = :item_type
+			  AND
+			    rpp.item_id = 0
+			  AND
+			    r2.roles_id = rpp.roles_id
+			WHERE
+			    b.{$this->_objMCP->escapeString($strPrimaryKey)} IN ({$this->_objMCP->escapeString(implode(',',$arrIds))})
+			GROUP 
+			   BY
+			    b.{$this->_objMCP->escapeString($strPrimaryKey)}";
+		
+	}
+	
+	/*
 	* Child level create permissions will be granted based on the childs
 	* context or parent. For example, a node may be created based on
 	* its context. This makes it possible to allow creation of a "project"
@@ -141,7 +348,7 @@ abstract class MCPPermissionBase extends MCPDAO implements MCPPermission {
 					THEN MAX(pr.add_child)
 					
 					#Determines whether user is assigned to role that has settings for creating node of a type that they created#
-					WHEN MAX(pr.add_own_child) IS NOT NULL
+					WHEN b.{$this->_objMCP->escapeString($strCreator)} = :users_id AND MAX(pr.add_own_child) IS NOT NULL
 					THEN MAX(pr.add_own_child)
 					
 					#by default creator of node type can create nodes of that type#
@@ -240,10 +447,10 @@ abstract class MCPPermissionBase extends MCPDAO implements MCPPermission {
 					WHEN MAX(rpe.`delete`) IS NOT NULL
 					THEN MAX(rpe.`delete`)
 					
-					WHEN MAX(rpe.`delete_own`) IS NOT NULL
+					WHEN b.{$this->_objMCP->escapeString($strCreator)} = :users_id AND MAX(rpe.`delete_own`) IS NOT NULL
 					THEN MAX(rpe.`delete_own`)
 						      	
-					WHEN MAX(rpp.`delete_own_child`) IS NOT NULL
+					WHEN b.{$this->_objMCP->escapeString($strCreator)} = :users_id AND MAX(rpp.`delete_own_child`) IS NOT NULL
 					THEN MAX(rpp.`delete_own_child`)
 						      	
 					WHEN MAX(rpp.`delete_child`) IS NOT NULL
@@ -279,10 +486,10 @@ abstract class MCPPermissionBase extends MCPDAO implements MCPPermission {
 					WHEN MAX(rpe.`edit`) IS NOT NULL
 					THEN MAX(rpe.`edit`)
 					
-					WHEN MAX(rpe.`edit_own`) IS NOT NULL
+					WHEN b.{$this->_objMCP->escapeString($strCreator)} = :users_id AND MAX(rpe.`edit_own`) IS NOT NULL
 					THEN MAX(rpe.`edit_own`)
 						      	
-					WHEN MAX(rpp.`edit_own_child`) IS NOT NULL
+					WHEN b.{$this->_objMCP->escapeString($strCreator)} = :users_id AND MAX(rpp.`edit_own_child`) IS NOT NULL
 					THEN MAX(rpp.`edit_own_child`)
 						      	
 					WHEN MAX(rpp.`edit_child`) IS NOT NULL
@@ -318,10 +525,10 @@ abstract class MCPPermissionBase extends MCPDAO implements MCPPermission {
 					WHEN MAX(rpe.`read`) IS NOT NULL
 					THEN MAX(rpe.`read`)
 					
-					WHEN MAX(rpe.`read_own`) IS NOT NULL
+					WHEN b.{$this->_objMCP->escapeString($strCreator)} = :users_id AND MAX(rpe.`read_own`) IS NOT NULL
 					THEN MAX(rpe.`read_own`)
 						      	
-					WHEN MAX(rpp.`read_own_child`) IS NOT NULL
+					WHEN b.{$this->_objMCP->escapeString($strCreator)} = :users_id AND MAX(rpp.`read_own_child`) IS NOT NULL
 					THEN MAX(rpp.`read_own_child`)
 						      	
 					WHEN MAX(rpp.`read_child`) IS NOT NULL

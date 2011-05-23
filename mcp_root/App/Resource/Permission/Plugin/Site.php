@@ -127,7 +127,7 @@ class MCPPermissionSite extends MCPPermissionBase {
 	*/
 	private function _rud($arrSiteIds,$intUser=null) {
 		
-		$strSQL = sprintf(
+		/*$strSQL = sprintf(
 			"SELECT
 			     m.sites_id item_id
 			     ,CASE
@@ -271,6 +271,21 @@ class MCPPermissionSite extends MCPPermissionBase {
 		);
 		
 		$arrPerms = $this->_objMCP->query($strSQL);
+		
+		return $arrPerms;*/
+		
+		$arrPerms = $this->_objMCP->query(
+			 $this->_getTopLevelEntityEditSQLTemplate('MCP_SITES','sites_id',$arrSiteIds,'creators_id')
+			,array(
+				 ':users_id'=>$intUser === null?0:$intUser
+				,':item_type'=>'MCP_SITES'
+				,':default_allow_delete'=>0
+				,':default_allow_edit'=>0
+				,':default_allow_read'=>1
+			)
+		);
+		
+		// echo '<pre>',print_r($arrPerms),'</pre>';
 		
 		return $arrPerms;
 		

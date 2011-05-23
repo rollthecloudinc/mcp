@@ -128,7 +128,7 @@ class MCPPermissionUser extends MCPPermissionBase {
 	*/
 	private function _rud($arrUserIds,$intUser=null) {
 		
-		$strSQL = sprintf(
+		/*$strSQL = sprintf(
 			"SELECT
 			     m.users_id item_id
 			     ,CASE
@@ -266,6 +266,21 @@ class MCPPermissionUser extends MCPPermissionBase {
 		);
 		
 		$arrPerms = $this->_objMCP->query($strSQL);
+		
+		return $arrPerms;*/
+		
+		$arrPerms = $this->_objMCP->query(
+			 $this->_getTopLevelEntityEditSQLTemplate('MCP_USERS','users_id',$arrUserIds,'users_id')
+			,array(
+				 ':users_id'=>$intUser === null?0:$intUser
+				,':item_type'=>'MCP_USERS'
+				,':default_allow_delete'=>0
+				,':default_allow_edit'=>0
+				,':default_allow_read'=>1
+			)
+		);
+		
+		// echo '<pre>',print_r($arrPerms),'</pre>';
 		
 		return $arrPerms;
 		

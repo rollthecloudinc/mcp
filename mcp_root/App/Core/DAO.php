@@ -87,5 +87,36 @@ abstract class MCPDAO extends MCPResource {
 		
 	}
 	
+	/*
+	* Helper function that converts hierarchical structure to a tree (set of nested arrays)
+	* 
+	* @param parent id
+	* @param rows
+	* @param primary key name
+	* @param parent_id key name
+	* @param name of key to store children
+	* @return array tree
+	*/
+	protected function _toTree($intParentId,&$arrRows,$strIdField,$strParentsIdField,$strNameResolution) {
+			
+		$arrChildren = array();
+			
+		for($i=0;$i<count($arrRows);$i++) {
+			if($intParentId === $arrRows[$i][$strParentsIdField]) {
+				$arrChildren = array_merge($arrChildren,array_splice($arrRows,$i--,1));
+			}
+		}
+			    
+		$intChildren = count($arrChildren);
+		if($intChildren != 0) {
+			for($i=0;$i<$intChildren;$i++) {
+				$arrChildren[$i][$strNameResolution] = $this->_toTree($arrChildren[$i][$strIdField],$arrRows,$strIdField,$strParentsIdField,$strNameResolution);
+			}        
+		}
+			    
+		return $arrChildren;
+		
+	}
+	
 }
 ?>

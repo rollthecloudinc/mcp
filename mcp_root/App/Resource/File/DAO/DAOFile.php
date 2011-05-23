@@ -12,25 +12,46 @@ class MCPDAOFile extends MCPDAO {
 	* @return str extension
 	*/
 	public function fetchExtByMime($mime) {
+
+		list($type,$subtype) = explode('/',$mime);
+		$arrMime = array_pop($this->_objMCP->query(
+			'SELECT ext FROM MCP_ENUM_MIME_TYPES WHERE type = :type AND subtype = :subtype'
+			,array(
+				 ':type'=>(string) $type
+				,':subtype'=>(string) $subtype
+			)
+		));
 		
-		return 'pdf'; // test
+		return $arrMime !== null?$arrMime['ext']:null;
 		
-		/* switch($mime) {
-			case 'image/jpg':
-				return 'jpg';
-				
-			case 'image/jpeg':
-				return 'jpeg';
-				
-			case 'image/gif':
-				return 'gif';
-					
-			case 'image/png':
-				return 'png';
-					
-			case 'image/bmp':
-				return 'bmp';
-		}	*/	
+	}
+	
+	/*
+	* Fetch file by id
+	* 
+	* @param int files id
+	* @param str columns to select
+	* @return array image data
+	*/
+	public function fetchById($intId) {
+		
+		/*
+		* Fetch image data 
+		*/
+		$arrFile = array_pop($this->_objMCP->query(
+			'SELECT * FROM MCP_MEDIA_FILES WHERE files_id = :files_id'
+			,array(
+				 ':files_id'=>(int) $intId
+			)
+		));
+		
+		if( $arrFile !== null ) {
+			// full path to the file
+			$arrFile['file_path'] = $this->_objMCP->getNormalFilePath().DS.'file_'.$arrFile['files_id'].'.'.$this->fetchExtByMime($arrFile['file_mime']);
+		}
+		
+		return $arrFile;
+		
 	}
 	
 	/*
@@ -41,6 +62,8 @@ class MCPDAOFile extends MCPDAO {
 	* @return int images id
 	*/
 	public function insert($arrFile,$boolWrite=false) {
+		
+		echo '<pre>',print_r($arrFile),'</pre>';
 		
 		/*if(isset($arrFile['tmp_name'])) {
 			$arrImage['image'] = file_get_contents($arrImage['tmp_name']);
