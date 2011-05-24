@@ -1,6 +1,6 @@
 <?php
-// abstract base class
-$this->import('App.Resource.Permission.PermissionBase');
+$this->import('App.Core.DAO');
+$this->import('App.Core.Permission');
 
 /*
 * Get permissions for dynamic fields
@@ -16,7 +16,7 @@ $this->import('App.Resource.Permission.PermissionBase');
 * are likely to have a drastic impact if someone doesn't know what they
 * are doing.
 */
-class MCPPermissionField extends MCPPermissionBase {
+class MCPPermissionField extends MCPDAO implements MCPPermission {
 	
 	/*
 	* Create a new dynamic field for entity type
@@ -153,7 +153,7 @@ class MCPPermissionField extends MCPPermissionBase {
 	* @param int users id
 	* @return array permission data
 	*/
-	private function _rud($fieldIds,$usersId) {
+	protected function _rud($fieldIds,$usersId) {
 		
 		/*
 		* First locate each fields raw data. This
@@ -370,7 +370,7 @@ class MCPPermissionField extends MCPPermissionBase {
 	* @param int users id
 	* @return permission data
 	*/
-	private function _c($ids,$userId) {
+	protected function _c($ids,$userId) {
 		
 		/*
 		* Group by entity type 

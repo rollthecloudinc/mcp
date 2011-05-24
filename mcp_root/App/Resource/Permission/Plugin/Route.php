@@ -1,6 +1,6 @@
 <?php 
-// abstract base class
-$this->import('App.Resource.Permission.PermissionBase');
+$this->import('App.Core.DAO');
+$this->import('App.Core.Permission');
 
 /*
 * Allow and deny access to pages based on specific routes such as; 
@@ -11,7 +11,7 @@ $this->import('App.Resource.Permission.PermissionBase');
 * 
 * This permission only implements read all others deny.
 */
-class MCPPermissionRoute extends MCPPermissionBase {
+class MCPPermissionRoute extends MCPDAO implements MCPPermission {
 
 	/*
 	* Determine whether user is able to access given routes (pages) associated

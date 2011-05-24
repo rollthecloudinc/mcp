@@ -1,13 +1,13 @@
 <?php
 // abstract base class
-$this->import('App.Resource.Permission.PermissionBase');
+$this->import('App.Resource.Permission.ChildLevelPermission');
 
 /*
 * Navigation link permissions data access layer
 */
-class MCPPermissionNavigationLink extends MCPPermissionBase {
+class MCPPermissionNavigationLink extends MCPChildLevelPermission {
 	
-	private 
+	protected
 	
 	/*
 	* navigation data access layer used to resolve menu link belongs to 
@@ -22,31 +22,36 @@ class MCPPermissionNavigationLink extends MCPPermissionBase {
 		
 	}
 	
-	/*
-	* Determine whether user is allowed to add link to specified menu(s)
-	* 
-	* @param array menu ids
-	* @return array permissions
-	*/
-	public function add($ids) {
-		
-		$permissions = $this->_c($ids,$this->_objMCP->getUsersId());
-		
-		$return = array();
-		foreach($permissions as $permission) {
-			$return[$permission['item_id']] = array(
-				'allow'=>(bool) $permission['allow_add']
-			);
-		}
-		
-		foreach(array_diff($ids,array_keys($return)) as $id) {
-			$return[$id] = array(
-				'allow'=>false
-			);
-		}
-		
-		return $return;
-		
+	protected function _getBaseTable() {
+		return 'MCP_NAVIGATION_LINKS';
+	}
+	
+	protected function _getParentTable() {
+		return 'MCP_NAVIGATION';
+	}
+	
+	protected function _getPrimaryKey() {
+		return 'navigation_links_id';
+	}
+	
+	protected function _getParentPrimaryKey() {
+		return 'navigation_id';
+	}
+	
+	protected function _getItemType() {
+		return 'MCP_NAVIGATION_LINK';
+	}
+	
+	protected function _getParentItemType() {
+		return 'MCP_NAVIGATION';
+	}
+	
+	protected function _getCreator() {
+		return 'creators_id';
+	}
+	
+	protected function _getParentCreator() {
+		return 'users_id';
 	}
 	
 	/*
@@ -158,7 +163,7 @@ class MCPPermissionNavigationLink extends MCPPermissionBase {
 	* @param int users id (when unspecified defaults to current user)
 	* @return array permission set
 	*/
-	private function _rud($intLink,$intUser=null) {
+	protected function _rud($intLink,$intUser=null) {
 		
 		/*
 		* Dynamic links that have not been converted to hard links
@@ -275,83 +280,7 @@ class MCPPermissionNavigationLink extends MCPPermissionBase {
 		$arrPerms = $this->_objMCP->query($strSQL);
 		
 		return array_pop($arrPerms);
-		
-		/*$arrPerms = $this->_objMCP->query(
-			$this->_getChildLevelEntityEditSQLTemplate('MCP_NAVIGATION_LINKS','navigation_links_id','navigation_id',array($intLink),'creators_id')
-			,array(
-				 ':users_id'=>($intUser === null?0:$intUser)
-				,':default_allow_delete'=>0
-				,':default_allow_edit'=>0
-				,':default_allow_read'=>1
-				,':item_type'=>'MCP_NAVIGATION_LINK'
-				,':item_type_parent'=>'MCP_NAVIGATION'
-			)
-		);
-		
-		return $arrPerms;*/
      
-	}
-	
-
-	/*
-	* Determine whether user is allowed to add link to specified menu(s)
-	*
-	* @param array navigation menu ids
-	* @param int users id (when unspecified defaults to current user)
-	* @return array permission set
-	*/
-	private function _c($arrMenuIds,$intUser=null) {
-
-		/* $strSQL = sprintf(
-			"SELECT
-			      m.navigation_id item_id
-			      ,CASE
-			      
-			        WHEN mp.add_child IS NOT NULL
-			        THEN mp.add_child
-			      
-			      	WHEN m.users_id = mp.users_id AND mp.add_own_child IS NOT NULL
-			      	THEN mp.add_own_child
-			      	
-			      	WHEN m.users_id = %s
-			      	THEN 1
-			      	
-			      	ELSE
-			      	0
-			      
-			       END allow_add
-			  FROM
-			      MCP_NAVIGATION m
-			  LEFT OUTER
-			  JOIN
-			      MCP_PERMISSIONS_USERS mp
-			    ON
-			      m.navigation_id = mp.item_id
-			   AND
-			      mp.users_id = %1\$s
-			   AND
-			      mp.item_type = 'MCP_NAVIGATION'
-			 WHERE
-			      m.navigation_id IN (%s)"
-			,$this->_objMCP->escapeString($intUser === null?0:$intUser)
-			,$this->_objMCP->escapeString(implode(',',$arrMenuIds))
-		);
-		
-		$arrPerms = $this->_objMCP->query($strSQL);*/
-		
-		$arrPerms = $this->_objMCP->query(
-			$this->_getChildLevelEntityCreateSQLTemplate('MCP_NAVIGATION','navigation_id',$arrMenuIds,'users_id')
-			,array(
-				 ':item_type'=>'MCP_NAVIGATION'
-				,':users_id'=>(int) ( $intUser === null?0:$intUser )
-				,':default_allow_add'=>0
-				,':deny_add_msg_dev'=>''
-				,':deny_add_msg_user'=>''
-			)
-		);
-		
-		return $arrPerms;
-      
 	}
 	
 }     

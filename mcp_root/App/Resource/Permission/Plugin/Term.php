@@ -1,11 +1,11 @@
 <?php
 // abstract base class
-$this->import('App.Resource.Permission.PermissionBase');
+$this->import('App.Resource.Permission.ChildLevelPermission');
 
 /*
 * Vocabulary term permissions data access layer
 */
-class MCPPermissionTerm extends MCPPermissionBase {
+class MCPPermissionTerm extends MCPChildLevelPermission {
 	
 	private 
 	
@@ -22,35 +22,36 @@ class MCPPermissionTerm extends MCPPermissionBase {
 		
 	}
 	
-	/*
-	* Determine whether user is allowed to add term to specified vocabularies
-	* 
-	* @param array voabulary id(s)
-	* @return array permissions
-	*/
-	public function add($ids) {
-		
-		$permissions = $this->_c($ids,$this->_objMCP->getUsersId());
-		
-		$return = array();
-		foreach($permissions as $permission) {
-			$return[$permission['item_id']] = array(
-				'allow'=>(bool) $permission['allow_add']
-				,'msg_dev'=>$permission['deny_add_msg_dev']
-				,'msg_user'=>'You are not allowed to create term for specified vocabulary.'
-			);
-		}
-		
-		foreach(array_diff($ids,array_keys($return)) as $id) {
-			$return[$id] = array(
-				'allow'=>false
-				,'msg_dev'=>$permission['deny_add_msg_dev']
-				,'msg_user'=>'You are not allowed to create term for specified vocabulary.'
-			);
-		}
-		
-		return $return;
-		
+	protected function _getBaseTable() {
+		return 'MCP_TERMS';
+	}
+	
+	protected function _getParentTable() {
+		return 'MCP_VOCABULARY';
+	}
+	
+	protected function _getPrimaryKey() {
+		return 'terms_id';
+	}
+	
+	protected function _getParentPrimaryKey() {
+		return 'vocabulary_id';
+	}
+	
+	protected function _getItemType() {
+		return 'MCP_TERMS';
+	}
+	
+	protected function _getParentItemType() {
+		return 'MCP_VOCABULARY';
+	}
+	
+	protected function _getCreator() {
+		return 'creators_id';
+	}
+	
+	protected function _getParentCreator() {
+		return 'creators_id';
 	}
 	
 	/*
@@ -162,7 +163,7 @@ class MCPPermissionTerm extends MCPPermissionBase {
 	* @param int users id (when unspecified defaults to current user)
 	* @return array permission set
 	*/
-	private function _rud($intTerm,$intUser=null) {
+	protected function _rud($intTerm,$intUser=null) {
 		
 		$term = $this->_objDAOTaxonomy->fetchTermById($intTerm);
 		
@@ -267,68 +268,6 @@ class MCPPermissionTerm extends MCPPermissionBase {
 		
 		return array_pop($arrPerms);
      
-	}
-	
-
-	/*
-	* Determine whether user is allowed to add term to specified vocabularies
-	*
-	* @param array vocabulary ids
-	* @param int users id (when unspecified defaults to current user)
-	* @return array permission set
-	*/
-	private function _c($arrVocabIds,$intUser=null) {
-
-		/*$strSQL = sprintf(
-			"SELECT
-			      m.vocabulary_id item_id
-			      ,CASE
-			      
-			        WHEN mp.add_child IS NOT NULL
-			        THEN mp.add_child
-			      
-			      	WHEN m.creators_id = mp.users_id AND mp.add_own_child IS NOT NULL
-			      	THEN mp.add_own_child
-			      	
-			      	WHEN m.creators_id = %s
-			      	THEN 1
-			      	
-			      	ELSE
-			      	0
-			      
-			       END allow_add
-			  FROM
-			      MCP_VOCABULARY m
-			  LEFT OUTER
-			  JOIN
-			      MCP_PERMISSIONS_USERS mp
-			    ON
-			      m.vocabulary_id = mp.item_id
-			   AND
-			      mp.users_id = %1\$s
-			   AND
-			      mp.item_type = 'MCP_VOCABULARY'
-			 WHERE
-			      m.vocabulary_id IN (%s)"
-			,$this->_objMCP->escapeString($intUser === null?0:$intUser)
-			,$this->_objMCP->escapeString(implode(',',$arrVocabIds))
-		);
-		
-		$arrPerms = $this->_objMCP->query($strSQL);*/
-		
-		$arrPerms = $this->_objMCP->query(
-			$this->_getChildLevelEntityCreateSQLTemplate('MCP_VOCABULARY','vocabulary_id',$arrVocabIds)
-			,array(
-				 ':item_type'=>'MCP_VOCABULARY'
-				,':users_id'=>(int) ( $intUser === null?0:$intUser )
-				,':default_allow_add'=>0
-				,':deny_add_msg_dev'=>''
-				,':deny_add_msg_user'=>''
-			)
-		);
-		
-		return $arrPerms;
-      
 	}
 	
 }     

@@ -117,7 +117,7 @@ class MCPDAOMenu extends MCPDAO {
 				if($arrLink['datasource'] == 0) continue;
 				
 				// expand the datasource
-				$this->_expandDataSource($arrLink);		
+				//$this->_expandDataSource($arrLink);		
 			}
 			
 			// parses menu into tree w/o multiple trips to the db
