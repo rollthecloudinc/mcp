@@ -258,7 +258,7 @@ class MCPMenuFormLink extends MCPModule {
 			,'child_key'=>'values'
 		));*/
 		
-		$arrLinks = $this->_objDAOMenu->fetchMenuImproved($arrMenu['menus_id'],array(
+		$arrLinks = $this->_objDAOMenu->fetchMenu($arrMenu['menus_id'],array(
 			 'select'=>'l.menu_links_id value,l.display_title label'
 			,'child_key'=>'values'
 		));
@@ -380,8 +380,8 @@ class MCPMenuFormLink extends MCPModule {
 			
 		}
 		
-		$arrMenu =  $this->_getMenu();
-		$this->_objDAOMenu->fetchMenuImproved($arrMenu['menus_id']);
+		// $arrMenu =  $this->_getMenu();
+		//$this->_objDAOMenu->fetchMenuImproved($arrMenu['menus_id']);
 		
 		// handle form processing
 		$this->_frmHandle();

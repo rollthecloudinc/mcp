@@ -45,8 +45,29 @@ abstract class MCPTopLevelPermission extends MCPDAO implements MCPPermission {
 			     	ELSE 0   	
 			     END allow_add
 			     
-			     ,:deny_add_msg_dev deny_add_msg_dev 
-			     ,:deny_add_msg_user deny_add_msg_user
+			     ,CASE
+			     
+					WHEN pu.add IS NOT NULL
+					THEN 'Permission assigned directly to user prevents action.'
+			     
+			     	WHEN MAX(pr.add) IS NOT NULL
+			     	THEN 'Permission assigned to one of users roles prevents action.'
+			     	
+			     	ELSE 'Not allowed to carry out action because no permissions exist.'   	
+			     	
+			     END deny_add_msg_dev
+			     
+			     ,CASE
+			     
+					WHEN pu.add IS NOT NULL
+					THEN 'You are not allowed to carry out given action due to insufficent permissions.'
+			     
+			     	WHEN MAX(pr.add) IS NOT NULL
+			     	THEN 'You are not allowed to carry out given action due to insufficent permissions.'
+			     	
+			     	ELSE 'You are not allowed to carry out given action due to insufficent permissions.'  	
+			     	
+			     END deny_add_msg_user
 			     
 			  FROM
 			     MCP_USERS u
@@ -327,8 +348,8 @@ abstract class MCPTopLevelPermission extends MCPDAO implements MCPPermission {
 			,array(
 				 ':users_id'=>$intUser === null?0:$intUser
 				,':entity_type'=> $this->_getItemType() // 'MCP_NAVIGATION'
-				,':deny_add_msg_dev'=>''
-				,':deny_add_msg_user'=>''
+				//,':deny_add_msg_dev'=>''
+				//,':deny_add_msg_user'=>''
 			)
 		);
 		

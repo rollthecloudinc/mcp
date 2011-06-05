@@ -114,7 +114,7 @@ class MCPDAOSessionHandler extends MCPDAO {
 	*/
 	public function changeSessionPassKey($strSID) {
 		
-		$strPID = sha1(time().time().'nautica');
+		$strPID = sha1(time().time().'xrs564rGh1lk-9760');
 		
 		/*$strSQL = sprintf(
 			"UPDATE MCP_SESSIONS SET pid='%s' WHERE sid='%s' AND expires_on_timestamp > FROM_UNIXTIME(%u) AND deleted IS NULL"
