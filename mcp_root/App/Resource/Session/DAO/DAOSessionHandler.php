@@ -74,7 +74,7 @@ class MCPDAOSessionHandler extends MCPDAO {
 			)
 		));
 		
-		return $arrRow === null?false:true;
+		return $arrRow !== null; // ?false:true;
 	}
 	
 	/*

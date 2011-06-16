@@ -9,7 +9,7 @@ class MCPTaxonomyFormTerm extends MCPModule {
 	/*
 	* Term dat access layer 
 	*/
-	$_objDAOTerm
+	$_objDAOTaxonomy
 	
 	/*
 	* Validation object 
@@ -237,11 +237,62 @@ class MCPTaxonomyFormTerm extends MCPModule {
 		*/
 		list($arrSave['parent_type'],$arrSave['parent_id']) = explode('-',$arrSave['parent_id'],2);
 		
-		/*
-		* Save term to db 
-		*/
-		$this->_objDAOTaxonomy->saveTerm($arrSave);
+		if(strcasecmp($arrSave['parent_type'],'vocabulary') !== 0) {
+			// Get the terms vocabulary
+			$arrVocab = $this->_objDAOTaxonomy->fetchTermsVocabulary($arrSave['parent_id']);
+			$arrSave['vocabulary_id'] = $arrVocab['vocabulary_id'];
+		} else {
+			$arrSave['vocabulary_id'] = $arrSave['parent_id'];
+		}
 		
+		/*
+		* Save term
+		*/
+		try {
+			
+			$this->_objDAOTaxonomy->saveTerm($arrSave);
+			
+			/*
+			* Fire update event using this as the target
+			*/
+			$this->_objMCP->fire($this,'TERM_UPDATE');
+		
+			/*
+			* Add success message 
+			*/
+			$this->_objMCP->addSystemStatusMessage( $this->_getSaveSuccessMessage() );
+			
+		} catch(MCPDAOException $e) {
+			
+			$this->_objMCP->addSystemErrorMessage(
+				$this->_getSaveErrorMessage()
+				,$e->getMessage()
+			);
+			
+			return false;
+			
+		}
+		
+		return true;
+		
+	}
+	
+	/*
+	* Message to be shown to user upon sucessful save of term
+	* 
+	* @return str message
+	*/
+	protected function _getSaveSuccessMessage() {
+		return 'Term '.($this->_getTerm() !== null?'Updated':'Created' ).'!';
+	}
+
+	/*
+	* Message to be shown to user when error occurs saving of term
+	* 
+	* @return str message
+	*/
+	protected function _getSaveErrorMessage() {
+		return 'An internal issue has prevented the term from being '.($this->_getTerm() !== null?'updated':'created' );
 	}
 	
 	/*

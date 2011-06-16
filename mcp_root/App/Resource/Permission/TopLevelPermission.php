@@ -359,9 +359,9 @@ abstract class MCPTopLevelPermission extends MCPDAO implements MCPPermission {
 
 	public function add($ids) {
 		
-		$permission = $this->_c($this->_objMCP->getUsersId());
+		$permissions = $this->_c($this->_objMCP->getUsersId());
 		
-		$return = array();
+		/*$return = array();
 		
 		if($permission !== null) {
 			$return[] = array(
@@ -373,6 +373,23 @@ abstract class MCPTopLevelPermission extends MCPDAO implements MCPPermission {
 			$return[] = array(
 				'allow'=>false
 				,'msg_dev'=>'You are not allowed to create a %s'
+				,'msg_user'=>'You may not add %s.'
+			);
+		}*/
+		
+		$return = array();
+		foreach($permissions as $permission) {
+			$return[$permission['item_id']] = array(
+				'allow'=>(bool) $permission['allow_add']
+				,'msg_dev'=>$permission['deny_read_msg_dev']
+				,'msg_user'=>'You may not add %s.'
+			);
+		}
+		
+		foreach(array_diff($ids,array_keys($return)) as $id) {
+			$return[$id] = array(
+				'allow'=>false
+				,'msg_dev'=>'You are not allowed to add specified %s'
 				,'msg_user'=>'You may not add %s.'
 			);
 		}

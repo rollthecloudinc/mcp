@@ -28,7 +28,7 @@ abstract class MCPChildLevelPermission extends MCPDAO implements MCPPermission {
 	*/
 	protected function _getCreateSQLTemplate($strBaseTable,$strPrimaryKey,$arrIds,$strCreator='creators_id') {
 		
-		return
+		$strSQL =
 			"SELECT
 			     b.{$this->_objMCP->escapeString($strPrimaryKey)} item_id #the generic entity id#
 				 ,CASE
@@ -59,6 +59,35 @@ abstract class MCPChildLevelPermission extends MCPDAO implements MCPPermission {
 						      
 					END allow_add
 
+			      #same thing as top but copied to determine case matched#
+				 ,CASE
+						      
+					#user permissions have precedence over roles. Determoine whether user has explicit setting to create a node of the type#
+				    WHEN pu.add_child IS NOT NULL
+					THEN 1
+				
+					#user permissions have precedence over roles. Determine whether user has explicit setting to create node of a type they created#   
+					WHEN b.{$this->_objMCP->escapeString($strCreator)} = pu.users_id AND pu.add_own_child IS NOT NULL
+					THEN 2
+				
+					#determines whether user is assigned to role that has settings for creating node of type#
+					WHEN MAX(pr.add_child) IS NOT NULL
+					THEN 3
+					
+					#Determines whether user is assigned to role that has settings for creating node of a type that they created#
+					WHEN b.{$this->_objMCP->escapeString($strCreator)} = :users_id AND MAX(pr.add_own_child) IS NOT NULL
+					THEN 4
+					
+					#by default creator of node type can create nodes of that type#
+					WHEN b.{$this->_objMCP->escapeString($strCreator)} = :users_id
+					THEN 5
+						
+					#When nothing has been matched deny creation of node of specified type#      	
+					ELSE
+					6
+						      
+					END debug_case_matched
+					
 					,:deny_add_msg_dev deny_add_msg_dev
 					,:deny_add_msg_user deny_add_msg_user
 					
@@ -99,6 +128,9 @@ abstract class MCPChildLevelPermission extends MCPDAO implements MCPPermission {
 			  GROUP
 				 BY
 				  b.{$this->_objMCP->escapeString($strPrimaryKey)}";
+			     
+		// echo "<p>$strSQL</p>";
+		return $strSQL;
 		
 	}
 	
@@ -121,7 +153,7 @@ abstract class MCPChildLevelPermission extends MCPDAO implements MCPPermission {
 	*/
 	protected function _getEditSQLTemplate($strBaseTable,$strPrimaryKey,$strParentPrimaryKey,$arrIds,$strCreator='creators_id') {
 		
-		return
+		$strSQL = 
 			"SELECT
 			 	 b.{$this->_objMCP->escapeString($strPrimaryKey)} item_id #base item unique id#
 			 	 
@@ -318,6 +350,9 @@ abstract class MCPChildLevelPermission extends MCPDAO implements MCPPermission {
 			 GROUP
 			    BY
 			      b.{$this->_objMCP->escapeString($strPrimaryKey)}";
+				
+		//echo "<p>$strSQL</p>";
+		return $strSQL;
 		
 	}
 	
@@ -347,6 +382,8 @@ abstract class MCPChildLevelPermission extends MCPDAO implements MCPPermission {
 	
 	protected function _c($arrIds,$intUser=null) {
 		
+		// echo "<p>{$this->_getParentItemType()}:$intUser</p>";
+		
 		$arrPerms = $this->_objMCP->query(
 			$this->_getCreateSQLTemplate(
 				$this->_getParentTable() //'MCP_NODE_TYPES'
@@ -369,20 +406,41 @@ abstract class MCPChildLevelPermission extends MCPDAO implements MCPPermission {
 
 	public function add($ids) {
 		
-		$permission = $this->_c($ids,$this->_objMCP->getUsersId());
+		$permissions = $this->_c($ids,$this->_objMCP->getUsersId());
 		
 		$return = array();
 		
-		if($permission !== null) {
+		/*if($permission !== null) {
 			$return[] = array(
 				'allow'=>(bool) $permission['allow_add']
 				,'msg_dev'=>$permission['deny_add_msg_dev']
 				,'msg_user'=>'You may not add %s.'
+				,'case_matched'=>$permission['debug_case_matched']
 			);
 		} else {
 			$return[] = array(
 				'allow'=>false
 				,'msg_dev'=>'You are not allowed to create a %s'
+				,'msg_user'=>'You may not add %s.'
+				,'case_matched'=>null
+			);
+		}*/
+		
+		// echo '<pre>',print_r($return),'</pre>';
+		
+		$return = array();
+		foreach($permissions as $permission) {
+			$return[$permission['item_id']] = array(
+				'allow'=>(bool) $permission['allow_add']
+				,'msg_dev'=>$permission['deny_read_msg_dev']
+				,'msg_user'=>'You may not add %s.'
+			);
+		}
+		
+		foreach(array_diff($ids,array_keys($return)) as $id) {
+			$return[$id] = array(
+				'allow'=>false
+				,'msg_dev'=>'You are not allowed to add specified %s'
 				,'msg_user'=>'You may not add %s.'
 			);
 		}

@@ -220,15 +220,55 @@ class MCPMenuFormLink extends MCPModule {
 			$arrSave['creators_id'] = $this->_objMCP->getUsersId();
 		}
 		
-		try {		
-			$this->_objDAOMenu->saveLink($arrSave);		
-		} catch(MCPDAOException $e) {			
-			echo $e->getMessage();
-			return false;			
+		
+		/*
+		* Save link to database 
+		*/
+		try {
+			
+			$this->_objDAOMenu->saveLink($arrSave);
+			
+			/*
+			* Fire update event using this as the target
+			*/
+			$this->_objMCP->fire($this,'LINK_UPDATE');
+		
+			/*
+			* Add success message 
+			*/
+			$this->_objMCP->addSystemStatusMessage( $this->_getSaveSuccessMessage() );
+			
+		} catch(MCPDAOException $e) {
+			
+			$this->_objMCP->addSystemErrorMessage(
+				$this->_getSaveErrorMessage()
+				,$e->getMessage()
+			);
+			
+			return false;
+			
 		}
 		
 		return true;
 		
+	}
+	
+	/*
+	* Message to be shown to user upon sucessful save of menu link
+	* 
+	* @return str message
+	*/
+	protected function _getSaveSuccessMessage() {
+		return 'Link '.($this->_getMenuLink() !== null?'Updated':'Created' ).'!';
+	}
+
+	/*
+	* Message to be shown to user when error occurs saving of menu link
+	* 
+	* @return str message
+	*/
+	protected function _getSaveErrorMessage() {
+		return 'An internal issue has prevented the link from being '.($this->_getMenuLink() !== null?'updated':'created' );
 	}
 	
 	/*
@@ -378,6 +418,22 @@ class MCPMenuFormLink extends MCPModule {
 			$arrLink = $this->_getMenuLink();	
 			$this->_setMenu( $this->_objDAOMenu->fetchMenuById($arrLink['menus_id']) );
 			
+		}
+		
+		/*
+		* Check user permissions 
+		*/
+		if($this->_getMenuLink() !== null) {
+			$perm = $this->_objMCP->getPermission(MCP::EDIT,'MenuLink',$mixLinkId);
+		} else {
+			$arrMenu = $this->_getMenu();
+			$perm = $this->_objMCP->getPermission(MCP::ADD,'MenuLink',$arrMenu['menus_id']);
+		}
+		
+		// echo '<pre>',print_r($perm),'</pre>';
+		
+		if(!$perm['allow']) {
+			throw new MCPPermissionException($perm);
 		}
 		
 		// $arrMenu =  $this->_getMenu();

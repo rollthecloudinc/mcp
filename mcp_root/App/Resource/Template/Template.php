@@ -163,7 +163,10 @@ class MCPTemplate extends MCPResource {
 	* @param str menu location
 	*/
 	public function nav($strLocation) {
-		echo $this->_objMCP->executeComponent('Component.Navigation.Module.Menu',array($strLocation));
+		//echo $this->_objMCP->executeComponent('Component.Navigation.Module.Menu',array($strLocation));
+		
+		// TESTING!!!
+		echo $this->_objMCP->executeComponent('Component.Menu.Module.Menu',array('main_menu'));
 	}
 	
 	/*

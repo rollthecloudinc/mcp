@@ -14,6 +14,23 @@ class Table implements \UI\Element {
 			,'caption'=>array(
 				'default'=>null
 			)
+			
+			/*
+			* Suppport for trees 
+			*/
+			,'tree'=>array(
+				'default'=>false
+			)
+			,'child_key'=>array(
+				'default'=>'children'
+			)
+			,'mutation'=>array(
+				'default'=>null
+			)
+			
+			/*
+			* form wrapper 
+			*/
 			,'form'=>array( // flag to wrap contents in form element
 				'default'=>false
 			)
@@ -35,7 +52,7 @@ class Table implements \UI\Element {
 	public function html($settings,\UI\Manager $ui) {
 		
 		extract($settings);
-		$out = '';	
+		$out = '';
 		
 		if($form === true) {
 			$out.= sprintf(
@@ -56,10 +73,10 @@ class Table implements \UI\Element {
 		$out.= '</thead>';
 		$out.= '<tbody>';
 		
-		$cycle = false;
+		// $cycle = false;
 		
 		if(!empty($data)) {
-			foreach($data as $row) {
+			/*foreach($data as $row) {
 				$out.= '<tr'.($cycle =! $cycle?' class="odd"':'').'>';
 				foreach($headers as $header) {
 					
@@ -69,7 +86,15 @@ class Table implements \UI\Element {
 					);
 				}
 				$out.= '</tr>';
-			}
+			}*/
+			
+			$out.= $this->_renderRow(
+				 $data
+				,false
+				,$headers
+				,$settings
+			);
+			
 		} else {
 			$out.= sprintf(
 				'<tr>
@@ -85,6 +110,45 @@ class Table implements \UI\Element {
 		
 		if($form === true) {
 			$out.= '</fieldset></form>';
+		}
+		
+		return $out;
+		
+	}
+	
+	private function _renderRow($data,$cycle,$headers,$settings,$runner=0) {
+		
+		$out = '';
+		
+		if(empty($data)) {
+			return $out;
+		}
+		
+		foreach($data as $row) {
+			
+			$out.= '<tr'.($cycle =! $cycle?' class="odd"':'').'>';
+			
+			foreach($headers as $index=>$header) {		
+				$out.= sprintf(
+					"<td>%s%s</td>"
+					,$index?'':str_repeat('&nbsp;',$runner * 3) // probably best to use CSS padding or margins instead - indent each level
+					,$header['mutation'] === null?$row[$header['column']]:call_user_func_array($header['mutation'],array($row[$header['column']],$row))
+				);
+			}
+			
+			$out.= '</tr>';
+			
+			// print children
+			if($settings['tree'] === true) {
+				$out.= $this->_renderRow(
+					isset($row[$settings['child_key']])?$row[$settings['child_key']]:array()
+					,$cycle
+					,$headers
+					,$settings
+					,($runner + 1)
+				);
+			}
+			
 		}
 		
 		return $out;

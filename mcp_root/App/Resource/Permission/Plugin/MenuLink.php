@@ -1,34 +1,33 @@
 <?php
-// abstract base class
 $this->import('App.Resource.Permission.ChildLevelPermission');
 
 /*
-* Vocabulary term permissions data access layer
+* Menu link permissions data access layer
 */
-class MCPPermissionTerm extends MCPChildLevelPermission {
+class MCPPermissionMenuLink extends MCPChildLevelPermission {
 	
 	protected function _getBaseTable() {
-		return 'MCP_TERMS';
+		return 'MCP_MENU_LINKS';
 	}
 	
 	protected function _getParentTable() {
-		return 'MCP_VOCABULARY';
+		return 'MCP_MENUS';
 	}
 	
 	protected function _getPrimaryKey() {
-		return 'terms_id';
+		return 'menu_links_id';
 	}
 	
 	protected function _getParentPrimaryKey() {
-		return 'vocabulary_id';
+		return 'menus_id';
 	}
 	
 	protected function _getItemType() {
-		return 'MCP_TERMS';
+		return 'MCP_MENU_LINK';
 	}
 	
 	protected function _getParentItemType() {
-		return 'MCP_VOCABULARY';
+		return 'MCP_MENU';
 	}
 	
 	protected function _getCreator() {
@@ -36,8 +35,8 @@ class MCPPermissionTerm extends MCPChildLevelPermission {
 	}
 	
 	protected function _getParentCreator() {
-		return 'creators_id';
+		return 'users_id';
 	}
 	
-}     
+}
 ?>

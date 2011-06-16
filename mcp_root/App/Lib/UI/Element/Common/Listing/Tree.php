@@ -42,7 +42,9 @@ class Tree implements \UI\Element {
 	}
 	
 	public function html($settings,\UI\Manager $ui) {
+		
 		return $this->_html($settings);
+		
 	}
 	
 	private function _html($settings,$runner=0) {
@@ -90,6 +92,5 @@ class Tree implements \UI\Element {
 		return $out;
 		
 	}
-	
 }
 ?>

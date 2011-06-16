@@ -6,8 +6,62 @@
 class MCPDAOMenu extends MCPDAO {
 	
 	/*
+	* List all navigation menus 
+	* 
+	* @param str select columns
+	* @param str where clause
+	* @param str order by clause
+	* @param str limit clause
+	* @return array navigation menus
+	*/
+	public function listAllMenus($strSelect='m.*',$strWhere=null,$strSort=null,$strLimit=null) {
+		
+		$strSQL = sprintf(
+			'SELECT 
+			      %s %s 
+			   FROM 
+			      MCP_MENUS m
+               LEFT OUTER
+               JOIN
+                  MCP_USERS u
+                 ON
+                  m.users_id = u.users_id
+               LEFT OUTER
+               JOIN
+                  MCP_SITES s
+                 ON
+                  m.sites_id = s.sites_id
+			      %s 
+			      %s 
+			      %s'
+			,$strLimit === null?'':'SQL_CALC_FOUND_ROWS'
+			,$strSelect
+			,$strWhere === null?'':"WHERE $strWhere"
+			,$strSort === null?'':"ORDER BY $strSort"
+			,$strLimit === null?'':"LIMIT $strLimit"
+		);
+		
+		// echo "<p>$strSQL</p>";
+		
+		$arrRows = $this->_objMCP->query($strSQL);
+		
+		// echo '<pre>',print_r($arrRows),'</pre>';
+		
+		if($strLimit === null) {
+			return $arrRows;
+		} else {
+			return array(
+				$arrRows
+				,array_pop(array_pop($this->_objMCP->query('SELECT FOUND_ROWS()')))
+			);
+		}
+	}
+	
+	/*
 	* @param int menus id
 	* @param array options 
+	* 
+	* 
 	* @return array menu
 	*/
 	public function fetchMenu($intMenusId,$arrOptions=array()) {
@@ -16,6 +70,9 @@ class MCPDAOMenu extends MCPDAO {
 		$strSQL = sprintf(
 			'SELECT 
 		           l.*  
+		           
+		           #all links physically stored in table are not dynamic#
+		           ,0 dynamic
 
 		           #full URL path#
 		           ,CASE
@@ -101,6 +158,48 @@ class MCPDAOMenu extends MCPDAO {
 			* will be needed to build the menu for display. 
 			*/
 			
+			/*
+			* Mixin permissions before converting to a tree because it would be very tedious
+			* afterwards, collecting all ids and reapplying when it can easily be done here while
+			* the result is in raw form. 
+			* 
+			* NOTE: execlude dynamic links
+			*/
+			if( isset($arrOptions['include_perms']) && $arrOptions['include_perms'] === true) {
+			
+				$ids = array();
+				foreach($arrFinalLinks as &$arrLink) {
+					if($arrLink['dynamic']) continue; // skip over dynamic links
+					$ids[] = $arrLink['menu_links_id'];
+				}
+				
+				// Get the permissions (only amounts to three queries regardless of number of links)
+				$arrRead = $this->_objMCP->getPermission(MCP::READ,'MenuLink',$ids);
+				$arrDelete = $this->_objMCP->getPermission(MCP::DELETE,'MenuLink',$ids);
+				$arrEdit = $this->_objMCP->getPermission(MCP::EDIT,'MenuLink',$ids);
+				
+				// add is global for menu
+				$add = $this->_objMCP->getPermission(MCP::ADD,'MenuLink',$intMenusId);
+				
+				// Apply permissions to links
+				foreach($arrFinalLinks as &$arrLink) {
+					if($arrLink['dynamic']) {
+						$arrLink['allow_read'] = false;
+						$arrLink['allow_delete'] = false;
+						$arrLink['allow_edit'] = false;
+						$arrLink['allow_add'] = false;
+						continue;
+					}
+					$arrLink['allow_read'] = $arrRead[$arrLink['menu_links_id']]['allow'];
+					$arrLink['allow_delete'] = $arrDelete[$arrLink['menu_links_id']]['allow'];
+					$arrLink['allow_edit'] = $arrEdit[$arrLink['menu_links_id']]['allow'];
+					$arrLink['allow_add'] = $add['allow'];
+				}
+				
+			}
+			
+			//echo '<pre>',print_r($arrFinalLinks),'</pre>';
+			
 			// parses menu into tree w/o multiple trips to the db
 			$arrFinalLinks = $this->_toTree(
 				 null
@@ -126,8 +225,7 @@ class MCPDAOMenu extends MCPDAO {
 	*/
 	public function fetchMenuById($intId) {
 		
-		// uses old navigation - probably going to be the same anyway - don't anticpate the navigation table changing any
-		$strSQL = 'SELECT *,navigation_id menus_id FROM MCP_NAVIGATION WHERE navigation_id = :menu_id';
+		$strSQL = 'SELECT * FROM MCP_MENUS WHERE menus_id = :menu_id';
 		
 		return array_pop($this->_objMCP->query(
 			$strSQL
@@ -135,6 +233,32 @@ class MCPDAOMenu extends MCPDAO {
 				':menu_id'=>(int) $intId
 			)
 		));
+		
+	}
+	
+	/*
+	* Get a menu by unique name within a site
+	* 
+	* @param str name
+	* @param int site id
+	* @return array menu data
+	*/
+	public function fetchSiteMenuByName($strName,$intSitesId) {
+		
+		$arrMenu = array_pop( $this->_objMCP->query(
+			'SELECT menus_id FROM MCP_MENUS WHERE sites_id = :sites_id AND system_name = :system_name LIMIT 1'
+			,array(
+				':sites_id'=>(int) $intSitesId
+				,':system_name'=>(string) $strName
+			)
+		));
+		
+		if($arrMenu === null) {
+			return null;
+		}
+		
+		// eliminate repeating the same code
+		return $this->fetchMenuById($arrMenu['menus_id']);
 		
 	}
 	
@@ -209,6 +333,26 @@ class MCPDAOMenu extends MCPDAO {
 	}
 	
 	/*
+	* Get list of all available navigation menu locations
+	* 
+	* @return array navigation menu locations
+	*/
+	public function fetchMenuLocations() {
+		$arrResult = $this->_objMCP->query('DESCRIBE MCP_MENUS');
+		$arrLocations = array();
+		
+		foreach($arrResult as $arrColumn) {
+			if(strcmp('menu_location',$arrColumn['Field']) == 0) {
+				foreach(explode(',',str_replace("'",'',trim(trim($arrColumn['Type'],'enum('),')'))) as $strLocation) {
+					$arrLocations[] = array('value'=>$strLocation,'label'=>$strLocation);
+				}
+			}
+		}
+		
+		return $arrLocations;
+	}
+	
+	/*
 	* Converts dynamic links to concrete ones
 	* 
 	* @param array raw dynamic links 
@@ -249,6 +393,18 @@ class MCPDAOMenu extends MCPDAO {
 					
 				}
 			
+			}
+			
+			// mark link as dynamic - control whether it can be dited, deleted, etc from UI
+			$arrNewLink['dynamic'] = 1;
+			
+			// normalize links URL
+			if($arrNewLink['absolute_url'] !== null) {
+				$arrNewLink['url'] = $arrNewLink['absolute_url'];
+			} else if($arrNewLink['path'] !== null) {
+				$arrNewLink['url'] = $this->_objMCP->getBaseUrl().'/'.$arrNewLink['path'];
+			} else {
+				$arrNewLink['url'] = null;
 			}
 			
 			$arrRebuild[] = $arrNewLink;
@@ -299,6 +455,21 @@ class MCPDAOMenu extends MCPDAO {
 		
 		return $arrConcreteLinks;
 		
+	}
+	
+	/*
+	* Insert or update menu
+	* 
+	* @param array menu data
+	*/
+	public function saveMenu($arrMenu) {	
+		return $this->_save(
+			$arrMenu
+			,'MCP_MENUS'
+			,'menus_id'
+			,array('menu_title','menu_location','system_name')
+			,'created_on_timestamp'
+		);	
 	}
 	
 	/*

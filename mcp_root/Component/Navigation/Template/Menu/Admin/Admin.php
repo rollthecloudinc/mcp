@@ -2,7 +2,8 @@
 	<!--  <li><a href="/index.php/<?php $this->_objMCP->getBaseUrl().'/' ?>Admin/DashBoard">DashBoard</a></li> -->
 	<li><a href="/index.php/<?php $this->_objMCP->getBaseUrl().'/' ?>Admin/Content">Content</a></li>
 	<li><a href="/index.php/<?php $this->_objMCP->getBaseUrl().'/' ?>Admin/Vocabulary">Vocabularies</a></li>
-	<li><a href="/index.php/<?php $this->_objMCP->getBaseUrl().'/' ?>Admin/Navigation">Menus</a></li>
+	<li><a href="/index.php/<?php $this->_objMCP->getBaseUrl().'/' ?>Admin/Navigation">Navigation</a><em>(deprected)</em></li>
+	<li><a href="/index.php/<?php $this->_objMCP->getBaseUrl().'/' ?>Admin/Menu">Menus</a></li>
 	<li><a href="/index.php/<?php $this->_objMCP->getBaseUrl().'/' ?>Admin/Users">Users</a></li>
 	<li><a href="/index.php/<?php $this->_objMCP->getBaseUrl().'/' ?>Admin/Roles">Roles</a></li>
 	<li><a href="/index.php/<?php $this->_objMCP->getBaseUrl().'/' ?>Admin/Config">Config</a></li>
