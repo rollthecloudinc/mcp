@@ -52,7 +52,11 @@ class MCPUtilMaster extends MCPModule {
 		// Execute and Get requested modules content
 		// NOTE: These variables will exist in the global template namespace
 		$this->_objMCP->assign('TITLE',$this->_objMCP->getConfigValue('site_title'));		
-		$this->_objMCP->assign('REQUEST_CONTENT',$this->_objMCP->executeModule("Site.$strSite.Module.$strRequestModule",$arrRequestArgs));
+		
+                $this->_objMCP->setMetaData('title',$this->_objMCP->getConfigValue('site_title'));
+                
+                
+                $this->_objMCP->assign('REQUEST_CONTENT',$this->_objMCP->executeModule("Site.$strSite.Module.$strRequestModule",$arrRequestArgs));
 		
 		// The / character triggers root relative template retrieval
 		return '/'.$this->_objMCP->getMasterTemplate();

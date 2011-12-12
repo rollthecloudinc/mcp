@@ -235,14 +235,19 @@ class MCPTaxonomyFormTerm extends MCPModule {
 		/*
 		* Split parent id into parent id (left) and parent type (right)
 		*/
-		list($arrSave['parent_type'],$arrSave['parent_id']) = explode('-',$arrSave['parent_id'],2);
+		list($strParentType,$intParentId) = explode('-',$arrSave['parent_id'],2);
 		
-		if(strcasecmp($arrSave['parent_type'],'vocabulary') !== 0) {
+		if(strcasecmp($strParentType,'vocabulary') !== 0) {
+			
 			// Get the terms vocabulary
-			$arrVocab = $this->_objDAOTaxonomy->fetchTermsVocabulary($arrSave['parent_id']);
+			$arrVocab = $this->_objDAOTaxonomy->fetchTermsVocabulary($intParentId);
+			
 			$arrSave['vocabulary_id'] = $arrVocab['vocabulary_id'];
+			$arrSave['parent_id'] = $intParentId;
+			
 		} else {
-			$arrSave['vocabulary_id'] = $arrSave['parent_id'];
+			$arrSave['vocabulary_id'] = $intParentId;
+			unset($arrSave['parent_id']);
 		}
 		
 		/*
@@ -519,7 +524,8 @@ class MCPTaxonomyFormTerm extends MCPModule {
 		* Build filter to check uniqueness 
 		*/
 		$strFilter = sprintf(
-			"t.deleted = 0 AND CONCAT(t.parent_type,'-',t.parent_id) = '%s' AND t.system_name = '%s' %s"
+			"t.deleted = 0 AND ( (t.parent_id IS NOT NULL AND CONCAT('term','-',t.parent_id) = '%s' ) OR (t.parent_id IS NULL AND CONCAT('vocabulary','-',t.vocabulary_id) = '%s' ) ) AND t.system_name = '%s' %s"
+			,$this->_objMCP->escapeString($this->_arrFrmValues['parent_id'])
 			,$this->_objMCP->escapeString($this->_arrFrmValues['parent_id'])
 			,$this->_objMCP->escapeString($mixValue)
 			
@@ -549,7 +555,8 @@ class MCPTaxonomyFormTerm extends MCPModule {
 		* Build filter to check uniqueness 
 		*/
 		$strFilter = sprintf(
-			"t.deleted = 0 AND CONCAT(t.parent_type,'-',t.parent_id) = '%s' AND t.human_name = '%s' %s"
+			"t.deleted = 0 AND ( (t.parent_id IS NOT NULL AND CONCAT('term','-',t.parent_id) = '%s' ) OR (t.parent_id IS NULL AND CONCAT('vocabulary','-',t.vocabulary_id) = '%s' ) ) AND t.human_name = '%s' %s"
+			,$this->_objMCP->escapeString($this->_arrFrmValues['parent_id'])
 			,$this->_objMCP->escapeString($this->_arrFrmValues['parent_id'])
 			,$this->_objMCP->escapeString($mixValue)
 			

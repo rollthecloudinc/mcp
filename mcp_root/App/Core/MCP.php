@@ -143,6 +143,11 @@ class MCP {
 	* Site database enrypted data salt 
 	*/
 	,$_strSalt
+                
+        /*
+        * Meta data associated with page request. 
+        */
+        ,$_arrMetaData = array()
 	
 	/*
 	* List of system messages 
@@ -157,6 +162,7 @@ class MCP {
 	* addSystemErrorMessage($strMessage)
 	* addSystemWarningMessage($strMessage)
 	* addSystemStatusMessage($strMessage);
+        * debug() - quick utility for debug messages
 	* 
 	* System messages DO NOT persist between requests. System messages
 	* are only available for the duration of a request.
@@ -170,7 +176,16 @@ class MCP {
 		
 		// status message
 		,'status'			=> array()
-	);
+	),
+        
+        /*
+        * Messages that will appear above all content when in a none production
+        * environment. This can be used to easily dump variables for inspection
+        * in the software development phase. Unlike system messages this should only
+        * be used for inspecting data during development since all debug infromation
+        * will be ignored (hidden) in production environment.
+        */
+        $_arrDebugMessages = array();
 	
 	/*
 	* Create MCP instance
@@ -370,7 +385,8 @@ class MCP {
 		
 		// Route to default module to resolve route
 		if(!class_exists("MCP$strModuleClass")) { // Add MCP prefix
-			return $this->executeComponent('Component.Navigation.Module.Router',array_merge(array($strReserveModuleClass),$arrArgs),'Component.Navigation.Template');
+			// old return $this->executeComponent('Component.Navigation.Module.Router',array_merge(array($strReserveModuleClass),$arrArgs),'Component.Navigation.Template');
+                        return $this->executeComponent('Component.Route.Module.Router',array_merge(array($strReserveModuleClass),$arrArgs),'Component.Route.Template');
 		}
 		
 		// Create module
@@ -435,14 +451,16 @@ class MCP {
 			// Execute component
 			$strDisplayTemplate = $objComponent->execute(empty($arrArgs)?array():$arrArgs);	
 		} catch(MCPPermissionException $objException) {
-			
+                    
 			/*
 			* Permission denied "module" 
 			*/
 			$objComponent = $this->getInstance(
-				'Component.Navigation.Module.Router'
+				// 'Component.Navigation.Module.Router' old
+                                'Component.Route.Module.Router'
 				,array($this)
-				,'NavigationRouter'
+                                ,'RouteRouter'
+				//,'NavigationRouter' old
 			);
 			
 			$strDisplayTemplate = '/'.str_replace(PKG,DS,$objComponent->getPkg('../..')).'/Template/'.$objComponent->execute(array('Permission Denied',$objException->getMessage()));
@@ -764,7 +782,7 @@ class MCP {
 	* @param mix entity id such as; id of nav to delete or id or vocab to add term
 	* @param arr permissions
 	*/
-	public function getPermission($strAction,$strEntity,$mixId) {
+	public function getPermission($strAction,$strEntity,$mixId=null) {
 		
 		/*
 		* get permissions 
@@ -772,7 +790,7 @@ class MCP {
 		$perms = $this->_objPermissionHandler->getPermission(
 			 $strAction
 			,$strEntity
-			,is_array($mixId)?$mixId:array($mixId)
+			,$mixId !== null?is_array($mixId)?$mixId:array($mixId):null
 		);
 		
 		/*
@@ -1040,7 +1058,15 @@ class MCP {
 				* Element may mixin any number of other items by separating each package with a | 
 				*/
 				foreach(explode('|',(string) array_pop($arrAdd)) as $strMixin) {
-					$arrMixin = array_merge($arrMixin,$this->getFrmConfig((string) $strMixin,$strType)); 
+                                    
+                                        $arrMixinFrmConfig = $this->getFrmConfig((string) $strMixin,$strType);
+                                    
+                                        if($arrMixinFrmConfig && is_array($arrMixinFrmConfig)) {
+                                            $arrMixin = array_merge($arrMixin,$arrMixinFrmConfig);
+                                        }
+                                        
+                                        unset($arrMixinFrmConfig);
+                                        
 				}
 			}
 		}
@@ -1125,54 +1151,7 @@ class MCP {
 						};
 							
 							
-						$arrArgs = $toArgs($objConfig->args,$toArgs);
-							
-							//echo '<pre>',print_r($arrArgs),'</pre>';
-							//exit;
-							
-							// deprecated olf code that didn't support multi-dimensional array declaration using xml ----
-							
-							// determine whether argument is serialized
-							/*$boolArgIsSerialized = false;			
-							foreach($objArg->attributes() as $strAttr=>$strValue) {
-								if( strcmp('serialized',$strAttr) === 0) {
-									$boolArgIsSerialized = true;
-									break;
-								}
-							}*/
-							
-							/*
-							* Support two-dimensional array 
-							*/
-							/*if( $boolArgIsSerialized === true ) {
-								
-								$mixUnserialized = unserialize(base64_decode( $objArg ));
-								
-								if( is_array($mixUnserialized) ) {
-									
-									$arrRebuiltArgs = array();
-									
-									foreach($mixUnserialized as $strArg) {
-										$arrRebuiltArgs[] = str_replace(array('SITES_ID','USERS_ID'),$const,$strArg);
-									}
-									
-									// echo '<pre>',print_r($arrRebuiltArgs),'</pre>';
-									
-									$arrArgs[] = $arrRebuiltArgs;
-									
-								} else {
-									// replace special site id and user id constants
-									$arrArgs[] = str_replace(array('SITES_ID','USERS_ID'),$const,$mixUnserialized);								
-								}
-								
-							} else {
-								// replace special site id and user id constants
-								$arrArgs[] = str_replace(array('SITES_ID','USERS_ID'),$const,$objArg);								
-							}*/
-							
-						// }
-						// Decrecated old code to that didn't support multi-dimensional arrays ---------------------
-							
+						$arrArgs = $toArgs($objConfig->args,$toArgs);					
 							
 					}
 					
@@ -1181,6 +1160,9 @@ class MCP {
 					
 					// call dao method
 					$mixValue = call_user_func_array(array($objDAO,$strMethod),$arrArgs);
+					
+					// add a blank item
+					array_unshift($mixValue,array('label'=>'--','value'=>''));
 				
 				} else if(strcmp('sql',$objConfig->getName()) == 0) {
 					
@@ -1634,6 +1616,77 @@ class MCP {
 	public function getSystemMessages() {
 		return $this->_arrSystemMessages;
 	}
+        
+        /*
+        * Add debug message 
+        * 
+        * IMPORTANT: 
+        * 
+        * Unlike system messages HTML entities will not be
+        * converted. This is done so that var_dump and print_r
+        * formating can be retained. Therefore, HTML can be invalid
+        * but it is more important to inspect actual contents of variables
+        * that have valid HTML during back-end development phase.
+        *
+        * @param str/array/obj debug message 
+         *@param array extra options (ie. class, line, format:[var dump, echo, print_r, etc] etc)
+        */
+        public function debug($mixData,$arrOpt=array()) {
+            
+            /*
+            * For the time being use print_r for all object and
+            * array dumps. However, in the future add options as necessary
+            * for different formats such as; var_dump instead of print_r.
+            */
+            if(is_array($mixData) || is_object($mixData)) {
+                $strMsg = '<pre>'.print_r($mixData,true).'</pre>';
+            } else {
+                $strMsg = '<p>'.$mixData.'</p>';
+            }
+            
+            /*
+            * Push final message onto debug stack. At this point all the template
+            * layer should need to do is print the msg no post processing
+            * should occur in the template layer. All post processing of converting
+            * a variable to a string should happen before placing the message into the
+            * debug message array below. 
+            */
+            $this->_arrDebugMessages[] = array(
+                'msg'=>$strMsg
+            );
+        }
+        
+        /*
+        * Get array of debug messages.
+        *
+        * @return array debug messages. 
+        */
+        public function getDebugMessages() {
+            return $this->_arrDebugMessages;
+        }
+        
+        /*
+        * Add Meta data
+        *
+        * @param str name
+        * @param str value
+        * @param optional attributes 
+        */
+        public function setMetaData($name,$value,$attr=array()) {
+            $this->_arrMetaData[$name] = array(
+                'value'=>$value
+                ,'attr'=>$attr
+            );
+        }
+        
+        /*
+        * Get meta data associated with page request.
+        *
+        * @return arr meta data 
+        */
+        public function getMetaData() {
+            return $this->_arrMetaData;
+        }
 	
 	/*
 	* Add dynamic field data to entity of specified type and row 
@@ -1749,9 +1802,12 @@ class MCP {
 		
 		// write session data before closing database connection
 		session_write_close();
+                
+                // debug info
+                $debug = $this->executeComponent('Component.Util.Module.SystemMessage.Debug',array());
 		
 		// dump request
-		echo $this->_strRequest;
+		echo $debug.$this->_strRequest;
 		
 		// commit user data
 		$this->_objUser->saveUserData();

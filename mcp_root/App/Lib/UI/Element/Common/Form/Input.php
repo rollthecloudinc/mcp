@@ -39,7 +39,7 @@ class Input implements \UI\Element {
 		extract($settings);
 
 		return sprintf(
-			'<input type="%s" name="%s" value="%s"%sid="%s"%s%s>'
+			'<input type="%s" name="%s" value="%s"%sid="%s"%s%s%s>'
 			,$type
 			,$name
 			,$value
@@ -47,6 +47,7 @@ class Input implements \UI\Element {
 			,$id
 			,$disabled === true?' disabled="disabled"':''
 			,$checked === true?' checked="checked"':''
+			,$class !== null?' class="'.$class.'"':''
 		);
 		
 	}

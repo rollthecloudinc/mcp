@@ -426,11 +426,30 @@ class MCPDAOField extends MCPDAO {
 					
 					$key = substr($attr,4);
 					
-					if(in_array($key,array('dao_pkg','dao_method','dao_args','multi','multi_limit','type'))) continue;
+					if(in_array($key,array('dao_pkg','dao_method','dao_args','multi','multi_limit','type','widget'))) continue;
 					
 					$values.= "<$key>$value</$key>";
 				
 				}
+			}
+			
+			/*
+			* --------------------------------------------------------------------------------------
+			* Widget assignment 
+			*/
+			if($field['cfg_widget'] === null) {
+				
+				$arrWidgets = $this->fetchFieldWidgets($field['fields_id']);
+				
+				if( !empty($arrWidgets) ) {
+					$arrWidget = array_shift($arrWidgets); // take the first one
+					$values.= '<widget>'.$arrWidget['value'].'</widget>';
+				}
+				
+			} else {
+				
+				$values.= '<widget>'.$field['cfg_widget'].'</widget>';
+				
 			}
 			
 			/*
@@ -847,6 +866,8 @@ class MCPDAOField extends MCPDAO {
 		*/
 		foreach($arrFields as $field_name=>$field_value) {
 			
+			// echo '<pre>',print_r($field_value),'</pre>';
+			
 			/*
 			* Get field definition
 			*/
@@ -891,8 +912,12 @@ class MCPDAOField extends MCPDAO {
 						if($field_value[$index] && isset($field_value[$index]['error']) && $field_value[$index]['error'] != 4) {
 							$field_value[$index]['value'] = $objDAOUpload->insert($field_value[$index],true);
 						} else {
-							unset($field_value[$index]);
-							continue;
+							
+							if(!isset($field_value[$index]['value']) || strlen($field_value[$index]['value']) !== 0) {
+								unset($field_value[$index]);
+								continue;
+							}
+							
 						}
 					
 					}
@@ -901,8 +926,10 @@ class MCPDAOField extends MCPDAO {
 					
 					if($field_value && isset($field_value['error']) && $field_value['error'] != 4) {
 						$field_value = $objDAOUpload->insert($field_value,true);
-					} else {
-						continue;
+					} else {				
+						if(!isset($field_value[$index]['value']) || strlen($field_value[$index]['value']) !== 0) {
+							continue;
+						}
 					}				
 					
 				}
@@ -977,6 +1004,69 @@ class MCPDAOField extends MCPDAO {
 	*/
 	public function deleteFieldValue($intFieldValuesId) {
 		echo "<p>Delete field value</p>";
+	}
+	
+	/*
+	* Determine whether name conflicts with existing concrete column
+	* of the table that the entity name  maps to. For example, it should
+	* not be possible to create a field named nodes_id or node_title
+	* for an MCP_NODE_TYPES type since both those columns are explicitly inside
+	* the MCP_NODES table.
+	* 
+	* @param str field name 
+	* @param str entity name
+	* [@param] int entity id
+	* @return bool
+	*/
+	public function concreteColConflict($strField,$strEntityType,$strEntityId=null) {
+		
+		/*
+		* Target table to run the describe query 
+		*/
+		$strTable = null;
+		
+		/*
+		* Resolve the target table 
+		*/
+		switch($strEntityType) {
+			
+			// global node type or node fields
+			case 'MCP_NODE_TYPES':
+				$strTable = empty($strEntityId)?'MCP_NODE_TYPES':'MCP_NODES';
+				break;
+			
+			// global vocabulary or term fields
+			case 'MCP_VOCABULARY':
+				$strTable = empty($strEntityId)?'MCP_VOCABULARY':'MCP_TERMS';
+				break;
+				
+			// user fields
+			case 'MCP_SITES':
+				$strTable = 'MCP_USERS';
+				break;
+				
+			default:
+				return false;
+			
+		}
+		
+		$arrCols = $this->_objMCP->query("DESCRIBE $strTable");
+		
+		/*
+		* Make sure the table does not have a column with the same
+		* name as the field. 
+		*/
+		foreach($arrCols as $arrCol) {
+			if( strcasecmp($arrCol['Field'],$strField) === 0 ) {
+				return true;
+			}
+		}
+		
+		/*
+		* If we get here that means that no columns conflict exists. 
+		*/
+		return false;
+		
 	}
 	
 	/*
@@ -1180,19 +1270,22 @@ class MCPDAOField extends MCPDAO {
 	*/
 	private function _saveScalarFieldValue($intFieldsId,$intRowsId,$arrValues) {
 		
+		$intCount = 0;
 		foreach($arrValues as $arrValue) {
 			
 			// id means the value is being changed that exists
 			if( isset($arrValue['id']) && !empty($arrValue['id']) ) {
 				
-				// update	
-				$this->_updateFieldValue($arrValue['id'],$arrValue['value']);
+				// update
+				$this->_updateFieldValue($arrValue['id'],$arrValue['value'],$intCount);
 				
 			} else {
-							
-				$this->_insertFieldValue($intFieldsId,$intRowsId,$arrValue['value']);
+
+				$this->_insertFieldValue($intFieldsId,$intRowsId,$arrValue['value'],$intCount);
 				
 			}
+			
+			$intCount++;
 			
 		}
 		
@@ -1201,13 +1294,15 @@ class MCPDAOField extends MCPDAO {
 	/*
 	* @param int field values id (MCP_FIELD_VALUES primary key)
 	* @param mix value
+	* @param int weight
 	*/
-	private function _updateFieldValue($intFieldValuesId,$mixValue) {
+	private function _updateFieldValue($intFieldValuesId,$mixValue,$intWeight=null) {
 		
 		/*
 		* When the value contains nothing delete it 
 		*/
 		if(strlen($mixValue) === 0) {
+			// echo "<p>DELETE</p>";
 			return $this->_objMCP->query("DELETE FROM MCP_FIELD_VALUES WHERE field_values_id = {$this->_objMCP->escapeString($intFieldValuesId)}");
 		}
 		
@@ -1276,7 +1371,8 @@ class MCPDAOField extends MCPDAO {
 			               THEN '{$this->_objMCP->escapeString( $mixValue )}'
 			               ELSE NULL
 			           END
-			       )	      
+			       )	
+			       ,MCP_FIELD_VALUES.weight = ".($intWeight === null?'NULL':$intWeight)."      
 			  WHERE
 			      MCP_FIELD_VALUES.field_values_id = {$this->_objMCP->escapeString($intFieldValuesId)}";
 		
@@ -1289,8 +1385,9 @@ class MCPDAOField extends MCPDAO {
 	* @param int fields id (MCP_FIELDS primary key)
 	* @param int rows id 
 	* @param mix value
+	* @param int weight
 	*/
-	private function _insertFieldValue($intFieldsId,$intRowsId,$mixValue) {
+	private function _insertFieldValue($intFieldsId,$intRowsId,$mixValue,$intWeight=null) {
 		
 		/*
 		* When value is empty don't do anything 
@@ -1306,7 +1403,7 @@ class MCPDAOField extends MCPDAO {
 		* storage type. 
 		*/
 		$strSQL =
-			"INSERT IGNORE INTO MCP_FIELD_VALUES (fields_id,rows_id,db_varchar,db_text,db_int,db_bool,db_price,db_timestamp,db_date)
+			"INSERT IGNORE INTO MCP_FIELD_VALUES (fields_id,rows_id,db_varchar,db_text,db_int,db_bool,db_price,db_timestamp,db_date,weight)
 				    SELECT
 				         fields_id
 				         ,{$this->_objMCP->escapeString( $intRowsId )} rows_id
@@ -1355,12 +1452,14 @@ class MCPDAOField extends MCPDAO {
 				            ELSE NULL
 				          END db_date
 				          
+				          ,".($intWeight === null?'NULL':$intWeight)." weight
+				          
 				      FROM
 				         MCP_FIELDS
 				     WHERE
 				         fields_id = {$this->_objMCP->escapeString( $intFieldsId )}";
 		
-		// echo "<p>$strSQL</p>";
+		//echo "<p>$strSQL</p>";
 		return $this->_objMCP->query($strSQL);
 		
 	}
@@ -1389,6 +1488,7 @@ class MCPField extends StdClass {
 	public function __toString() {
 		return (string) $this->_value;
 	}
+	
 	
 }
 ?>

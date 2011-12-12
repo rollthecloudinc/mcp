@@ -1,5 +1,6 @@
 <?php 
 if($node) {
+    
 	printf('<h2>%s</h2>',$this->out($node['node_title']));
 	
 	/*

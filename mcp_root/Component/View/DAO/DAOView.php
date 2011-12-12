@@ -31,8 +31,8 @@ class MCPDAOView extends MCPDAO {
 		)
 		,array(
 			'human_name'=>'Menus'
-			,'system_name'=>'Navigation'
-			,'table'=>'MCP_NAVIGATION'
+			,'system_name'=>'Menu'
+			,'table'=>'MCP_MENUS'
 		)
 		,array(
 			'human_name'=>'Config'
@@ -51,8 +51,8 @@ class MCPDAOView extends MCPDAO {
 		)
 		,array(
 			'human_name'=>'Links'
-			,'system_name'=>'NavigationLinks'
-			,'table'=>'MCP_NAVIGATION_LINKS'
+			,'system_name'=>'MenuLink'
+			,'table'=>'MCP_MENU_LINKS'
 		)
 		,array(
 			'human_name'=>'Images'
@@ -97,8 +97,8 @@ class MCPDAOView extends MCPDAO {
 		// Taxonomy DAO is required to generate list of vocabularies
 		$objDAOTaxonomy = $this->_objMCP->getInstance('Component.Taxonomy.DAO.DAOTaxonomy',array($this->_objMCP));
 		
-		// Navigation DAO is required to generate list of menus
-		$objDAONavigation = $this->_objMCP->getInstance('Component.Navigation.DAO.DAONavigation',array($this->_objMCP));
+		// Menu DAO is required to generate list of menus
+		$objDAOMenu = $this->_objMCP->getInstance('Component.Menu.DAO.DAOMenu',array($this->_objMCP));
 		
 		$types = array();
 		
@@ -106,7 +106,7 @@ class MCPDAOView extends MCPDAO {
 		foreach($this->_arrTables as $type) {
 			
 			// skip over nodes, terms and links
-			if( in_array($type['system_name'],array('Node','Term','NavigationLink')) ) continue;
+			if( in_array($type['system_name'],array('Node','Term','MenuLink')) ) continue;
 			
 			$types[] = array(
 				'value'=>$type['system_name']
@@ -127,9 +127,9 @@ class MCPDAOView extends MCPDAO {
 		);
 		
 		// Get all menus for site
-		$menus = $objDAONavigation->listAllNavs(
-			"CONCAT('NavigationLink:',n.navigation_id) value,n.menu_title label"
-			,"n.sites_id = {$this->_objMCP->escapeString($this->_objMCP->getSitesId())} AND n.deleted = 0"
+		$menus = $objDAOMenu->listAllMenus(
+			"CONCAT('MenuLink:',m.menus_id) value,m.menu_title label"
+			,"m.sites_id = {$this->_objMCP->escapeString($this->_objMCP->getSitesId())} AND m.deleted = 0"
 		);
 		
 		// populate types with all dynamic types
@@ -185,9 +185,13 @@ class MCPDAOView extends MCPDAO {
 		}
 		
 		// Add any dynamic column
-		foreach($this->_fetchDynamicFieldsByViewType($strViewType) as $field) {			
-			$fields[] = $field;
-		}
+                $arrDynamicFields = $this->_fetchDynamicFieldsByViewType($strViewType);
+                
+                if($arrDynamicFields) {
+                    foreach($arrDynamicFields as $field) {			
+                            $fields[] = $field;
+                    }
+                }
 		
 		return $fields;
 		
@@ -1144,6 +1148,8 @@ class MCPDAOView extends MCPDAO {
 		// echo "<p>$strSQL</p>";
 		// echo '<pre>',print_r($arrBind),'</pre>';
 		// $this->_objMCP->addSystemStatusMessage("View Query: $strSQL");
+                        
+                // $this->_objMCP->debug($strSQL);
 		
 		// ------------------------------------------------------------------
 		// fetch result set
@@ -1337,6 +1343,13 @@ class MCPDAOView extends MCPDAO {
 				$relation = 'Parent';
 				$relation_type = 'one';
 				$path = 'parent';
+				break;
+                            
+			case 'menus_id':
+				$label = 'Menu';
+				$relation = 'Menu';
+				$relation_type = 'one';
+				$path = 'menu';
 				break;
 			
 			case 'nodes_id':

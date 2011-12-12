@@ -15,9 +15,6 @@ class MCPUtilAdmin extends MCPModule {
 		// Manage vocabularies
 		'Vocabulary'			=>'Component.Taxonomy.Module.List.Vocabulary'
 		
-		// Manage navigation (deprecated)
-		,'Navigation'			=>'Component.Navigation.Module.List.Menu'
-		
 		// Manage menus
 		,'Menu'					=>'Component.Menu.Module.List.Menu'
 		

@@ -176,7 +176,7 @@ class MCPViewView extends MCPModule {
 				$this->_arrTemplateData['pager'] = '';
 				
 				// Fetch all rows w/ any type of pagination
-				$this->_arrTemplateData['rows'] = $this->_objDAOView->fetchRows( $this->_objView );
+				$this->_arrTemplateData['rows'] = $this->_objDAOView->fetchRows( $this->_objView, null, $this);
 				
 			}
 			

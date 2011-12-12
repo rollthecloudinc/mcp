@@ -29,7 +29,7 @@ class MCPDAOUtil extends MCPDAO {
 			  JOIN
 			     MCP_TERMS c
 			    ON
-			     c.parent_type = 'vocabulary'
+			     c.parent_id IS NULL
 			   AND
 			     s.parent_id = c.terms_id
 			   AND
@@ -38,7 +38,7 @@ class MCPDAOUtil extends MCPDAO {
 			  JOIN
 			     MCP_VOCABULARY v
 			    ON
-			     c.parent_id = v.vocabulary_id
+			     c.vocabulary_id = v.vocabulary_id
 			 WHERE
 			     v.pkg = 'Component.Util'
 			   AND
@@ -85,7 +85,7 @@ class MCPDAOUtil extends MCPDAO {
 			  JOIN
 			     MCP_VOCABULARY v
 			    ON
-			     c.parent_id = v.vocabulary_id
+			     c.vocabulary_id = v.vocabulary_id
 			   AND
 			     v.pkg = 'Component.Util'
 			   AND
@@ -93,7 +93,7 @@ class MCPDAOUtil extends MCPDAO {
 			   AND
 			     v.sites_id = 0
 			 WHERE
-			     c.parent_type = 'vocabulary'
+			     c.parent_id IS NULL
 			   AND
 			     c.system_name = 'United States'
 			 LIMIT 1"

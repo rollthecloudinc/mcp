@@ -57,6 +57,15 @@ class MCPNodeViewEntry extends MCPModule {
 			$this->_arrTemplateData['node'] = null;
 		}
 		
+                /*
+                * Make the default title of the page the node title. This
+                * can be overriden in the template to use a more specific title
+                * using the same call considering the mcp is available in the template.
+                */
+                if( isset($this->_arrTemplateData['node']) ) {
+                    $this->_objMCP->setMetaData('title',$this->_arrTemplateData['node']['node_title']);
+                }
+                
 		/*
 		* Swap template for edit 
 		*/

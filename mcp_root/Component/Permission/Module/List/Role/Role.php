@@ -62,7 +62,7 @@ class MCPPermissionListRole extends MCPModule {
 		}
 		
 		// return number of found rows
-		return array_shift($arrData);
+		return array_shift($arrResult);
 		
 	}
 	
@@ -149,6 +149,9 @@ class MCPPermissionListRole extends MCPModule {
 	}
 	
 	public function execute($arrArgs) {
+            
+                // Number of roles per page
+		$intLimit = $this->getConfigValue('roles_per_page');
 		
 		// get the current page
 		$this->_intPage = !empty($arrArgs) && is_numeric($arrArgs[0])?array_shift($arrArgs):1;

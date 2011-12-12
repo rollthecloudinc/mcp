@@ -659,6 +659,14 @@ class MCPFieldForm extends MCPModule {
 		}
 		
 		/*
+		* Make sure name does not conflict with an existing concrete column name for the table that
+		* the entity maps to. 
+		*/
+		if( $this->_objDAOField->concreteColConflict($mixValue,$entity_type,$entities_id) === true ) {
+			return "$strLabel may not be used because a column in table already has that name.";
+		}
+		
+		/*
 		* Build filter to see if field with name already exists 
 		*/
 		$strFilter = sprintf(

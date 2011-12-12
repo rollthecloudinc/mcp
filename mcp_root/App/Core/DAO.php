@@ -55,9 +55,9 @@ abstract class MCPDAO extends MCPResource {
 			} else if(in_array($strField,$arrStrings)) {
 				$mixValue = (string) $mixValue;
 			} else if(in_array($strField,$arrSerialized)) {
-				$mixValue = (string) base64_encode(serialize($mixValue));
+				$mixValue = base64_encode(serialize($mixValue));
 			} else {
-				$mixValue = (int) $this->_objMCP->escapeString($mixValue);
+				$mixValue = (int) $mixValue;
 			}
 			
 			$arrColumns[] = $strField;  
@@ -82,6 +82,9 @@ abstract class MCPDAO extends MCPResource {
 		
 		//echo "<p>$strSQL</p>";
 		//echo '<pre>',print_r($arrBind),'</pre>';
+                
+                $this->_objMCP->debug($strSQL);
+                $this->_objMCP->debug($arrBind);
 			
 		return $this->_objMCP->query($strSQL,$arrBind);
 		

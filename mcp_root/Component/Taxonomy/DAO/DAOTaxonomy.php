@@ -38,10 +38,17 @@ class MCPDAOTaxonomy extends MCPDAO {
 			,$strLimit === null?'':"LIMIT $strLimit"
 		);
 		
+                //$this->_objMCP->addSystemStatusMessage($strSQL);
+                
 		/*
 		* Query db 
 		*/
 		$arrVocabulary = $this->_objMCP->query($strSQL);
+                
+                /*
+                * Calculate number of total found rows 
+                */
+                $intFoundRows = array_pop(array_pop($this->_objMCP->query('SELECT FOUND_ROWS()')));
 		
 		/*
 		* Add in dynamic fields - Internal columns used to add dynamic field data after removed
@@ -63,7 +70,7 @@ class MCPDAOTaxonomy extends MCPDAO {
 		*/
 		return array(
 			$arrVocabulary
-			,array_pop(array_pop($this->_objMCP->query('SELECT FOUND_ROWS()')))
+			,$intFoundRows
 		);
 		
 	}
@@ -90,8 +97,7 @@ class MCPDAOTaxonomy extends MCPDAO {
 			      %s
 			      %s
 			      ,t.terms_id tmp_terms_id
-			      ,t.parent_type tmp_parent_type
-			      ,t.parent_id tmp_parent_id
+			      ,t.vocabulary_id tmp_vocabulary_id
 			   FROM
 			      MCP_TERMS t
 			     %s
@@ -113,16 +119,8 @@ class MCPDAOTaxonomy extends MCPDAO {
 		* Add in dynamic fields - Internal columns used to add dynamic field data after removed
 		*/
 		foreach($arrTerms as &$arrTerm) {
-			
-			if(strcmp('vocabulary',$arrTerm['tmp_parent_type']) === 0) {
-				$entity_id = $arrTerm['tmp_parent_id'];
-			} else {
-				$vocab = $this->fetchTermsVocabulary($arrTerm['tmp_parent_id']);
-				$entity_id = $vocab['vocabulary_id'];
-			}
-			
-			$arrTerm = $this->_objMCP->addFields($arrTerm,$arrTerm['tmp_terms_id'],'MCP_VOCABULARY',$entity_id);
-			unset($arrTerm['tmp_terms_id'],$arrTerm['tmp_parent_id'],$arrTerm['tmp_parent_type']);
+			$arrTerm = $this->_objMCP->addFields($arrTerm,$arrTerm['tmp_vocabulary_id'],'MCP_VOCABULARY',$arrTerm['tmp_vocabulary_id']);
+			unset($arrTerm['tmp_terms_id'],$arrTerm['tmp_vocabulary_id']);
 		}
 		
 		/*
@@ -203,26 +201,22 @@ class MCPDAOTaxonomy extends MCPDAO {
 			}
 		}*/
 		
-		/*$arrTerm = array_pop($this->_objMCP->query(sprintf(
-			'SELECT
-			      %s
-			      ,parent_id tmp_parent_id
-			      ,parent_type tmp_parent_type
-			   FROM
-			      MCP_TERMS t
-			  WHERE
-			      t.terms_id = %s'
-			,$strSelect
-			,$this->_objMCP->escapeString($intTermsId)
-		)));*/
-		
 		$arrTerm = array_pop($this->_objMCP->query(
-			'SELECT
+			"SELECT
                   t.*
+                  
+                  ,CASE
+                      WHEN parent_id IS NULL
+                      THEN 'vocabulary'
+                      
+                      ELSE
+                      'term'
+                  END parent_type
+                 
 			   FROM
 			      MCP_TERMS t
 			  WHERE
-			      t.terms_id = :terms_id'
+			      t.terms_id = :terms_id"
 			,array(
 				':terms_id'=>(int) $intTermsId
 			)
@@ -230,16 +224,8 @@ class MCPDAOTaxonomy extends MCPDAO {
 		
 		// dynamic field vocab resolution
 		if( $arrTerm !== null ) {
-		
-			if(strcmp('vocabulary',$arrTerm['parent_type']) === 0) {
-				$entity_id = $arrTerm['parent_id'];
-			} else {
-				$vocab = $this->fetchTermsVocabulary($arrTerm['parent_id']);
-				$entity_id = $vocab['vocabulary_id'];
-			}
-		
 			// decorate node with dynamic field values
-			$arrTerm = $this->_objMCP->addFields($arrTerm,$intTermsId,'MCP_VOCABULARY',$entity_id);
+			$arrTerm = $this->_objMCP->addFields($arrTerm,$intTermsId,'MCP_VOCABULARY',$arrTerm['vocabulary_id']);
 		}
 		
 		return $arrTerm;
@@ -269,14 +255,15 @@ class MCPDAOTaxonomy extends MCPDAO {
 			   FROM
 			      MCP_TERMS t
 			  WHERE
-			      t.parent_type = '%s'
-			    AND
-			      t.parent_id = %s
+			  	  %s
+			      t.parent_id %s
 			      %s
 			      %s"
 			,$arrOptions !== null && isset($arrOptions['select'])?$arrOptions['select']:'t.*'
-			,$this->_objMCP->escapeString($strParentType)
-			,$this->_objMCP->escapeString($intParentId)
+			
+			,strcasecmp('vocabulary',$strParentType) === 0?"t.vocabulary_id = {$this->_objMCP->escapeString($intParentId)} AND ":''
+			,strcasecmp('vocabulary',$strParentType) === 0?'IS NULL':" = {$this->_objMCP->escapeString($intParentId)}"
+			
 			,$arrOptions !== null && isset($arrOptions['filter'])?"AND {$arrOptions['filter']}":''
 			,$arrOptions !== null && isset($arrOptions['sort'])?"ORDER BY {$arrOptions['sort']}":''
 		);
@@ -308,40 +295,9 @@ class MCPDAOTaxonomy extends MCPDAO {
 	* @param int terms id
 	* @return array vocabularies data
 	*/
-	public function fetchTermsVocabulary($intTermsId,$runner=0,$echo=false) {
-		
-		/*$strSQL = sprintf(
-			'SELECT
-			      t.terms_id
-			      ,t.parent_id
-			      ,t.parent_type
-			   FROM
-			      MCP_TERMS t
-			  WHERE
-			      t.terms_id = %s'
-			,$this->_objMCP->escapeString($intTermsId)
-		);*/
-		
-		$arrRow = array_pop($this->_objMCP->query(
-            'SELECT
-			      t.terms_id
-			      ,t.parent_id
-			      ,t.parent_type
-			   FROM
-			      MCP_TERMS t
-			  WHERE
-			      t.terms_id = :terms_id'
-			,array(
-				':terms_id'=>(int) $intTermsId
-			)
-		));
-		
-		if(strcmp($arrRow['parent_type'],'vocabulary') != 0) {
-			return $this->fetchTermsVocabulary($arrRow['parent_id'],($runner+1),$echo);
-		}
-		
-		return $this->fetchVocabularyById($arrRow['parent_id']);
-		
+	public function fetchTermsVocabulary($intTermsId,$runner=0,$echo=false) {		
+		$arrTerm = $this->fetchTermById($intTermsId);		
+		return $arrTerm['vocabulary_id'];		
 	}
 	
 	/*
@@ -481,7 +437,7 @@ class MCPDAOTaxonomy extends MCPDAO {
 				$arrTerm
 				,'MCP_TERMS'
 				,'terms_id'
-				,array('system_name','human_name','description','parent_type')
+				,array('system_name','human_name','description')
 				,'created_on_timestamp'
 			);	
 		
@@ -647,7 +603,7 @@ class MCPDAOTaxonomy extends MCPDAO {
 		/*
 		* Get targets siblings
 		*/
-		$arrTerms = $this->fetchTerms($arrTarget['parent_id'],$arrTarget['parent_type'],false,array(
+		$arrTerms = $this->fetchTerms($arrTarget['parent_id'],($arrTarget['parent_id'] === null?'vocabulary':'term'),false,array(
 			'filter'=>'t.deleted = 0'
 		));
 		
@@ -686,7 +642,6 @@ class MCPDAOTaxonomy extends MCPDAO {
 				"(%s,%s,'%s',%s)"
 				,$this->_objMCP->escapeString($intId)
 				,$this->_objMCP->escapeString($arrTarget['parent_id'])
-				,$this->_objMCP->escapeString($arrTarget['parent_type'])
 				,$this->_objMCP->escapeString($intIndex)
 			);
 		}
@@ -695,7 +650,7 @@ class MCPDAOTaxonomy extends MCPDAO {
 		* Build update query 
 		*/
 		$strSQL = sprintf(
-			'INSERT IGNORE INTO MCP_TERMS (terms_id,parent_id,parent_type,weight) VALUES %s ON DUPLICATE KEY UPDATE parent_id=VALUES(parent_id),parent_type=VALUES(parent_type),weight=VALUES(weight)'
+			'INSERT IGNORE INTO MCP_TERMS (terms_id,parent_id,weight) VALUES %s ON DUPLICATE KEY UPDATE parent_id=VALUES(parent_id),weight=VALUES(weight)'
 			,implode(',',$arrUpdate)
 		);
 		

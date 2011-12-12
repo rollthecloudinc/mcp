@@ -73,6 +73,9 @@ class MCPNodeFormEntry extends MCPModule {
 		// Assign form post data
 		$this->_arrFrmPost = $this->_objMCP->getPost($this->_getFrmName());
 		
+		// echo '<pre>',print_r($this->_arrFrmPost),'</pre>';
+		//echo '<pre>',print_r($_POST),'</pre>';
+		
 	}
 	
 	/*

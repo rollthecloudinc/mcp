@@ -15,7 +15,12 @@ class MCPTemplate extends MCPResource {
 	* to be placed in head of master template file.
 	*/
 	,$_arrStyles
-	,$_arrLinks;
+	,$_arrLinks
+        
+        /*
+        * Site doctype 
+        */
+        ,$_doctype;
 	
 	/*
 	* Create instance of Template
@@ -42,6 +47,11 @@ class MCPTemplate extends MCPResource {
 		$this->_arrTemplateData = array();
 		$this->_arrLinks = array();
 		$this->_arrStyles = array();
+                
+                /*
+                * Maybe not the best place but it will work. 
+                */
+                $this->_doctype = $this->_objMCP->getConfigValue('site_doctype');
 	}
 	
 	/*
@@ -76,10 +86,8 @@ class MCPTemplate extends MCPResource {
 			$this->_objMCP->triggerError("Template file $strTemplateFile doesn't exist.");
 		}
 		
-		$strFileContents = file_get_contents($strTemplateFile);
-		
 		ob_start();
-		$this->_compileTemplate($strFileContents,$objModule);
+                $this->_compileTemplate($strTemplateFile,$objModule);
 		$strTemplateContents = ob_get_contents();
 		
 		/*
@@ -108,18 +116,19 @@ class MCPTemplate extends MCPResource {
 	* Makes it possible for the template to return without
 	* affecting anything. 
 	* 
-	* @param str file contents
-	* @param obj module
+	* @param str file path
+	* @param obj module associated with template
 	*/
-	private function _compileTemplate($strFileContents,$objModule=null) {
+	private function _compileTemplate($strTemplateFile,$objModule=null) {
 		
 		// Extract associated module variables into global scope
 		extract($this->_arrTemplateData);
 		if($objModule !== null) {
 			extract($this->_arrTemplateData[$objModule->getName()]);
 		}
-		
-		eval('?>'.$strFileContents);
+		             
+                include($strTemplateFile);
+                
 	}
 	
 	/*
@@ -160,13 +169,14 @@ class MCPTemplate extends MCPResource {
 	/*
 	* Short-cut to print nav 
 	* 
-	* @param str menu location
+	* @param str menu name
 	*/
-	public function nav($strLocation) {
+	public function nav($strName) {
+            
 		//echo $this->_objMCP->executeComponent('Component.Navigation.Module.Menu',array($strLocation));
 		
 		// TESTING!!!
-		echo $this->_objMCP->executeComponent('Component.Menu.Module.Menu',array('main_menu'));
+		echo $this->_objMCP->executeComponent('Component.Menu.Module.Menu',array($strName));
 	}
 	
 	/*
@@ -183,7 +193,8 @@ class MCPTemplate extends MCPResource {
 		
 		$perm = $this->_objMCP->getPermission(MCP::READ,'Route','Admin/*');
 		if( $perm['allow'] ) {		
-			echo $this->_objMCP->executeComponent('Component.Navigation.Module.Menu.Admin',array());		
+                    // old echo $this->_objMCP->executeComponent('Component.Navigation.Module.Menu.Admin',array());	
+                    echo $this->_objMCP->executeComponent('Component.Menu.Module.Menu.Admin',array());	
 		}
 		
 	}
@@ -206,7 +217,7 @@ class MCPTemplate extends MCPResource {
 	* Short-cut to print system messages
 	*/
 	public function messages() {
-		echo $this->_objMCP->executeComponent('Component.Util.Module.SystemMessage',array());
+		echo $this->_objMCP->executeComponent('Component.Util.Module.SystemMessage.User',array());
 	}
 	
 	/*

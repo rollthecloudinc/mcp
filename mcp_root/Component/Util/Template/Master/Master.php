@@ -1,8 +1,6 @@
 <?php $this->doctype(); ?>
 <html lang="en">
 <head>
-	<meta http-equiv="content-type" content="text/html; charset=utf-8">
-	<title><?php $this->title(); ?></title>
 	<?php $this->meta(); ?>
 	<?php $this->css(); ?>
 	<?php $this->js(); ?>

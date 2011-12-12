@@ -54,6 +54,8 @@ class MCPDAONode extends MCPDAO {
 			,empty($strLimit) ? '' :"LIMIT $strLimit"
 		);
 		
+		//echo '<p>',$strSQL,'</p>';
+		
 		$arrNodes = $this->_objMCP->query($strSQL,$arrBound);
 		
 		/*
@@ -62,6 +64,10 @@ class MCPDAONode extends MCPDAO {
 		foreach($arrNodes as &$arrNode) {
 			$arrNode = $this->_objMCP->addFields($arrNode,$arrNode['tmp_nodes_id'],'MCP_NODE_TYPES',$arrNode['tmp_node_types_id']);
 			unset($arrNode['tmp_nodes_id'],$arrNode['tmp_node_types_id']);
+		}
+		
+		if( empty($strLimit) ) {
+			return $arrNodes;
 		}
 		
 		return array(

@@ -74,6 +74,18 @@ class MCPMenuFormLink extends MCPModule {
 		$this->_arrFrmErrors = array();
 		
 		$this->_addCustomValidationRules();
+                
+                /*
+                * Sponge any serialized data fields. This essentially removes any empty strings. Necessary
+                * so that items that have been deleted using the delete button are ignored.
+                */
+                if($this->_arrFrmPost !== null) {
+                    foreach(array('mod_cfg','mod_args','datasource_args') as $strField) {
+                        if(isset($this->_arrFrmPost[$strField]) && is_array($this->_arrFrmPost[$strField])) {
+                            $this->_arrFrmPost[$strField] = $this->_spongeSerialized($this->_arrFrmPost[$strField]);
+                        }
+                    }
+                }
 		
 	}
 	
@@ -189,6 +201,31 @@ class MCPMenuFormLink extends MCPModule {
 		}
 		
 	}
+        
+        /*
+        * Given a numerical array will remove all elements that are an empty string
+        * and rebuld the array. This is necessary for serialized arrays because when
+        * items are deleted they will still exists in the post array. This is correct
+        * considering deleted fields need to exist so that the fields values can be removed from
+        * the db. However, in the case of serialized arguments this is not true since everytime
+        * an item is saved the entire serialized array will be replaced with the new values.
+        *
+        * @param array array of values
+        * @return array   
+        */
+        protected function _spongeSerialized($arrValues) {
+            
+            $arrNew = array();
+            
+            foreach($arrValues as $mixValue) {
+                if(strcmp($mixValue,'') !== 0) {
+                    $arrNew[] = $mixValue;
+                }
+            }
+            
+            return $arrNew;
+            
+        }
 	
 	protected function _frmSave() {
 		
@@ -225,6 +262,8 @@ class MCPMenuFormLink extends MCPModule {
 		* Save link to database 
 		*/
 		try {
+                    
+                        $this->_objMCP->debug($arrSave);
 			
 			$this->_objDAOMenu->saveLink($arrSave);
 			
@@ -450,7 +489,7 @@ class MCPMenuFormLink extends MCPModule {
 		$this->_arrTemplateData['values'] = $this->_arrFrmValues;
 		$this->_arrTemplateData['errors'] = $this->_arrFrmErrors;
 		$this->_arrTemplateData['legend'] = 'Link';
-		$this->_arrTemplateData['layout'] = null; //ROOT.'/Component/menu/Template/Form/Link/Layout.php';
+		$this->_arrTemplateData['layout'] = ROOT.'/Component/menu/Template/Form/Link/Layout.php';
 		
 		return 'Link/Link.php';
 	}

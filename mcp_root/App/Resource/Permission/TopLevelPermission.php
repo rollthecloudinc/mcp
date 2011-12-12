@@ -32,9 +32,10 @@ abstract class MCPTopLevelPermission extends MCPDAO implements MCPPermission {
 	*/
 	protected function _getCreateSQLTemplate() {
 
-		return
+		$strSQL =
 			"SELECT
-			      CASE
+			       u.users_id item_id
+			      ,CASE
 			     
 					WHEN pu.add IS NOT NULL
 					THEN pu.add
@@ -110,6 +111,9 @@ abstract class MCPTopLevelPermission extends MCPDAO implements MCPPermission {
 			 GROUP
 			    BY
 			      u.users_id";
+		
+		
+		return $strSQL;
 		
 	}
 	
@@ -353,7 +357,7 @@ abstract class MCPTopLevelPermission extends MCPDAO implements MCPPermission {
 			)
 		);
 		
-		return array_pop($arrPerms);
+		return $arrPerms;
      
 	}
 
@@ -361,6 +365,7 @@ abstract class MCPTopLevelPermission extends MCPDAO implements MCPPermission {
 		
 		$permissions = $this->_c($this->_objMCP->getUsersId());
 		
+		//echo '<pre>',print_r($permissions),'</pre>';
 		/*$return = array();
 		
 		if($permission !== null) {
@@ -381,18 +386,22 @@ abstract class MCPTopLevelPermission extends MCPDAO implements MCPPermission {
 		foreach($permissions as $permission) {
 			$return[$permission['item_id']] = array(
 				'allow'=>(bool) $permission['allow_add']
-				,'msg_dev'=>$permission['deny_read_msg_dev']
+				,'msg_dev'=>isset($permission['deny_add_msg_dev'])?$permission['deny_add_msg_dev']:''
 				,'msg_user'=>'You may not add %s.'
 			);
 		}
 		
-		foreach(array_diff($ids,array_keys($return)) as $id) {
+		//echo '<pre>',print_r($return),'</pre>';
+		
+		foreach(array_diff( array($this->_objMCP->getUsersId()) ,array_keys($return)) as $id) {
 			$return[$id] = array(
 				'allow'=>false
 				,'msg_dev'=>'You are not allowed to add specified %s'
 				,'msg_user'=>'You may not add %s.'
 			);
 		}
+		
+		//echo '<pre>',print_r($return),'</pre>';
 		
 		return $return;
 		
@@ -406,7 +415,7 @@ abstract class MCPTopLevelPermission extends MCPDAO implements MCPPermission {
 		foreach($permissions as $permission) {
 			$return[$permission['item_id']] = array(
 				'allow'=>(bool) $permission['allow_read']
-				,'msg_dev'=>$permission['deny_read_msg_dev']
+				,'msg_dev'=>isset($permission['deny_read_msg_dev'])?$permission['deny_read_msg_dev']:''
 				,'msg_user'=>'You may not see %s.'
 			);
 		}
@@ -431,7 +440,7 @@ abstract class MCPTopLevelPermission extends MCPDAO implements MCPPermission {
 		foreach($permissions as $permission) {
 			$return[$permission['item_id']] = array(
 				'allow'=>(bool) $permission['allow_delete']
-				,'msg_dev'=>$permission['deny_delete_msg_dev']
+				,'msg_dev'=>isset($permission['deny_delete_msg_dev'])?$permission['deny_delete_msg_dev']:''
 				,'msg_user'=>'You may not delete %s.'
 			);
 		}
@@ -456,7 +465,7 @@ abstract class MCPTopLevelPermission extends MCPDAO implements MCPPermission {
 		foreach($permissions as $permission) {
 			$return[$permission['item_id']] = array(
 				'allow'=>(bool) $permission['allow_edit']
-				,'msg_dev'=>$permission['deny_edit_msg_dev']
+				,'msg_dev'=>isset($permission['deny_edit_msg_dev'])?$permission['deny_edit_msg_dev']:''
 				,'msg_user'=>'You may not edit %s.'
 			);
 		}

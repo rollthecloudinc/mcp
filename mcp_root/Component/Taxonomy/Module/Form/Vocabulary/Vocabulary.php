@@ -256,6 +256,8 @@ class MCPTaxonomyFormVocabulary extends MCPModule {
 		* Can person edit or add vocabulary?
 		*/
 		$perm = $this->_objMCP->getPermission(($intVocabulariesId === null?MCP::ADD:MCP::EDIT),'Vocabulary',$intVocabulariesId);
+		// echo '<pre>',var_dump($perm),'</pre>';
+		
 		if(!$perm['allow']) {
 			throw new MCPPermissionException($perm);
 		}

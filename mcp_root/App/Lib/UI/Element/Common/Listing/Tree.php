@@ -52,7 +52,7 @@ class Tree implements \UI\Element {
 		extract($settings);
 		$out = '';
 		
-		if($form === true) {
+		if(isset($form) && $form === true) {
 			$out.= sprintf(
 				'<form name="%s" action="%s" method="%s"><fieldset><legend>%s</legend>'
 				,$form_name
@@ -85,7 +85,7 @@ class Tree implements \UI\Element {
 			$out.="</$list_element>";
 		}
 		
-		if($form === true) {
+		if(isset($form) && $form === true) {
 			$out.= '</fieldset></form>';
 		}
 		

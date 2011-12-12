@@ -95,6 +95,8 @@ class Form implements \UI\Element {
 				
 			foreach($config as $field=>$data) {
 				
+				// echo '<pre>',print_r($data),'</pre>';
+				
 				// current buffered element
 				$element = '';
 				
@@ -127,7 +129,7 @@ class Form implements \UI\Element {
 				));
 
 				// Multi-values with checkbox group only require a single loop, same for multi-select
-				$loops = isset($data['multi']) && !in_array($widget,array('checkbox_group','multi_select'))?$data['multi']:1;	
+				$loops = isset($data['multi']) && !in_array($widget,array('checkbox_group','multi_select')) && isset($values[$field]) && is_array($values[$field])? (count($values[$field]) + 1):1;	
 
 				// display multiple values as list for now
 				// not needed for special multi_select and checkbox_group cases
@@ -142,7 +144,7 @@ class Form implements \UI\Element {
 					));				
 					
 					$element.= sprintf(
-						'<ol id="%s">'
+						'<ol id="%s" class="ui-widget-multi">'
 						,$idbase.strtolower(str_replace('_','-',$field)) // for multiple values label references container
 					);
 				}
@@ -151,7 +153,7 @@ class Form implements \UI\Element {
 					
 					// multi_select and checkbox_group don't need/support delete control
 					if( isset($data['multi']) && !in_array($widget,array('multi_select','checkbox_group')) ) {
-						$out.= '<li>';
+						$element.= '<li>';
 						
 						// create control to delete value
 						$element.= $ui->draw('Common.Form.Input',array(
@@ -180,19 +182,30 @@ class Form implements \UI\Element {
 								// checkbox group only compatible with scalar fields
 								if( isset($data['multi']) ) {
 									
+									// echo '<pre>',print_r($data['values']),'</pre>';
+									
+									// rebuild values without any blank values
+									$rebuild = array();
+									foreach($data['values'] as $option) {
+										if(strlen($option['value']) === 0) continue;
+										$rebuild[] = $option;
+									}
+									
 									// Render as checkbox group in a list
-									$out.= $ui->draw('Common.Listing.Tree',array(
-										'data'=>$data['values']
+									$element.= $ui->draw('Common.Listing.Tree',array(
+										'data'=>$rebuild
 										,'mutation'=>function($val,$checkbox,$index) use(&$field,&$values,&$name,&$idbase,&$strDisabled,&$element,$ui) {
-										
+											
+											$out = '';
+											
 											// label
-											$element = $ui->draw('Common.Form.Label',array(
+											$out.= $ui->draw('Common.Form.Label',array(
 												'for'=>$idbase.strtolower( str_replace('_','-',$field) ).'-'.($index+1)
 												,'label'=>$checkbox['label']
 											));
 										
 											// checkbox
-											$element.= $ui->draw('Common.Form.Input',array(
+											$out.= $ui->draw('Common.Form.Input',array(
 												'type'=>'checkbox'
 												,'id'=>$idbase.strtolower( str_replace('_','-',$field) ).'-'.($index+1)
 												,'name'=>"{$name}[$field][$index][value]"
@@ -300,6 +313,7 @@ class Form implements \UI\Element {
 							,'id'=>$idbase.strtolower(str_replace('_','-',$field)).( isset($data['multi'])?'-'.($i+1):'')
 							,'checked'=>strcmp($input_type,'checkbox') == 0 && ((string) $val)?true:false
 							,'disabled'=>$strDisabled?true:false
+							,'class'=>!empty($widget)?"ui-widget-$widget":null
 						));
 							
 						/*
@@ -311,6 +325,16 @@ class Form implements \UI\Element {
 							* Images will now show after form is submitted 
 							*/
 							$intImagesId = is_array($val) && isset($val['id'])?$val['id']:$val;
+                                                        
+                                                        /*if(is_array($val) && isset($val['images_id'])) {
+                                                            $intImagesId = $val['images_id']; 
+                                                        } else if(is_array($val) && isset($val['id'])) {
+                                                            $intImagesId = $val['id'];
+                                                        } else if(is_object($val)) {
+                                                            $intImagesId = (string) $val;
+                                                        } else {
+                                                            $intImagesId = $val;
+                                                        }*/
 								
 							$element.= $ui->draw('Common.Field.Thumbnail',array(
 								'src'=>( $image_path !== null?sprintf($image_path,(string) $intImagesId):$intImagesId )
@@ -360,6 +384,7 @@ class Form implements \UI\Element {
 									,'name'=>"{$name}[$field][$i][id]"
 									,'value'=>$values[$field][$i]->getId()
 								));
+								//echo "<p>{$name}[$field][$i][id]</p>";
 							}							
 						}
 						
@@ -369,7 +394,7 @@ class Form implements \UI\Element {
 							if( !isset($data['sortable']) || $data['sortable'] != 0 ) {
 							
 								// Create controls to sort multiple values - render as a list / tree
-								$element.= $ui->draw('Common.Listing.Tree',array(
+								/*$element.= $ui->draw('Common.Listing.Tree',array(
 									'value_key'=>'control'
 									,'data'=>array(
 										array(
@@ -389,7 +414,7 @@ class Form implements \UI\Element {
 											))
 										)
 									)
-								));	
+								));*/
 							
 							}
 							

@@ -1058,6 +1058,16 @@
 			</message>
 		</frm>
 	</mod>
+	<mod pkg="Component.Permission.Module.List.Role">
+		<config>
+			<roles_per_page>
+				<label>Per Page</label>
+				<required>Y</required>
+				<default>10</default>
+				<type>numeric</type>
+			</roles_per_page>
+                </config>
+        </mod>
 	<mod pkg="PlatForm.ProjectPad.Module.Register">
 		<frm mixin="Component.User.Module.Registration.Form">
 			<first_name>

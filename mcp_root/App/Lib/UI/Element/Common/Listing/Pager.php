@@ -8,7 +8,7 @@ class Pager implements \UI\Element {
 	
 	public function settings() {
 		return array(
-			,'base_path'=>array( // link building base
+			'base_path'=>array( // link building base
 				'required'=>true
 			)
 			,'total_pages'=>array( // total number of pages

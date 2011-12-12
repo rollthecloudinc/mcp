@@ -15,7 +15,7 @@ class MCPMenuMenu extends MCPModule {
 	$_objDAOMenu;
 	
 	public function __construct(MCP $objMCP,MCPModule $objParent=null,$arrConfig=null) {
-		parent::__construct($objMCP,$objParent,$arrConfg);
+		parent::__construct($objMCP,$objParent,$arrConfig);
 		$this->_init();
 	}
 	

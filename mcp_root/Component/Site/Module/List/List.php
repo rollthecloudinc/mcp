@@ -117,7 +117,7 @@ class MCPSiteList extends MCPModule {
 			}
 			
 			$permsEdit = $this->_objMCP->getPermission(MCP::EDIT,'Site',$ids);
-			$permsDelete = $this->_objMCP->getPermission(MCP::EDIT,'Site',$ids);
+			$permsDelete = $this->_objMCP->getPermission(MCP::DELETE,'Site',$ids);
 			
 			// add in flags to determine whether user has permission to edit or delete site
 			foreach($this->_arrTemplateData['sites'] as &$site) {

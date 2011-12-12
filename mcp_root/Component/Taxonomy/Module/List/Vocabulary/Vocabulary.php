@@ -114,9 +114,12 @@ class MCPTaxonomyListVocabulary extends MCPModule {
 			$vocab['allow_add_term'] = $permsAddTerm[$vocab['vocabulary_id']]['allow'];
 			$vocab['allow_delete'] = $deletePerms[$vocab['vocabulary_id']]['allow'];
 		}
+                
+                $pages = array_shift($data);
+                $this->_objMCP->addSystemStatusMessage($pages);
 		
 		// return number of found rows
-		return array_shift($data);
+		return $pages;
 		
 	}
 	
@@ -206,7 +209,7 @@ class MCPTaxonomyListVocabulary extends MCPModule {
 		$this->_arrTemplateData['back_link'] = $this->getBasePath(false);
 		
 		// Create new vocabulary link
-		$this->_arrTemplateData['create_link'] = "{$this->getBasePath(false)}/Create";
+		$this->_arrTemplateData['create_link'] = "{$this->getBasePath(false)}/{$this->_intPage}/Create";
 		
 		// Form action
 		$this->_arrTemplateData['frm_action'] = $this->getBasePath();
@@ -290,8 +293,8 @@ class MCPTaxonomyListVocabulary extends MCPModule {
 		
 		$strBasePath = parent::getBasePath();
 		
-		// ad the page number
-		 $strBasePath.= "/{$this->_intPage}";
+		// add the page number
+		// $strBasePath.= "/{$this->_intPage}";
 		 
 		 if($redirect === true && $this->_strRedirect) {
 		 	$strBasePath.= "/{$this->_strRedirect}";
