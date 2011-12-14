@@ -353,6 +353,8 @@ class MCPNodeFormEntry extends MCPModule {
 		* Copy values array 
 		*/
 		$arrValues = $this->_arrFrmValues;
+                
+                // $this->_objMCP->debug($arrValues);
 		
 		//echo '<pre>',print_r($_POST),'</pre>';
 		

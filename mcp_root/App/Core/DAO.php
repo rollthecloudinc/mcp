@@ -83,8 +83,8 @@ abstract class MCPDAO extends MCPResource {
 		//echo "<p>$strSQL</p>";
 		//echo '<pre>',print_r($arrBind),'</pre>';
                 
-                $this->_objMCP->debug($strSQL);
-                $this->_objMCP->debug($arrBind);
+                // $this->_objMCP->debug($strSQL);
+                // $this->_objMCP->debug($arrBind);
 			
 		return $this->_objMCP->query($strSQL,$arrBind);
 		

@@ -80,7 +80,7 @@ class MCPMenuFormLink extends MCPModule {
                 * so that items that have been deleted using the delete button are ignored.
                 */
                 if($this->_arrFrmPost !== null) {
-                    foreach(array('mod_cfg','mod_args','datasource_args') as $strField) {
+                    foreach(array('mod_args','datasource_args') as $strField) {
                         if(isset($this->_arrFrmPost[$strField]) && is_array($this->_arrFrmPost[$strField])) {
                             $this->_arrFrmPost[$strField] = $this->_spongeSerialized($this->_arrFrmPost[$strField]);
                         }
@@ -108,7 +108,19 @@ class MCPMenuFormLink extends MCPModule {
 	
 		// Validatate form values 
 		if($this->_arrFrmPost !== null) {
+                    
 			$this->_arrFrmErrors = $this->_objValidator->validate($this->_getFrmConfig(),$this->_arrFrmValues);
+                        
+                        /*
+                        * Validate the target module condiguarion separately. 
+                        */
+                        if(isset($this->_arrFrmValues['mod_cfg'])) {
+                            $arrTargetModErrors = $this->_objValidator->validate($this->_getFrmTargetModConfig(),$this->_arrFrmValues['mod_cfg']);
+                            if(!empty($arrTargetModErrors)) {
+                                $this->_arrFrmErrors['mod_cfg'] = $arrTargetModErrors;
+                            }
+                        }
+                        
 		}
 		
 		// Save form data to database 
@@ -125,8 +137,10 @@ class MCPMenuFormLink extends MCPModule {
 		
 		if($this->_arrFrmPost !== null) {
 			$this->_setFrmSaved();
+                        $this->_setFrmTargetModSaved();
 		} else if($this->_getMenuLink() !== null) {
 			$this->_setFrmEdit();
+                        $this->_setFrmTargetModEdit();
 		} else {
 			$this->_setFrmCreate();
 		}
@@ -141,6 +155,19 @@ class MCPMenuFormLink extends MCPModule {
 		foreach( $this->_getFrmFields() as $strField ) {
 			
 			$this->_arrFrmValues[$strField] = isset($this->_arrFrmPost[$strField])?$this->_arrFrmPost[$strField]:'';
+			
+		}
+		
+	}
+        
+	/*
+	* Handle form submission for target module configuration.
+	*/
+	protected function _setFrmTargetModSaved() {
+		
+		foreach( $this->_getFrmTargetModFields() as $strField ) {
+			
+			$this->_arrFrmValues['mod_cfg'][$strField] = isset($this->_arrFrmPost['mod_cfg'],$this->_arrFrmPost['mod_cfg'][$strField])?$this->_arrFrmPost['mod_cfg'][$strField]:'';
 			
 		}
 		
@@ -174,6 +201,22 @@ class MCPMenuFormLink extends MCPModule {
 		}
 		
 	}
+        
+        /*
+        * Set edit for target module. 
+        */
+        protected function _setFrmTargetModEdit() {
+            
+            $arrLink = $this->_getMenuLink();
+            
+            /*
+            * Target module configuration 
+            */
+            foreach($this->_getFrmTargetModFields() as $strField) {
+                $this->_arrFrmValues['mod_cfg'][$strField] = isset($arrLink['mod_cfg'],$arrLink['mod_cfg'][$strField])?$arrLink['mod_cfg'][$strField]:'';
+            }
+            
+        }
 	
 	/*
 	* handle request to create a new link 
@@ -232,6 +275,10 @@ class MCPMenuFormLink extends MCPModule {
 		$arrLink = $this->_getMenuLink();
 		
 		$arrSave = $this->_arrFrmValues;
+                
+            
+                //$this->_objMCP->debug($arrSave);
+                //return;
 		
 		/*
 		* Foreign key reference to menu that link belongs to. 
@@ -262,8 +309,6 @@ class MCPMenuFormLink extends MCPModule {
 		* Save link to database 
 		*/
 		try {
-                    
-                        $this->_objMCP->debug($arrSave);
 			
 			$this->_objDAOMenu->saveLink($arrSave);
 			
@@ -353,6 +398,24 @@ class MCPMenuFormLink extends MCPModule {
 		return $this->_arrCachedFrmConfig;
 		
 	}
+        
+        /*
+        * Get configuration form options for target module
+        * that the link points to if it points to a module. 
+        * 
+        * @return array target module configuration 
+        */
+        protected function _getFrmTargetModConfig() {
+            
+            $arrLink = $this->_getMenuLink();
+            
+            if($arrLink !== null && isset($arrLink['target']) && strcasecmp('module',$arrLink['target']) === 0 ) {
+                return $this->_objMCP->getModConfig($arrLink['mod_path']);
+            } else {
+                return array();
+            }
+            
+        }
 	
 	/*
 	* Get menu link form fields
@@ -362,6 +425,15 @@ class MCPMenuFormLink extends MCPModule {
 	protected function _getFrmFields() {
 		return array_keys($this->_getFrmConfig());
 	}
+        
+        /*
+        * Get target module configuration form fields.
+        * 
+        * @return array module configuration fields
+        */
+        protected function _getFrmTargetModFields() {
+            return array_keys($this->_getFrmTargetModConfig());
+        }
 	
 	/*
 	* get the form name
@@ -407,6 +479,31 @@ class MCPMenuFormLink extends MCPModule {
 	protected function _setMenu($arrMenu) {
 		$this->_arrMenu = $arrMenu;
 	}
+        
+        /*
+        * Add in target module configuration. 
+        */
+        protected function _addTargetModTplVars() {
+            
+            $arrLink = $this->_getMenuLink();
+            $arrFields = $this->_getFrmTargetModFields();
+            
+            if($arrLink === null || empty($arrFields)) {
+                return;
+            } 
+            
+            /*
+            * Module configuation will be presented as a nested form. 
+            */
+            $this->_arrTemplateData['mod_form'] = array();
+            $this->_arrTemplateData['mod_form']['legend'] = 'Module Config';
+            $this->_arrTemplateData['mod_form']['nested'] = true;
+            $this->_arrTemplateData['mod_form']['name'] = $this->_getFrmName().'[mod_cfg]';
+            $this->_arrTemplateData['mod_form']['config'] = $this->_getFrmTargetModConfig();
+            $this->_arrTemplateData['mod_form']['values'] = isset($this->_arrFrmValues['mod_cfg'])?$this->_arrFrmValues['mod_cfg']:array();
+            $this->_arrTemplateData['mod_form']['errors'] = isset($this->_arrFrmErrors['mod_cfg'])?$this->_arrFrmErrors['mod_cfg']:array();
+            
+        }
 	
 	public function execute($arrArgs) {
 		
@@ -490,7 +587,10 @@ class MCPMenuFormLink extends MCPModule {
 		$this->_arrTemplateData['errors'] = $this->_arrFrmErrors;
 		$this->_arrTemplateData['legend'] = 'Link';
 		$this->_arrTemplateData['layout'] = ROOT.'/Component/menu/Template/Form/Link/Layout.php';
-		
+                
+                // Load nested module config form template variables
+                $this->_addTargetModTplVars();
+                
 		return 'Link/Link.php';
 	}
 	

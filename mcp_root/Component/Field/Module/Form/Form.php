@@ -266,7 +266,7 @@ class MCPFieldForm extends MCPModule {
 				$arrValues['cfg_media'] = 'video';
 				$arrValues['db_value'] = 'int';
 				$arrValues['db_ref_table'] = 'MCP_MEDIA_VIDEO';
-				$arrValues['db_ref_col'] = 'video_id';
+				$arrValues['db_ref_col'] = 'videos_id';
 				break;
 				
 			case 'file':

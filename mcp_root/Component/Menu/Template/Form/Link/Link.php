@@ -39,4 +39,14 @@ $(document).ready(function() {
 	
 	// just for testing - make a node type column - specific form overrride
 	,'layout'=>$layout
+        ,'layout_vars'=>$mod_form
 )); ?>
+
+<?php 
+
+/*
+* Form for configuration of module options when linking to a module. 
+*/
+echo $module_form; 
+
+?>

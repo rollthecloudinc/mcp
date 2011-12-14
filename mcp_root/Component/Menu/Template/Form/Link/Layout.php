@@ -60,6 +60,10 @@
 				<li><?php echo $mod_tpl; ?></li>
 				<li><?php echo $mod_args; ?></li>
 			</ul>
+                        
+                        <?php if(isset($layout_vars)) {
+                            echo $ui->draw('Common.Form.Form',$layout_vars);
+                        } ?>
 
 		</fieldset>
 		

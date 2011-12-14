@@ -464,7 +464,7 @@ class MCPDAOField extends MCPDAO {
 						$values.= sprintf(
 							'<dao>
 								<pkg>Component.Node.DAO.DAONode</pkg>
-						      	<method>fetchNodes</method>
+						      	<method>listAll</method>
 						    		<args>
 										<arg>n.nodes_id value,n.node_title label</arg>
 						      			<arg>n.deleted = 0 AND n.sites_id = SITES_ID AND n.node_types_id = %s</arg>
@@ -631,6 +631,10 @@ class MCPDAOField extends MCPDAO {
 		header('Content-Type: text/xml');
 		echo $xml->asXML();
 		exit;*/
+                
+                /*$cfg = $this->_objMCP->getFrmConfig($xml,'frm');
+                echo '<pre>'.print_r($cfg,true).'</pre>';
+                exit;*/
 		
 		/*
 		* Convert to config 
@@ -882,7 +886,7 @@ class MCPDAOField extends MCPDAO {
 			/*
 			* Handle special image resource field 
 			*/
-			if( in_array($arrField['cfg_media'],array('file','image')) ) { // strcmp($arrField['cfg_media'],'image') == 0
+			if( in_array($arrField['cfg_media'],array('file','image','video')) ) { // strcmp($arrField['cfg_media'],'image') == 0
 				
 				/*
 				* Determine the correct DAO to use for uploading normal files 
@@ -899,7 +903,13 @@ class MCPDAOField extends MCPDAO {
 						break;
 						
 					case 'audio': // todo
+                                                continue;
+                                            
 					case 'video': // todo
+                                                $objDAOUpload = $this->_objMCP->getInstance('App.Resource.File.DAO.DAOVideo',array($this->_objMCP));
+                                                $this->_objMCP->debug($field_value);
+                                                continue;
+                                            
 					default:
 						continue; // really an error todo
 						

@@ -45,7 +45,22 @@ class Form implements \UI\Element {
 			,'layout'=>array(
 				'default'=>null
 			)
-
+                        /*
+                        * Additional variables to pass to custom
+                        * layout template. 
+                        */
+                        ,'layout_vars'=>array(
+                                'default'=>array()
+                        )
+                        /*
+                        * Flag can be set to nest forms within one another. This
+                        * will effectively remove the form element and any submit
+                        * buttons allowing the outer form to handle the submission
+                        * process.  
+                        */
+                        ,'nested'=>array(
+                            'default'=>false
+                        )
 			,'recaptcha'=>array(
 				'default'=>null
 			)
@@ -76,13 +91,15 @@ class Form implements \UI\Element {
 		extract($settings);
 		$out='';
 		
-		$form.= sprintf(
-			'<form name="%s" id="%s" action="%s" method="%s" enctype="multipart/form-data">'
-			,$name
-			,$name
-			,$action
-			,$method
-		);
+                if(!$nested) {
+                    $form.= sprintf(
+                            '<form name="%s" id="%s" action="%s" method="%s" enctype="multipart/form-data">'
+                            ,$name
+                            ,$name
+                            ,$action
+                            ,$method
+                    );
+                }
 		
 		$form.= '<fieldset>';
 		
@@ -281,7 +298,15 @@ class Form implements \UI\Element {
 							,'disabled'=>$strDisabled?true:false
 							,'value'=>isset($data['multi'])?isset($values[$field][$i])?$values[$field][$i]:'':$values[$field]								
 						));
+                                                
+                                                
+                                        } else if(isset($data['media']) && strcasecmp($data['media'],'video') === 0) {
 						
+                                            
+                                                $element.= $ui->draw('Common.Form.Video',array(
+                                                    'base_name'=>sprintf('%s[%s]%s',$name,$field,(isset($data['multi'])?"[$i]":''))
+                                                ));
+                                            
 					} else {
 					
 						switch(isset($data['type'])?$data['type']:'') {
@@ -443,21 +468,25 @@ class Form implements \UI\Element {
 			if( $recaptcha !== null ) {
 				$elements['recaptcha'] = $recaptcha;
 				$form.= "<li>$recaptcha</li>";
-			}
-			
-			/*
-			* Submit button 
-			*/
-			$submit = sprintf('<input type="submit" name="%s[save]" value="%s" id="%s%s">',$name,$submit,$idbase,'save');
-			$form.= "<li class=\"save\">$submit</li>";
+                        }
+                        
+                        if(!$nested) {
+                            
+                            /*
+                            * Submit button 
+                            */
+                            $submit = sprintf('<input type="submit" name="%s[save]" value="%s" id="%s%s">',$name,$submit,$idbase,'save');
+                            $form.= "<li class=\"save\">$submit</li>";
 			
 				
-			/*
-			* Clear button 
-			*/
-			if(strlen($clear) !== 0) {
+                            /*
+                            * Clear button 
+                            */
+                            if(strlen($clear) !== 0) {
 				$form.= sprintf('<li class="save"><input type="submit" name="%s[clear]" value="%s" id="%s%s"></li>',$name,$clear,$idbase,'save');
-			}
+                            }
+                            
+                        }
 				
 			$form.= '</ul>';
 			
@@ -467,12 +496,22 @@ class Form implements \UI\Element {
 		
 
 		
-		$form.= '</fieldset></form>';
+		$form.= '</fieldset>';
+                
+                if(!$nested) {
+                    $form.= '</form>';
+                }
 		
 		// where the magic happens!
 		
 		extract($elements);
 		$rendered = '';
+                
+                if(isset($settings['layout_vars'])) {
+                    $layout_vars = $settings['layout_vars'];
+                } else {
+                    $layout_vars = null;
+                }
 		
 		ob_start();
 		

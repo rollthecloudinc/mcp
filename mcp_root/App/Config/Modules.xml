@@ -538,6 +538,14 @@
 			</target>
 		</frm>
 	</mod>
+        <mod pkg="Component.Menu.Module.Form.Link.Config">
+            <config>
+                <module>
+                    <label>Module</label>
+                    <required>Y</required>
+                </module>
+            </config>
+        </mod>
 	<mod pkg="Component.Navigation.Module.Form.Menu">
 		<frm>
 			<system_name>
