@@ -38,17 +38,23 @@ class Input implements \UI\Element {
 		
 		extract($settings);
 
-		return sprintf(
-			'<input type="%s" name="%s" value="%s"%sid="%s"%s%s%s>'
+		$input = sprintf(
+			'<input type="%s" name="%s"%sid="%s"%s%s%s'
 			,$type
 			,$name
-			,$value
 			,$max !== null?' maxlength="'.$max.'"':''
 			,$id
 			,$disabled === true?' disabled="disabled"':''
 			,$checked === true?' checked="checked"':''
 			,$class !== null?' class="'.$class.'"':''
 		);
+                
+                if(strcasecmp($type,'file') !== 0) {
+                    $input.= ' value="'.$value.'"';
+                }
+                
+                return $input.'>';
+                
 		
 	}
 	

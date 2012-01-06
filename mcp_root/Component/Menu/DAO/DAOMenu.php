@@ -115,7 +115,10 @@ class MCPDAOMenu extends MCPDAO {
 		        AND
 		           v.menu_links_id IS NULL
 		        AND
-		           l.deleted = 0'      
+		           l.deleted = 0
+                      ORDER
+                         BY
+                          l.weight ASC'      
 			,isset($arrOptions['select'])?",{$arrOptions['select']}":''
 		);
 		

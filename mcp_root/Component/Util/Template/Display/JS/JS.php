@@ -37,18 +37,18 @@ $(function() {
 			// the way values get deleted is by setting them to an empty string
 			$(evt.target).parent().find('input:not([type="submit"]):not([type="hidden"]):not(option),select,textarea').each(function() {
 				
-				/*if(this.nodeName == 'SELECT') {
+				if(this.nodeName == 'SELECT') {
 					var option = document.createElement('option');
 					option.value = '';
 					$(this).append(option);
-				}*/
+				}
 
 				if(this.type == 'file') {
-					var replace = document.createElement('input');
-					replace.type = 'hidden';
-					replace.name = this.name + '[value]';
-					replace.value = '';
-					$(this).replaceWith(replace);
+                                        //var replace = document.createElement('input');
+                                        //replace.type = 'hidden';
+                                        //replace.name = this.name + '[value]';
+                                        //replace.value = '';
+					$('input[type="hidden"][name="' + this.name  + '[value]"]').val('');
 				}
 	
 				$(this).val('');
@@ -75,13 +75,23 @@ $(function() {
 			input.id = input.id.replace(/-[0-9]*-/,'-' + (count + 1) + '-');
 
 			var control = $('input:not([type="submit"]):not([type="hidden"]):not(option),select,textarea',clone).get(0);
-			control.name = control.name.replace(/\[[0-9]*\]\[value\]/,'[' + count + '][value]');
+                        
+                        if(control.type === 'file') {
+                            control.name = control.name.replace(/\[[0-9]*\]/,'[' + count + ']');
+                        } else {
+                            control.name = control.name.replace(/\[[0-9]*\]\[value\]/,'[' + count + '][value]');
+                        }
+                        
 			control.id = control.id.replace(/-[0-9]*$/, '-' + (count + 1) );
 			$(control).val('');
 
 			$('input[type="hidden"]',clone).remove();
 
 			$(this).parent().find('ol').append(clone);
+                        
+                        // remove image elements (for image files)
+                        $('img',clone).remove();
+                        
 			$(clone).show();
 			
 		});

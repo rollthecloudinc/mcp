@@ -262,111 +262,6 @@
 			</site_db_adapter>
 		</frm>
 	</mod>
-	<mod pkg="Component.Navigation.Module.Form.Link">
-		<frm>	
-			<link_title>
-				<label>Link Name</label>
-				<required>Y</required>
-				<min>1</min>
-				<max>96</max>
-			</link_title>
-			<browser_title>
-				<label>Browser Title</label>
-				<required>N</required>
-				<min>1</min>
-				<max>96</max>
-			</browser_title>
-			<page_heading>
-				<label>Page Heading</label>
-				<required>N</required>
-				<min>1</min>
-				<max>96</max>
-			</page_heading>
-			<parent_id>
-				<label>Links Parent</label>
-				<required>Y</required>
-				<min>4</min>
-				<max>255</max>
-			</parent_id>
-			<target_window>
-				<label>Target Window</label>
-				<required>Y</required>
-				<default>_self</default>
-				<dao>
-					<pkg>Component.Navigation.DAO.DAONavigation</pkg>
-					<method>fetchLinksTargetWindows</method>
-				</dao>
-			</target_window>
-			<sites_internal_url>
-				<label>URL</label>
-				<required>N</required>
-				<max>255</max>
-				<min>1</min>
-			</sites_internal_url>
-			<link_url>
-				<label>External URL</label>
-				<required>N</required>
-				<max>255</max>
-				<min>1</min>
-			</link_url>
-			<target_module>
-				<label>Mod.</label>
-				<required>N</required>
-				<max>255</max>
-				<min>1</min>
-			</target_module>
-			<target_module_args>
-				<label>Mod Args</label>
-				<required>N</required>
-				<multi>3</multi>
-				<type>text</type>
-				<min>1</min>
-				<max>255</max>
-			</target_module_args>
-			<target_template>
-				<label>Mod Tpl.</label>
-				<required>N</required>
-				<max>255</max>
-				<min>1</min>
-			</target_template>
-			<header_content>
-				<label>Page Header</label>
-				<required>N</required>
-				<min>1</min>
-				<textarea>1</textarea>
-			</header_content>
-			<header_content_type>
-				<label>Page Header Type</label>
-				<required>N</required>
-				<default>html</default>
-				<dao>
-					<pkg>Component.Navigation.DAO.DAONavigation</pkg>
-					<method>fetchLinksContentTypes</method>
-					<args>
-						<arg>header_content_type</arg>
-					</args>
-				</dao>
-			</header_content_type>
-			<footer_content>
-				<label>Page Footer</label>
-				<required>N</required>
-				<min>1</min>
-				<textarea>1</textarea>
-			</footer_content>
-			<footer_content_type>
-				<label>Page Footer Type</label>
-				<required>N</required>
-				<default>html</default>
-				<dao>
-					<pkg>Component.Navigation.DAO.DAONavigation</pkg>
-					<method>fetchLinksContentTypes</method>
-					<args>
-						<arg>footer_content_type</arg>
-					</args>
-				</dao>
-			</footer_content_type>
-		</frm>
-	</mod>
 	<mod pkg="Component.Menu.Module.Form.Menu">
 		<frm>
 			<system_name>
@@ -536,53 +431,6 @@
 					</value>
 				</values>
 			</target>
-		</frm>
-	</mod>
-        <mod pkg="Component.Menu.Module.Form.Link.Config">
-            <config>
-                <module>
-                    <label>Module</label>
-                    <required>Y</required>
-                </module>
-            </config>
-        </mod>
-	<mod pkg="Component.Navigation.Module.Form.Menu">
-		<frm>
-			<system_name>
-				<label>System Name</label>
-				<required>Y</required>
-				<max>128</max>
-				<type>navigation_system_name</type>
-			</system_name>
-			<menu_title>
-				<label>Title</label>
-				<required>Y</required>
-				<max>128</max>
-				<type>text</type>
-			</menu_title>
-			<menu_location>
-				<label>Position</label>
-				<required>Y</required>
-				<dao>
-					<pkg>Component.Navigation.DAO.DAONavigation</pkg>
-					<method>fetchNavLocations</method>
-				</dao>
-			</menu_location>
-			<display_title>
-				<label>Display Title</label>
-				<required>N</required>
-				<default>1</default>
-				<values>
-					<value>
-						<value>1</value>
-						<label>Yes</label>
-					</value>
-					<value>
-						<value>0</value>
-						<label>No</label>
-					</value>
-				</values>
-			</display_title>
 		</frm>
 	</mod>
 	<mod pkg="Component.Node.Module.Form.Entry">
@@ -952,6 +800,17 @@
 			</description>
 		</frm>
 	</mod>
+        <mod pkg="Component.View.Module.View">
+           <config>
+              <back_label>
+                  <label>Back Label</label>
+                  <required>N</required>
+                  <type>text</type>
+                  <max>48</max>
+                  <description>Link shown when viewing an individual entity to go back to list of entities.</description>
+              </back_label> 
+           </config> 
+        </mod>
 	<mod pkg="Component.View.Module.Form">
 		<frm>
 			<type>
@@ -1076,109 +935,4 @@
 			</roles_per_page>
                 </config>
         </mod>
-	<mod pkg="PlatForm.ProjectPad.Module.Register">
-		<frm mixin="Component.User.Module.Registration.Form">
-			<first_name>
-				<label>First Name</label>
-				<required>Y</required>
-				<min>1</min>
-				<max>96</max>
-				<type>custom_first_name</type>
-			</first_name>
-			<last_name>
-				<label>Last Name</label>
-				<required>Y</required>
-				<min>1</min>
-				<max>96</max>
-				<type>custom_last_name</type>
-			</last_name>
-			<states_id>
-				<label>State</label>
-				<required>N</required>
-				<dao>
-					<pkg>Component.Util.DAO.DAOUtil</pkg>
-					<method>listAllStates</method>
-					<args>
-						<arg>s.human_name label,s.terms_id value</arg>
-						<arg></arg>
-						<arg>s.human_name ASC</arg>
-					</args>
-				</dao>
-			</states_id>
-		</frm>
-	</mod>
-	<mod pkg="PlatForm.ProjectPad.Module.Project.Form">
-		<frm mixin="Component.Node.Module.Form.Entry">
-			<categories_id>
-				<label>Category</label>
-				<required>Y</required>
-				<after>nodes_title</after>
-				<dao>
-					<pkg>PlatForm.ProjectPad.DAO.DAOProjectPadCategory</pkg>
-					<method>fetchCategoryOptions</method>
-					<args>
-						<arg>SITES_ID</arg>
-					</args>
-				</dao>
-			</categories_id>
-			<ideal_price>
-				<label>Ideal Price</label>
-				<required>N</required>
-				<type>numeric</type>
-			</ideal_price>
-			<node_content>
-				<label>Project</label>
-			</node_content>
-			<node_types_id static="Y">
-				<default>project::PlatForm.ProjectPad</default>
-			</node_types_id>
-			<node_subtitle static="Y">
-				<default></default>
-			</node_subtitle>
-			<content_type static="Y">
-				<default>text</default>
-			</content_type>
-			<intro_type static="Y">
-				<default>text</default>
-			</intro_type>
-			<intro_content static="Y">
-				<default></default>
-			</intro_content>
-			<node_published static="Y">
-				<default>1</default>
-			</node_published>
-		</frm>
-	</mod>
-	<mod pkg="PlatForm.ProjectPad.Module.Category.Form">
-		<frm mixin="Component.Taxonomy.Module.Form.Term">
-			<system_name>
-				<label>Category ID</label>
-			</system_name>
-			<human_name>
-				<label>Category</label>
-			</human_name>
-		</frm>
-	</mod>
-	<mod pkg="PlatForm.ProjectPad.Module.Filter.Project">
-		<frm>
-			<title>
-				<label>Title</label>
-				<max>128</max>
-				<required>N</required>
-				<type>text</type>
-			</title>
-			<category>
-				<label>Category</label>
-				<required>N</required>
-				<size>5</size>
-				<dao>
-					<pkg>PlatForm.ProjectPad.DAO.DAOProjectPadCategory</pkg>
-					<method>fetchCategoryOptions</method>
-					<args>
-						<arg>SITES_ID</arg>
-					</args>
-				</dao>
-			</category>
-		</frm>
-	</mod>
 </modules>

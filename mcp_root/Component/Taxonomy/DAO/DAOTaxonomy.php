@@ -251,7 +251,8 @@ class MCPDAOTaxonomy extends MCPDAO {
 		*/
 		$strSQL = sprintf(
 			"SELECT
-			      %s
+			      t.terms_id tmp_id
+                              ,%s
 			   FROM
 			      MCP_TERMS t
 			  WHERE
@@ -268,20 +269,25 @@ class MCPDAOTaxonomy extends MCPDAO {
 			,$arrOptions !== null && isset($arrOptions['sort'])?"ORDER BY {$arrOptions['sort']}":''
 		);
 		
-		// echo "<p>$strSQL</p>";
+                // $this->_objMCP->debug(var_dump($boolR,true));
 		
 		/*
 		* Fetch terms 
 		*/
 		$arrTerms = $this->_objMCP->query($strSQL);
+                
+                // echo '<pre>'.print_r($arrTerms,true).'</pre>';
 		
 		/*
 		* Recure 
+                * 
+                * Loose type so that argument can be defined in XML as 0 or 1 
 		*/
 		if($boolR === true) {
 			foreach($arrTerms as &$arrTerm) {
 				$children = $arrOptions !== null && isset($arrOptions['children'])?$arrOptions['children']:'terms';
-				$arrTerm[$children] = $this->fetchTerms($arrTerm['terms_id'],'term',$boolR,$arrOptions);
+                                $arrTerm[$children] = $this->fetchTerms($arrTerm['tmp_id'],'term',$boolR,$arrOptions);
+                                unset($arrTerm['tmp_id']);
 			}
 		}
 		
@@ -297,7 +303,7 @@ class MCPDAOTaxonomy extends MCPDAO {
 	*/
 	public function fetchTermsVocabulary($intTermsId,$runner=0,$echo=false) {		
 		$arrTerm = $this->fetchTermById($intTermsId);		
-		return $arrTerm['vocabulary_id'];		
+		return $arrTerm; //$arrTerm['vocabulary_id'];		
 	}
 	
 	/*
@@ -432,6 +438,8 @@ class MCPDAOTaxonomy extends MCPDAO {
 		$this->_objMCP->begin();
 		
 		try {
+                    
+                        
 		
 			$intId = $this->_save(
 				$arrTerm

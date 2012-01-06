@@ -1127,7 +1127,8 @@ class MCP {
 						* Parses XML DAO argument structure into multi-dimensional array uses arg
 						* to differentiate between numeric and associative keys.
 						*/
-						$toArgs = function($objArg,$toArgs) use (&$const) {
+                                                $objMCP = $this;
+						$toArgs = function($objArg,$toArgs) use (&$const,$objMCP) {
 								
 							$arrReturn = array();
 							$intIndex = 0;
@@ -1140,8 +1141,37 @@ class MCP {
 								if( $objChild->count() ) {
 									$arrReturn[$strUseIndex] = $toArgs($objChild,$toArgs);
 								} else {
-									// replace special site id and user id constants
-									$arrReturn[$strUseIndex] = str_replace(array('SITES_ID','USERS_ID'),$const,$objChild);
+                                                                    
+                                                                        // Support boolean and integer type casting
+                                                                        // This is necessary so that strict comparisions can occur
+                                                                        $boolParsed = false;
+                                                                        foreach($objChild->attributes() as $strAttr=>$strAttrVal) {
+                                                                            if(strcasecmp($strAttr,'type') === 0) {
+                                                                                
+                                                                                switch((string) $strAttrVal) {
+                                                                                    case 'bool':
+                                                                                        $arrReturn[$strUseIndex] = (bool) ((string) $objChild);
+                                                                                        $boolParsed = true;
+                                                                                        break;
+                                                                                        
+                                                                                    case 'int':
+                                                                                        $arrReturn[$strUseIndex] = (int) ((string) $objChild);
+                                                                                        $boolParsed = true;
+                                                                                        break;
+                                                                                        
+                                                                                    default:
+                                                                                        break;
+                                                                                }
+                                                                                
+                                                                            }
+                                                                        }
+                                                                    
+                                                                        // This will be false when the value has already been casted and assigned
+                                                                        if($boolParsed === false) {
+                                                                            // replace special site id and user id constants
+                                                                            $arrReturn[$strUseIndex] = str_replace(array('SITES_ID','USERS_ID'),$const,$objChild);
+                                                                        }
+                                                                        
 								}
 									
 							}

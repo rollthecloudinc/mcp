@@ -130,7 +130,9 @@ class Form implements \UI\Element {
 				/*
 				* Skip static fields 
 				*/
-				if(isset($data['static']) && strcmp('Y',$data['static']) == 0) continue;
+				if(isset($data['static']) && strcmp('Y',$data['static']) == 0) {
+                                    continue;
+                                }
 					
 				/*
 				* Disabled attribute 
@@ -146,8 +148,13 @@ class Form implements \UI\Element {
 				));
 
 				// Multi-values with checkbox group only require a single loop, same for multi-select
-				$loops = isset($data['multi']) && !in_array($widget,array('checkbox_group','multi_select')) && isset($values[$field]) && is_array($values[$field])? (count($values[$field]) + 1):1;	
+				$loops = isset($data['multi']) && !in_array($widget,array('checkbox_group','multi_select')) && isset($values[$field]) && is_array($values[$field])?count($values[$field]):1;	
 
+                                // default to a single loop
+                                if($loops === 0) {
+                                    $loops = 1;
+                                }
+                                
 				// display multiple values as list for now
 				// not needed for special multi_select and checkbox_group cases
 				if( isset($data['multi']) && !in_array($widget,array('multi_select','checkbox_group')) ) {
@@ -192,9 +199,12 @@ class Form implements \UI\Element {
 							/*
 							* Collection of checkboxes
 							* 
-							* @todo: hierarchy support
+							* @note: 
+                                                        * 
+                                                        * checkbox group does not support a hierarchy of items just a single level. This
+                                                        * is a limitation that should be introduced into the form to select a widget for a field. 
 							*/
-							case 'checkbox_group':
+							case 'checkbox_group': // @todo modify this like others
 								
 								// checkbox group only compatible with scalar fields
 								if( isset($data['multi']) ) {
@@ -242,8 +252,23 @@ class Form implements \UI\Element {
 								
 							/*
 							* Multiple select 
+                                                        * 
+                                                        * @note: supports hierarchy of items
 							*/
 							case 'multi_select':
+                                                            
+                                                                $rebuildValues = array();
+                                                                
+                                                                if(isset($values[$field]) && is_array($values[$field])) {
+                                                                    foreach($values[$field] as $mixVal) {
+                                                                        if(is_array($mixVal)) {
+                                                                            $rebuildValues[] = $mixVal['value'];
+                                                                        } else {
+                                                                            $rebuildValues[] = $mixVal;
+                                                                        }
+                                                                    }
+                                                                }
+                                                            
 								$element.= $ui->draw('Common.Form.Select',array(
 						
 									// Elements that are dynamic fields and contain multiple values are placed in value key
@@ -251,15 +276,23 @@ class Form implements \UI\Element {
 						
 									,'id'=>$idbase.strtolower(str_replace('_','-',$field)).'-'.($i+1)
 									,'data'=>$data
-									,'value'=>$values[$field]
+									,'value'=>$rebuildValues
 									,'size'=>isset($data['size'])?$data['size']:7
 									,'disabled'=>$strDisabled?true:false
 									,'multiple'=>true
 								));
 								break;
+                                                                
+                                                                
+                                                        /*
+                                                        * Linked list @todo
+                                                        */
+                                                        case 'linkedlist':
+                                                            break;
+                                                                
 								
 							/*
-							* Auto complete field 
+							* Auto complete field @todo
 							*/
 							case 'autocomplete':
 								break;
@@ -267,11 +300,15 @@ class Form implements \UI\Element {
 							/*
 							* External look-up - pop-up window with options and return - good for large data sets 
 							*/
-							case 'lookup':
+							case 'lookup': // @todo
 								break;
 						
 							/*
 							* Single select menu
+                                                        *
+                                                        * @note:
+                                                        * 
+                                                        * This widget is compatible with a hierarchy of items.   
 							*/
 							case 'select':
 							default:
@@ -333,7 +370,7 @@ class Form implements \UI\Element {
 						$element.= $ui->draw('Common.Form.Input',array(
 							'type'=>$input_type
 							,'name'=>sprintf('%s[%s]%s',$name,$field,(isset($data['multi'])?$dynamic_field && $input_type !== 'file'?"[$i][value]":"[$i]":''))
-							,'value'=>strcmp($input_type,'checkbox') == 0?'1':$val
+							,'value'=>strcmp($input_type,'checkbox') !== 0?is_array($val)?$val['value']:$val:'1'
 							,'max'=>isset($data['max'])?$data['max']:null
 							,'id'=>$idbase.strtolower(str_replace('_','-',$field)).( isset($data['multi'])?'-'.($i+1):'')
 							,'checked'=>strcmp($input_type,'checkbox') == 0 && ((string) $val)?true:false
@@ -342,28 +379,33 @@ class Form implements \UI\Element {
 						));
 							
 						/*
-						* For images show thumbnail 
+						* For images show thumbnail (@todo this will affect moves and audio I believe)
 						*/
 						if(isset($data['media']) && $val) {
 								
 							/*
 							* Images will now show after form is submitted 
 							*/
-							$intImagesId = is_array($val) && isset($val['id'])?$val['id']:$val;
-                                                        
-                                                        /*if(is_array($val) && isset($val['images_id'])) {
-                                                            $intImagesId = $val['images_id']; 
-                                                        } else if(is_array($val) && isset($val['id'])) {
-                                                            $intImagesId = $val['id'];
-                                                        } else if(is_object($val)) {
-                                                            $intImagesId = (string) $val;
-                                                        } else {
-                                                            $intImagesId = $val;
-                                                        }*/
-								
-							$element.= $ui->draw('Common.Field.Thumbnail',array(
+							$intImagesId = is_array($val) && isset($val['value'])?$val['value']:$val;
+							
+                                                        if(!is_array($intImagesId)) {
+                                                            $element.= $ui->draw('Common.Field.Thumbnail',array(
 								'src'=>( $image_path !== null?sprintf($image_path,(string) $intImagesId):$intImagesId )
-							));
+                                                            ));
+                                                        }
+                                                        
+                                                        /*
+                                                        * When mutiple items are allowed for media field drop
+                                                        * the value so that the image meta data can still be updated
+                                                        * regardless of new image upload.  
+                                                        */
+                                                        if(!is_array($intImagesId)) {
+                                                            $element.= $ui->draw('Common.Form.Input',array(
+                                                                'type'=>'hidden'
+                                                                ,'name'=>"{$name}[$field][$i][value]"
+                                                                ,'value'=>$intImagesId
+                                                            ));
+                                                        }  
 								
 						}
 					
@@ -371,34 +413,46 @@ class Form implements \UI\Element {
 						
 					// close multiple value list element
 					if( isset($data['multi']) ) {
+                                           
 							
 						/*
 						* When using a collapsed widget such as; checkbox group or
-						* multi-select each id needs to be dumped out in a look because
+						* multi-select each id needs to be dumped out in a loop because
 						* the outer loop will only occur once. 
 						*/					
 						if(isset($data['values']) && in_array($widget,array('checkbox_group','multi_select'))) {
+                                               
+                                           
+                                                        $rebuildValues = array();
+
+                                                        if(isset($values[$field]) && is_array($values[$field])) {
+                                                            foreach($values[$field] as $mixVal) {
+                                                                if(is_array($mixVal)) {
+                                                                    if(isset($mixVal['id'])) {
+                                                                        $rebuildValues[] = $mixVal['id'];
+                                                                    }
+                                                                } else {
+                                                                    $rebuildValues[] = $mixVal->getId();
+                                                                }
+                                                            }
+                                                        }
+                                                    
 							/*
 							* This logic is necessary to support multi-selects and check box groups or any other
 							* item that allows multiple selections without separate physical fields.
 							* 
-							* @todo: hierarchy support
 							*/
-							foreach($data['values'] as $index=>$value) {
 								
-								foreach($values[$field] as $mcpfield) {
-									if( $value['value'] == $mcpfield ) {
-										$element.= $ui->draw('Common.Form.Input',array(
-											'type'=>'hidden'
-											,'name'=>"{$name}[$field][$index][id]"
-											,'value'=>$mcpfield->getId()
-										));										
-										break;
-									}
-								}	
+                                                        foreach($rebuildValues as $index=>$strVal) {
+                                                            $element.= $ui->draw('Common.Form.Input',array(
+                                                                'type'=>'hidden'
+                                                                ,'name'=>"{$name}[$field][$index][id]"
+                                                                ,'value'=>$strVal
+                                                            ));										
+                                                        }	
 								
-							}
 						} else {
+                                                    
 							/*
 							* IMPORTANT: For dynamic fields the field values primary key is needed
 							* to update any scalar dynamic field. 
@@ -410,7 +464,15 @@ class Form implements \UI\Element {
 									,'value'=>$values[$field][$i]->getId()
 								));
 								//echo "<p>{$name}[$field][$i][id]</p>";
-							}							
+                                                                        
+                                                        // necessary for submissions
+							} else if(is_array($values[$field][$i]) && isset($values[$field][$i]['id'])) {
+								$element.= $ui->draw('Common.Form.Input',array(
+									'type'=>'hidden'
+									,'name'=>"{$name}[$field][$i][id]"
+									,'value'=>$values[$field][$i]['id']
+								));                                                            
+                                                        }							
 						}
 						
 						// multi_select and checkbox don't need/support sorting controls

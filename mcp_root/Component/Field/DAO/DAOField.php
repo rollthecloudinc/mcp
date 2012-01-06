@@ -484,11 +484,12 @@ class MCPDAOField extends MCPDAO {
 						    		<args>
 										<arg>%s</arg>
 						      			<arg>%s</arg>
-						      			<arg>1</arg>
+						      			<arg type="bool">1</arg>
 						      			<arg>
 						      				<select>t.terms_id value,t.human_name label</select>
 						      				<filter>t.deleted = 0</filter>
 						      				<sort>t.weight ASC,t.human_name ASC</sort>
+                                                                                <children>values</children>
 						      			</arg>
 						         	</args>
 							 </dao>'
@@ -907,7 +908,7 @@ class MCPDAOField extends MCPDAO {
                                             
 					case 'video': // todo
                                                 $objDAOUpload = $this->_objMCP->getInstance('App.Resource.File.DAO.DAOVideo',array($this->_objMCP));
-                                                $this->_objMCP->debug($field_value);
+                                                // $this->_objMCP->debug($field_value);
                                                 continue;
                                             
 					default:
@@ -923,8 +924,9 @@ class MCPDAOField extends MCPDAO {
 							$field_value[$index]['value'] = $objDAOUpload->insert($field_value[$index],true);
 						} else {
 							
-							if(!isset($field_value[$index]['value']) || strlen($field_value[$index]['value']) !== 0) {
-								unset($field_value[$index]);
+							if(!isset($field_value[$index]['value'])) {
+								// $this->_objMCP->debug($field_value[$index]);
+                                                                unset($field_value[$index]);
 								continue;
 							}
 							
@@ -950,6 +952,9 @@ class MCPDAOField extends MCPDAO {
 			} /*else if ( strcmp($arrField['cfg_media'],'file') == 0 ) {
 				continue; // ignore for now
 			}*/
+                        
+                        // $this->_objMCP->debug($arrField['cfg_name']);
+                        // $this->_objMCP->debug($field_value);
 			
 			// @TODO: add handling for other media types such as; video, audio, file, ect
 			

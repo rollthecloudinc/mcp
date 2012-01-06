@@ -90,7 +90,12 @@ class MCPTaxonomyFormTerm extends MCPModule {
 			$this->_strParentType = $arrTerm['parent_type'];
 			
 			if(strcmp('term',$this->_strParentType) == 0) {
+                            
+                          
+                                
 				$arrVocabulary = $this->_objDAOTaxonomy->fetchTermsVocabulary($this->_intParentId);
+                                
+                               
 				
 				// reset the parent to display correct vocabulary terms in drop down
 				$this->_strParentType = 'vocabulary';
@@ -98,6 +103,8 @@ class MCPTaxonomyFormTerm extends MCPModule {
 			}
 			
 		}
+                
+                
 		
 		/*
 		* Set form values 
@@ -233,29 +240,54 @@ class MCPTaxonomyFormTerm extends MCPModule {
 		}
 		
 		/*
+                * @TODO 
 		* Split parent id into parent id (left) and parent type (right)
 		*/
-		list($strParentType,$intParentId) = explode('-',$arrSave['parent_id'],2);
+                //if(isset($arrSave['parent_id'])) {
+                list($strParentType,$intParentId) = explode('-',$arrSave['parent_id'],2);
+                /*} else {
+                    $strParentType = 'vocabulary';
+                    $intParentId = $arrTerm['vocabulary_id'];
+                }*/
+                
+                if(strcmp('vocabulary',$strParentType) === 0) {
+                    $arrSave['parent_id'] = null;
+                    $arrSave['vocabulary_id'] = $intParentId;
+                } else {
+                    $arrVocab = $this->_objDAOTaxonomy->fetchTermsVocabulary($intParentId);
+                    $arrSave['parent_id'] = $intParentId;
+                    $arrSave['vocabulary_id'] = $arrVocab['vocabulary_id'];
+                }
+                
+                //$arrSave['vocabulary_id'] = $intParentId;
+                //$arrSave['parent_id'] = $intParentId;
+                
+                // $this->_objMCP->debug($strParentType);
 		
-		if(strcasecmp($strParentType,'vocabulary') !== 0) {
+		//if(strcasecmp($strParentType,'vocabulary') !== 0) {
 			
 			// Get the terms vocabulary
-			$arrVocab = $this->_objDAOTaxonomy->fetchTermsVocabulary($intParentId);
+			//$arrVocab = $this->_objDAOTaxonomy->fetchTermsVocabulary($intParentId);
 			
-			$arrSave['vocabulary_id'] = $arrVocab['vocabulary_id'];
-			$arrSave['parent_id'] = $intParentId;
+			//$arrSave['vocabulary_id'] = $arrVocab['vocabulary_id'];
+			//$arrSave['parent_id'] = $intParentId;
 			
-		} else {
-			$arrSave['vocabulary_id'] = $intParentId;
-			unset($arrSave['parent_id']);
-		}
+		//} else {
+                        // $this->_objMCP->debug($arrTerm);
+			//$arrSave['vocabulary_id'] = $arrTerm['vocabulary_id'];
+			//unset($arrSave['parent_id']);
+		//}
+                
+                $this->_objMCP->debug($arrSave);
+                
+                //return;
 		
 		/*
 		* Save term
 		*/
 		try {
 			
-			$this->_objDAOTaxonomy->saveTerm($arrSave);
+			$intId = $this->_objDAOTaxonomy->saveTerm($arrSave);
 			
 			/*
 			* Fire update event using this as the target
@@ -266,6 +298,22 @@ class MCPTaxonomyFormTerm extends MCPModule {
 			* Add success message 
 			*/
 			$this->_objMCP->addSystemStatusMessage( $this->_getSaveSuccessMessage() );
+                        
+                        /*
+                        * Refresh data 
+                        */
+                        if($arrTerm !== null) {
+                            $this->_setTerm($this->_objDAOTaxonomy->fetchTermById($arrTerm['terms_id']));
+                        } else {
+                            $this->_setTerm($this->_objDAOTaxonomy->fetchTermById($intId));
+                        }
+                        
+                        /*
+                        * Reload data
+                        */
+                        $this->_arrFrmValues = array();
+                        $this->_setFrmEdit();
+                        
 			
 		} catch(MCPDAOException $e) {
 			
@@ -313,18 +361,8 @@ class MCPTaxonomyFormTerm extends MCPModule {
 		$arrTerm = $this->_getTerm();
 		
 		$entity_id = null;
-		if($arrTerm !== null) {
-			if(strcmp($arrTerm['parent_type'],'vocabulary') === 0) {
-				$entity_id = $arrTerm['parent_id'];
-			} else {
-				
-				// get the vocabulary the term belongs to
-				$vocab = $this->_objDAOTaxonomy->fetchTermsVocabulary($arrTerm['terms_id'],0,true);
-				if($vocab !== null) {
-					$entity_id = $vocab['vocabulary_id'];
-				}
-				
-			}
+		if($arrTerm !== null) {           
+                    $entity_id = $arrTerm['vocabulary_id'];
 		} else {
 			if(strcmp('vocabulary',$this->_strParentType) === 0 && $this->_intParentId !== null) {
 				$entity_id = $this->_intParentId;
@@ -340,6 +378,9 @@ class MCPTaxonomyFormTerm extends MCPModule {
 		
 		$arrConfig = $this->_objMCP->getFrmConfig($this->getPkg(),'frm',true,array('entity_type'=>'MCP_VOCABULARY','entities_id'=>$entity_id));
 		
+                
+                
+                
 		/*
 		* Proxy in term options due to overhead of recursion used to build hierarchy
 		*/
@@ -349,7 +390,7 @@ class MCPTaxonomyFormTerm extends MCPModule {
 			* Default options 
 			*/
 			$arrOptions = array(
-				'select'=>'t.terms_id,t.system_name label,CONCAT(\'term-\',t.terms_id) value'
+				'select'=> 't.terms_id,t.system_name label,CONCAT(\'term-\',t.terms_id) value'
 				,'children'=>'values'
 			);
 			
@@ -362,13 +403,13 @@ class MCPTaxonomyFormTerm extends MCPModule {
 			/*
 			* Add filter to ommitt items that have been soft deleted 
 			*/
-			$arrOptions['filter'] = 't.deleted = 0 ';
+			$arrOptions['filter'] = ' t.deleted = 0 ';
 			
 			/*
 			* Add a filter to ommit the term being edited
 			*/
 			if($arrTerm !== null) {
-				$arrOptions['filter'].= "AND t.terms_id <> {$this->_objMCP->escapeString($arrTerm['terms_id'])}";
+				$arrOptions['filter'].= " AND t.terms_id <> {$this->_objMCP->escapeString($arrTerm['terms_id'])} ";
 			}
 			
 			$this->_arrTermOptions = array(
@@ -382,8 +423,11 @@ class MCPTaxonomyFormTerm extends MCPModule {
 						,$arrOptions
 					)
 				)		
-			);			
+			);
+                                        
 		}
+                
+                // $this->_objMCP->debug($this->_arrTermOptions);
 		
 		/*
 		* Assign term options hierarchy as values 

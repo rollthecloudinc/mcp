@@ -227,8 +227,8 @@ class MCPViewView extends MCPModule {
 			
 		}
 		
-		// Back label 
-		$this->_arrTemplateData['back_label'] = 'Content';
+		// Back label (link config option)
+		$this->_arrTemplateData['back_label'] = $this->getConfigValue('back_label')?$this->getConfigValue('back_label'):'Back To Content';
 		
 		// Redirect back link
 		$this->_arrTemplateData['back_link'] = "{$this->getBasePath(false,true)}{$this->_objMCP->getQueryString()}";

@@ -330,6 +330,8 @@ class MCPNodeFormEntry extends MCPModule {
 		* Assign config to proxy property 
 		*/
 		$this->_arrCachedFrmConfig = $config;
+                
+                // $this->_objMCP->debug($config);
 		
 		return $this->_arrCachedFrmConfig;
 	
@@ -422,7 +424,7 @@ class MCPNodeFormEntry extends MCPModule {
 		*/
 		try {
 			
-			$this->_objDAONode->saveNode($arrValues);
+			$intId = $this->_objDAONode->saveNode($arrValues);
 			
 			/*
 			* Fire update event using this as the target
@@ -433,6 +435,18 @@ class MCPNodeFormEntry extends MCPModule {
 			* Add success message 
 			*/
 			$this->_objMCP->addSystemStatusMessage( $this->_getSaveSuccessMessage() );
+                        
+                        /*
+                        * Refresh node and compile data 
+                        */
+                        if($arrNode !== null) {
+                            $this->_arrNode = $this->_objDAONode->fetchById($arrNode['nodes_id']);
+                        } else {
+                            $this->_arrNode = $this->_objDAONode->fetchById($intId);
+                        }
+                        
+                        $this->_arrFrmValues = array();
+                        $this->_setFrmEdit();
 			
 		} catch(MCPDAOException $e) {
 			

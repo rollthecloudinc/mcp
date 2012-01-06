@@ -1,0 +1,56 @@
+$form->addField('name');
+
+Value - cast to string toString
+
+Widgets
+
+
+\TextArea :: \Widegt
+- type: str
+- multiple: false
+
+\TextField :: \Widget
+- type: str
+  mutliple: false
+
+\Select :: \Widget
+- type: str
+  mutiple: false
+
+\RadioList :: \Grid
+- type: str
+  mutiple: false
+
+\Autocomplete :: \Grid
+- type: str
+  mutiple: false
+
+\LinkedList :: \Grid
+- type: str
+  mutiple: false
+
+\MultiSelect :: \Widget\Collapsed
+- type: str
+  mutiple: true
+
+\Checkbox :: \Widget
+- type: str
+- mutiple: false
+
+\CheckboxGroup :: \Widget\Collapsed
+- type: str
+  mutiple: true
+  
+\Date
+- type []
+- multiple false
+  
+  
+\Grid :: \Widget
+- docked: Widget[]
+- items Widget[]
+- layout
+
+\Vertical :: \Layout
+\Column :: \Layout
+\Horizonal :: [ \Layout
