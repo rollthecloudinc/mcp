@@ -96,6 +96,11 @@ $(function() {
                         // remove image elements (for image files)
                         $('img',clone).remove();
                         
+                        // remove label for generic files
+                        $('input[type=file] + p',clone).remove();
+                        
+                        $('.preview',clone).replaceWith('<div class="preview"></div>');
+                        
 			$(clone).show();
 			
 		});

@@ -476,40 +476,6 @@
 				<required>N</required>
 				<max>128</max>
 			</node_subtitle>
-			<node_content>
-				<label>Body</label>
-				<required>Y</required>
-				<textarea>1</textarea>
-			</node_content>
-			<intro_content>
-				<label>Teaser</label>
-				<required>N</required>
-				<textarea>1</textarea>
-			</intro_content>
-			<content_type>
-				<label>Body Type</label>
-				<required>Y</required>
-				<default>html</default>
-				<dao>
-					<pkg>Component.Util.DAO.DAOUtil</pkg>
-					<method>listContentTypes</method>
-					<args>
-						<arg>ct.system_name value,ct.human_name label</arg>
-					</args>
-				</dao>
-			</content_type>
-			<intro_type>
-				<label>Teaser Type</label>
-				<required>Y</required>
-				<default>html</default>
-				<dao>
-					<pkg>Component.Util.DAO.DAOUtil</pkg>
-					<method>listContentTypes</method>
-					<args>
-						<arg>ct.system_name value,ct.human_name label</arg>
-					</args>
-				</dao>
-			</intro_type>
 			<node_published>
 				<label>Published</label>
 				<required>Y</required>
@@ -525,6 +491,42 @@
 					</value>
 				</values>
 			</node_published>
+			<node_content>
+				<label>Body</label>
+				<required>Y</required>
+				<textarea>1</textarea>
+                                <widget>textarea</widget>
+			</node_content>
+			<content_type>
+				<label>Body Type</label>
+				<required>Y</required>
+				<default>html</default>
+				<dao>
+					<pkg>Component.Util.DAO.DAOUtil</pkg>
+					<method>listContentTypes</method>
+					<args>
+						<arg>ct.system_name value,ct.human_name label</arg>
+					</args>
+				</dao>
+			</content_type>
+			<intro_content>
+				<label>Teaser</label>
+				<required>N</required>
+				<textarea>1</textarea>
+                                <widget>textarea</widget>
+			</intro_content>
+			<intro_type>
+				<label>Teaser Type</label>
+				<required>Y</required>
+				<default>html</default>
+				<dao>
+					<pkg>Component.Util.DAO.DAOUtil</pkg>
+					<method>listContentTypes</method>
+					<args>
+						<arg>ct.system_name value,ct.human_name label</arg>
+					</args>
+				</dao>
+			</intro_type>
 		</frm>
 	</mod>
 	<mod pkg="Component.Node.Module.Form.Comment">

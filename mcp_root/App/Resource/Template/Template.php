@@ -347,77 +347,31 @@ class MCPTemplate extends MCPResource {
 		}
 	}
 	
-	
-	
-	
-	
-	
 	public function build_form($frm) {	
 		echo $this->ui('Common.Form.Form',$frm);
 	}
+        
 	public function build_table($tbl) {	
 		echo $this->ui('Common.Listing.Table',$tbl);	
 		return;
 	}
+        
 	public function date_format($strTimestamp) {
 		return $this->ui('Common.Field.Date',array(
 			'date'=>$strTimestamp
 			,'type'=>'timestamp'
 		));
 	}
+        
 	public function build_tree($tree) {		
 		echo $this->ui('Common.Listing.Tree',$tree);
 		return;
 	}
+        
 	public function ui($name,$options) {
 		return $this->_objMCP->ui($name,$options);
 	}
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	/*
-	* Inspired by Smarty html_options method because it is beyond useful.
-	* Used to render options list for a select menu. 
-	*/
-	public function html_options($arrOptions) {
-		/*
-		* Return string 
-		*/
-		$strReturn = '';
-		
-		/*
-		* Extract values, output and selected
-		*/
-		$arrValues = isset($arrOptions['values'])?$arrOptions['values']:null;
-		$arrOutput = isset($arrOptions['output'])?$arrOptions['output']:null;
-		$strSelected = isset($arrOptions['selected'])?$arrOptions['selected']:null;
-		
-		/*
-		* Values and output are required to build option list 
-		*/
-		if($arrValues === null || $arrOutput === null) return $strReturn;
-		
-		$intValues = count($arrValues);
-		for($i=0;$i<$intValues;$i++) {
-			$strReturn.=
-			sprintf(
-				'<option value="%s"%s>%s</option>'
-				,$arrValues[$i]
-				,$strSelected == $arrValues[$i]?' selected="selected"':''
-				,htmlentities($arrOutput[$i])
-			);
-		}
-		
-		return $strReturn;
-	}
 	/*
 	* Used to close empty HTML element for seamless XHTML and HTML transition 
 	* 
@@ -444,242 +398,7 @@ class MCPTemplate extends MCPResource {
 				if($boolEcho === true) echo '>'; else return '>';
 			
 		}		
-	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	/*
-	* Form builder 
-	* 
-	* @param array frm key value pairs:
-	* - name
-	* - action
-	* - config
-	* - values
-	* - errors
-	* - legend
-	*/
-	private function _deprecated_build_form($frm) {
-		
-		echo $this->ui('Common.Form.Form',$frm);
-		return;
-		
-		
-		
-		$name = isset($frm['name'])?$frm['name']:'';
-		$action = isset($frm['action'])?$frm['action']:'';
-		$config = isset($frm['config'])?$frm['config']:array();
-		$values = isset($frm['values'])?$frm['values']:array();
-		$errors = isset($frm['errors'])?$frm['errors']:array();
-		$legend = isset($frm['legend'])?$frm['legend']:'';
-		$idbase = isset($frm['idbase'])?$frm['idbase']:'frm-';
-		$submit = isset($frm['submit'])?$frm['submit']:'Save';
-		
-		
-		
-		
-		// clear button
-		$clear =  isset($frm['clear'])?$frm['clear']:'';
-		
-		?>
-		<form name="<?php echo $name; ?>" id="<?php echo $name; ?>" action="<?php echo $action; ?>" method="POST" enctype="multipart/form-data">
-		<fieldset>
-			<legend><?php echo $legend; ?></legend>
-			<?php
-			if(!empty($config)) {
-			
-				print('<ul>');
-				foreach($config as $field=>$data) {
-					
-					/*
-					* Skip static fields 
-					*/
-					if(isset($data['static']) && strcmp('Y',$data['static']) == 0) continue;
-					
-					/*
-					* Disabled attribute 
-					*/
-					$strDisabled = isset($data['disabled']) && $data['disabled'] == 'Y'?' disabled="disabled"':'';
-				
-					/*
-					* Print the field label 
-					*/
-					/*printf(
-						'<li class="%2$s%s"><label for="%s%1$s"'.$strDisabled.'>%s%s</label>'
-						,strtolower(str_replace('_','-',$field))
-						,$idbase
-						,$data['label']
-						,isset($data['required']) && $data['required'] == 'Y'?'&nbsp<span class="required">*</span>':''
-					);*/
-					
-					echo '<li>'.$this->ui('Common.Form.Label',array(
-						'for'=>$idbase.strtolower(str_replace('_','-',$field))
-						,'label'=>$data['label']
-						,'required'=>isset($data['required']) && $data['required'] == 'Y'?true:false
-					));
-					
-					$loops = isset($data['multi'])?$data['multi']:1;
-					
-					for($i=0;$i<$loops;$i++) {
-				
-						/*
-						* Print the field input, select, radio, checkbox, etc 
-						*/
-						if(isset($data['values'])) {
-						
-							/*$strSize = isset($data['size'])?' size="'.$data['size'].'"':'';
-					
-							printf(
-								'<select name="%s[%s]%s" id="%s%s"'.$strDisabled.$strSize.'>'
-								,$name
-								,$field
-								,(isset($data['multi'])?'[]':'')
-								,$idbase
-								,strtolower(str_replace('_','-',$field))
-							);*/
-						
-							/*
-							* This format can be used as a callback for recursive select menus 
-							*/
-							/*$func = create_function(
-								'$func,$data,$template,$values,$field,$runner=0'					
-								,'foreach($data[\'values\'] as $option_value) {
-									printf(
-										\'<option class="depth-%u" value="%s"%s>%s</option>\'
-										,$runner
-										,$option_value[\'value\']
-										,$values[$field] == $option_value[\'value\']?\' selected="selected"\':\'\'
-										,$template->out($option_value[\'label\'])
-									);						
-									if(isset($option_value[\'values\']) && !empty($option_value[\'values\'])) {
-										call_user_func($func,$func,$option_value,$template,$values,$field,($runner+1));
-									}				
-								}');*/
-						
-							/*
-							* Build select menu 
-							*/
-							//call_user_func($func,$func,$data,$this,$values,$field);
-					
-							//print('</select>');
-							
-							echo $this->ui('Common.Form.Select',array(
-								'name'=>sprintf('%s[%s]%s',$name,$field,(isset($data['multi'])?'[]':''))
-								,'id'=>$idbase.strtolower(str_replace('_','-',$field))
-								,'data'=>$data
-								,'value'=>$values[$field]
-								,'size'=>isset($data['size'])?$data['size']:null
-								,'disabled'=>$strDisabled?true:false
-							));
-							
-						
-						} else if(isset($data['textarea'])) {
-						
-							/*printf(
-							'<textarea name="%s[%s]%s" id="%s%s"'.$strDisabled.'>%s</textarea>'
-								,$name
-								,$field
-								,(isset($data['multi'])?'[]':'')
-								,$idbase
-								,strtolower(str_replace('_','-',$field))
-								,isset($data['multi'])?isset($values[$field][$i])?$values[$field][$i]:'':$values[$field]
-							);*/	
-
-							echo $this->ui('Common.Form.TextArea',array(
-								'name'=>sprintf('%s[%s]%s',$name,$field,(isset($data['multi'])?'[]':''))
-								,'id'=>$idbase.strtolower(str_replace('_','-',$field))
-								,'disabled'=>$strDisabled?true:false
-								,'value'=>isset($data['multi'])?isset($values[$field][$i])?$values[$field][$i]:'':$values[$field]								
-							));
-						
-						} else {
-					
-							switch(isset($data['type'])?$data['type']:'') {
-								case 'bool':
-									$input_type = 'checkbox';
-									break;
-							
-								default:
-									$input_type = 'text';
-							}
-							
-							/*
-							* Override for file input 
-							*/
-							if(isset($data['image'])) {
-								$input_type = 'file';
-								
-								// show image preview
-								/*if(!is_array($values[$field]) && is_numeric($values[$field])) {
-									printf(
-										'<img src="%s/%u">'
-										,'http://local.mcp4/img.php'
-										,$values[$field]
-									);
-								}*/
-								
-							}
-							
-							$val = isset($data['multi'])?isset($values[$field][$i])?$values[$field][$i]:'':$values[$field];
-					
-							printf(
-								'<input type="%s" name="%s[%s]%s" value="%s"%sid="%s%s"%s'.$strDisabled.$this->close(false)
-								,$input_type
-								,$name
-								,$field
-								,(isset($data['multi'])?'[]':'')
-								,strcmp($input_type,'checkbox') == 0?'1':$val
-								,isset($data['max'])?'maxlength="'.$data['max'].'"':' '
-								,$idbase
-								,strtolower(str_replace('_','-',$field))
-								,strcmp($input_type,'checkbox') == 0 && $val?' checked="checked"':''
-							);
-					
-						}
-						
-					}
-				
-					/*
-					* Print field errors 
-					*/
-					if(isset($errors[$field])) printf('<p>%s</p>',$this->out($errors[$field]));
-				
-					print('</li>');
-				
-				} 
-			
-				/*
-				* Submit button 
-				*/
-				printf('<li class="save"><input type="submit" name="%s[save]" value="%s" id="%s%s"></li>',$name,$submit,$idbase,'save');
-				
-				/*
-				* Clear button 
-				*/
-				if(strlen($clear) !== 0) {
-					printf('<li class="save"><input type="submit" name="%s[clear]" value="%s" id="%s%s"></li>',$name,$clear,$idbase,'save');
-				}
-				
-				print('</ul>');
-			} else {
-				print('<p>No config available for site</p>');
-			}
-		?>	
-		</fieldset>
-		</form><?php	
-	}
-	
-	
-	
+        }
 	
 }
 ?>

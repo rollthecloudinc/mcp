@@ -2018,7 +2018,7 @@ class MCPDAOView extends MCPDAO {
 					break;
 				
 				case 'bool':
-					// case to int because no bool value exists in SQL - uses 0 and 1
+					// cast to int because no bool value exists in SQL - uses 0 and 1
 					$rebuild[] = (int) $value;
 					break;
 				

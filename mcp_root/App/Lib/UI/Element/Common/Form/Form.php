@@ -139,7 +139,7 @@ class Form implements \UI\Element {
 				*/
 				$strDisabled = isset($data['disabled']) && $data['disabled'] == 'Y'?' disabled="disabled"':'';
 				
-				$form.= '<li><?php echo $'.$field.'; ?>';
+				$form.= '<li class="widget-'.($widget?str_replace('_','-',$widget):'null').' '.(isset($data['multi'])?'many':'one').'"><?php echo $'.$field.'; ?>';
 					
 				$element.= $ui->draw('Common.Form.Label',array(
 					'for'=>$idbase.strtolower(str_replace('_','-',$field))
@@ -294,7 +294,7 @@ class Form implements \UI\Element {
 									,'id'=>$idbase.strtolower(str_replace('_','-',$field)).'-'.($i+1)
 									,'data'=>$data
 									,'value'=>$rebuildValues
-									,'size'=>isset($data['size'])?$data['size']:7
+									,'size'=>isset($data['size'])?$data['size']:10
 									,'disabled'=>$strDisabled?true:false
 									,'multiple'=>true
 								));
@@ -344,7 +344,7 @@ class Form implements \UI\Element {
 						}
 							
 						
-					} else if(isset($data['textarea'])) {	
+					} else if(isset($data['textarea']) || strcasecmp($widget,'textarea') === 0) {	
 
 						$element.= $ui->draw('Common.Form.TextArea',array(
 							'name'=>sprintf('%s[%s]%s',$name,$field,(isset($data['multi'])?$dynamic_field?"[$i][value]":"[$i]":''))
@@ -383,6 +383,7 @@ class Form implements \UI\Element {
 						if(isset($data['media'])) {
 							$input_type = 'file';
 						}
+                                                
 							
 						$element.= $ui->draw('Common.Form.Input',array(
 							'type'=>$input_type
@@ -411,9 +412,10 @@ class Form implements \UI\Element {
                                                         */
                                                         if(strcasecmp('image',$data['media']) === 0) {
                                                             if(!is_array($mixMediaId)) {
-                                                                $element.= $ui->draw('Common.Field.Thumbnail',array(
+                                                                /*$element.= $ui->draw('Common.Field.Thumbnail',array(
 								'src'=>( $image_path !== null?sprintf($image_path,(string) $mixMediaId):$mixMediaId )
-                                                                ));
+                                                                ));*/
+                                                                $element.= '<div class="preview" style="background-image: url('.( $image_path !== null?sprintf($image_path,(string) $mixMediaId):$mixMediaId ).');"></div>';
                                                             }
                                                         }
                                                         
@@ -448,6 +450,7 @@ class Form implements \UI\Element {
 						}
 					
 					}
+                                        
                                         
                                         /*
                                         * Add meta data fields for image alt and caption. 

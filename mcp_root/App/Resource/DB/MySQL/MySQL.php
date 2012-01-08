@@ -203,7 +203,7 @@ class MCPMySQL extends MCPResource implements MCPDB {
 		$named = 'false';
 		
 		/*
-		* Pttern to match against; defaults to ? placeholder 
+		* Pattern to match against; defaults to ? placeholder 
 		*/
 		$pattern = '\?';
 		

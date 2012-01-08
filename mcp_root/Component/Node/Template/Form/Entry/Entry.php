@@ -28,7 +28,7 @@
 
 <script type="text/javascript">
 $(document).ready(function() {
-	$('#node-node-content').ckeditor();
+	$('#node-node-content,#node-intro-content').ckeditor();
 });
 </script>
 
