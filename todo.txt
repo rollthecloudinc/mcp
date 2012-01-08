@@ -31,4 +31,48 @@
     - can't sort
     - This will solve the majority of issues
     - leave developers responsibility to do sorting, customization programmtaically
+
+
+
+----------------------------------------------------------------------------------------
+
+
+00001: Complete administrative UI to manage views
+- Form has been partially created but there is much to be done. Views themselves are stable if the data
+  is entered via the db manually. Just nothing exist to create views via the admin UI.
+
+00002: administrative UI to manage permissions and assigning roles to users.
+- Not much work has been done here. There is only a basic static form that shows the intended
+  work flow. Nothing actually functions though.
+
+00003: Implement cache layer for finding entities by ID.
+- There is a basic cache system set-up but it has all been commented out considering
+  it requires an extra query to hit the DB to check for a serialized object.
+
+00004: Create linked list and auto complete form widgets.
+- Several forms will be dependent on at the very least a linked list. The linked list
+  will be necessary for roles and views UI. Though I tend to think that both of these will
+  not be able to use the default form Builder UI but we will see.
+
+00004: Rebuild Taxonomy term list module/look. 
+- Make it more like the new menu display. In which all terms are shown on a single page in a table with indenting.
+
+00005: Implement and integrate configuration permission plugin.
+- Right now configuration is not being protected by permissions layer. In the end it should be possible
+  to look down specific configuration parameters to certain users.
+
+00006: Determine better means of managing assets (JS and CSS) and possibly internal aggregation and minification support.
+- Right now CSS and JS are merely embedded in templates. However, there whould be a way for modules and templates
+  to add files via method of the MCP facade or something.
+
+00007: When term is input as a view filter parameter match against all child terms as well.
+- Right now when a term is used as a view filter the match is explicit to that term
+  only not children. Therefore, given a store with a category structure a search for
+  "socks" would only yield products directly associated with socks not those that
+  are indirectly associated with socks via child terms such as; "dress socks" or "sports socks".
+
+00008 BUG
+If no fields have been created for an entity the create fields button is not showing up. However, once
+a single field is created the button properly shows up for those who have the proper permissions.
+     
   
