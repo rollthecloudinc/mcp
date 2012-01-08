@@ -1,4 +1,6 @@
 <?php 
+$this->import('Component.Field.DAO.Field');
+
 /*
 * Dynamic field data access layer 
 */
@@ -298,6 +300,17 @@ class MCPDAOField extends MCPDAO {
 							// fetch the image data
 							$relation = $objDAOImage->fetchById((int) $value);  					
 							break;
+                                                    
+                                                // field references generic file
+                                                case 'MCP_MEDIA_FILES::files_id':
+                                                    
+                                			// get the files dao
+							$objDAOFile = $this->_objMCP->getInstance('App.Resource.File.DAO.DAOFile',array($this->_objMCP));
+							
+							// fetch the image data
+							$relation = $objDAOFile->fetchById((int) $value);
+                                                    
+                                                        break;
 		
 						// field references a node
 						case 'MCP_NODES::nodes_id':
@@ -931,7 +944,12 @@ class MCPDAOField extends MCPDAO {
 							} else {
                                                             // This will make it possible to update images associated meta data such as; title and alt
                                                             //$this->_objMCP->debug('update meta data '.$index);
-                                                            $objDAOUpload->updateMetaData($field_value[$index]);
+                                                            
+                                                            // At this time only images have meta data associated with them.
+                                                            if($arrField['cfg_media'] === 'image') {
+                                                                $objDAOUpload->updateMetaData($field_value[$index]);
+                                                            }
+                                                            
                                                         }
 							
 						}
@@ -943,9 +961,12 @@ class MCPDAOField extends MCPDAO {
 					if($field_value && isset($field_value['error']) && $field_value['error'] != 4) {
 						$field_value = $objDAOUpload->insert($field_value,true);
 					} else {	
-                                            
+                                                
+                                                // At this time only images have meta data associated with them.
                                                 if(isset($field_value['value']) && strlen($field_value['value']) !== 0) {
-                                                    $objDAOUpload->updateMetaData($field_value);
+                                                    if($arrField['cfg_media'] === 'image') {
+                                                        $objDAOUpload->updateMetaData($field_value);
+                                                    }
                                                 }
                                             
 						if(!isset($field_value['value']) || strlen($field_value['value']) !== 0) {
@@ -1488,50 +1509,6 @@ class MCPDAOField extends MCPDAO {
 		return $this->_objMCP->query($strSQL);
 		
 	}
-	
-}
-
-class MCPField extends StdClass implements ArrayAccess {
-	
-	private 
-	
-	$_value
-	,$_id;
-	
-	public function setValue($value) {
-		$this->_value = $value;
-	}
-	
-	public function setId($id) {
-		$this->_id = $id;
-	}
-	
-	public function getId() {
-		return $this->_id;
-	}
-	
-	public function __toString() {
-		return (string) $this->_value;
-	}
-        
-        public function offsetSet($offset, $value) {
-            if (is_string($offset)) {
-                $this->$offset = $value;
-            }
-        }
-        
-        public function offsetExists($offset) {
-            return isset($this->$offset);
-        }
-        
-        public function offsetUnset($offset) {
-            unset($this->$offset);
-        }
-        
-        public function offsetGet($offset) {
-            return isset($this->$offset)?$this->$offset:null;
-        }
-	
 	
 }
 ?>

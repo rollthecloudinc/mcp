@@ -62,71 +62,20 @@ class MCPDAOFile extends MCPDAO {
 	* @return int images id
 	*/
 	public function insert($arrFile,$boolWrite=false) {
-		
-		echo '<pre>',print_r($arrFile),'</pre>';
-		
-		/*if(isset($arrFile['tmp_name'])) {
-			$arrImage['image'] = file_get_contents($arrImage['tmp_name']);
-		}*/
-		
-		/*
-		* Create temporary file to write image to 
-		*/
-		// $strTmp = tempnam('','img');
-		
-		/*
-		* Create image resource 
-		*/
-		// $objImage = imagecreatefromstring($arrImage['image']);
-		
-		/*
-		* Write image to temporary file 
-		*/
-		/* switch($arrImage['type']) {
-			case 'image/jpg':
-			case 'image/jpeg':
-				imagejpeg($objImage,$strTmp,100);
-				break;
-				
-			case 'image/gif':
-				imagegif($objImage,$strTmp);
-				break;
-					
-			case 'image/png':
-				imagepng($objImage,$strTmp,0);
-				break;
-					
-			case 'image/bmp':
-				imagebmp($objImage,$strTmp);
-				break;
-		} */
-		
-		/*
-		* Get images width,height and filesize 
-		*/
-		// $arrImage['width'] = imagesx($objImage);
-		// $arrImage['height'] = imagesy($objImage);
-		// $arrImage['size'] = sprintf("%u", filesize($strTmp));
-		
-		/*
-		* Cleanup temporary resources 
-		*/
-		// imagedestroy($objImage);
-		
-		// echo '<pre>',print_r($arrFile),'</pre>';
-		
+                
 		/*
 		* Insert file data into database 
 		*/
-		$intId = $this->_objMCP->query(sprintf(
-			"INSERT INTO MCP_MEDIA_FILES (sites_id,creators_id,file_label,file_mime,file_size,created_on_timestamp) VALUES (%s,%s,'%s','%s','%s',NOW())"
-			,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
-			,$this->_objMCP->escapeString($this->_objMCP->getUsersId())
-			,$this->_objMCP->escapeString($arrFile['name'])
-			,$this->_objMCP->escapeString($arrFile['type'])
-			,$this->_objMCP->escapeString($arrFile['size'])
-			// ,md5( file_get_contents($arrFile['tmp_name']) )
-		));
+		$intId = $this->_objMCP->query(
+			"INSERT INTO MCP_MEDIA_FILES (sites_id,creators_id,file_label,file_mime,file_size,created_on_timestamp) VALUES (:sites_id,:users_id,:name,:type,:size,NOW())"
+                        ,array(
+                             ':sites_id'    => (int) $this->_objMCP->getSitesId()
+                            ,':users_id'    => (int) $this->_objMCP->getUsersId()
+                            ,':name'        => $arrFile['name']
+                            ,':type'        => $arrFile['type']
+                            ,':size'        => $arrFile['size']
+			)
+		);
 		
 		/*
 		* Save file to file directory

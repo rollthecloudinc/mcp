@@ -404,12 +404,26 @@ class Form implements \UI\Element {
 							/*
 							* Images will now show after form is submitted 
 							*/
-							$intImagesId = is_array($val) && isset($val['value'])?$val['value']:$val;
+							$mixMediaId = is_array($val) && isset($val['value'])?$val['value']:$val;
 							
-                                                        if(!is_array($intImagesId)) {
-                                                            $element.= $ui->draw('Common.Field.Thumbnail',array(
-								'src'=>( $image_path !== null?sprintf($image_path,(string) $intImagesId):$intImagesId )
-                                                            ));
+                                                        /*
+                                                        * Image preview 
+                                                        */
+                                                        if(strcasecmp('image',$data['media']) === 0) {
+                                                            if(!is_array($mixMediaId)) {
+                                                                $element.= $ui->draw('Common.Field.Thumbnail',array(
+								'src'=>( $image_path !== null?sprintf($image_path,(string) $mixMediaId):$mixMediaId )
+                                                                ));
+                                                            }
+                                                        }
+                                                        
+                                                        /*
+                                                        * Generic File cue
+                                                        */
+                                                        else if(strcasecmp('file',$data['media']) === 0) {
+                                                            if(is_object($val)) {
+                                                                $element.= '<p>'.htmlentities($val['file_label']).'</p>';
+                                                            }
                                                         }
                                                         
                                                         /*
@@ -420,13 +434,15 @@ class Form implements \UI\Element {
                                                         * Do the same for single image field so that ssociated meta
                                                         * data can be easily updated.  
                                                         */
-                                                        if(!is_array($intImagesId)) {
+                                                        if(!is_array($mixMediaId)) {
                                                             $element.= $ui->draw('Common.Form.Input',array(
                                                                 'type'=>'hidden'
                                                                 ,'name'=>isset($data['multi'])?"{$name}[$field][$i][value]":"{$name}[$field][value]"
-                                                                ,'value'=>$intImagesId
+                                                                ,'value'=>$mixMediaId
                                                             ));
                                                         }
+                                                        
+                                                        unset($intMediaId);
                                                         
 								
 						}
