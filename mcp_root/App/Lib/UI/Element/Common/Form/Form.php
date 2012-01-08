@@ -213,10 +213,14 @@ class Form implements \UI\Element {
 									
 									// rebuild values without any blank values
 									$rebuild = array();
+                                                                        
 									foreach($data['values'] as $option) {
 										if(strlen($option['value']) === 0) continue;
 										$rebuild[] = $option;
 									}
+                                                                        
+                                                                        //echo '<pre>'; var_dump($values[$field]); echo '</pre>';
+                                                                        //echo '<pre>'; var_dump($rebuild); echo '</pre>';
 									
 									// Render as checkbox group in a list
 									$element.= $ui->draw('Common.Listing.Tree',array(
@@ -224,6 +228,19 @@ class Form implements \UI\Element {
 										,'mutation'=>function($val,$checkbox,$index) use(&$field,&$values,&$name,&$idbase,&$strDisabled,&$element,$ui) {
 											
 											$out = '';
+                                                                                        $checked = false;
+                                                                                        
+                                                                                        // in_array is not correct because mcp instances need to be casted to strings before comparision
+                                                                                        if(!empty($values[$field])) {
+                                                                                            foreach($values[$field] as $mixVal) {
+                                                                                                //var_dump($mixVal);
+                                                                                                if( (is_array($mixVal) && isset($mixVal['value']) && $checkbox['value'] === $mixVal['value']) || ((string) $mixVal) === $checkbox['value']) {
+                                                                                                    //echo "<p>{$mixVal} = {$checkbox['value']}</p>";;
+                                                                                                    $checked = true;
+                                                                                                    break;
+                                                                                                }
+                                                                                            }
+                                                                                        }
 											
 											// label
 											$out.= $ui->draw('Common.Form.Label',array(
@@ -235,9 +252,9 @@ class Form implements \UI\Element {
 											$out.= $ui->draw('Common.Form.Input',array(
 												'type'=>'checkbox'
 												,'id'=>$idbase.strtolower( str_replace('_','-',$field) ).'-'.($index+1)
-												,'name'=>"{$name}[$field][$index][value]"
+												,'name'=>"{$name}[$field][][value]"
 												,'value'=>$checkbox['value']
-												,'checked'=>in_array($checkbox['value'],$values[$field])
+												,'checked'=>$checked
 												,'disabled'=>$strDisabled?true:false
 											));
 											
@@ -377,9 +394,10 @@ class Form implements \UI\Element {
 							,'disabled'=>$strDisabled?true:false
 							,'class'=>!empty($widget)?"ui-widget-$widget":null
 						));
+                                                
 							
 						/*
-						* For images show thumbnail (@todo this will affect moves and audio I believe)
+						* For images show thumbnail (@todo this will affect movies and audio I believe)
 						*/
 						if(isset($data['media']) && $val) {
 								
@@ -398,18 +416,54 @@ class Form implements \UI\Element {
                                                         * When mutiple items are allowed for media field drop
                                                         * the value so that the image meta data can still be updated
                                                         * regardless of new image upload.  
+                                                        * 
+                                                        * Do the same for single image field so that ssociated meta
+                                                        * data can be easily updated.  
                                                         */
                                                         if(!is_array($intImagesId)) {
                                                             $element.= $ui->draw('Common.Form.Input',array(
                                                                 'type'=>'hidden'
-                                                                ,'name'=>"{$name}[$field][$i][value]"
+                                                                ,'name'=>isset($data['multi'])?"{$name}[$field][$i][value]":"{$name}[$field][value]"
                                                                 ,'value'=>$intImagesId
                                                             ));
-                                                        }  
+                                                        }
+                                                        
 								
 						}
 					
 					}
+                                        
+                                        /*
+                                        * Add meta data fields for image alt and caption. 
+                                        */
+                                        if(isset($data['media']) && strcasecmp($data['media'],'image') === 0) {
+                                            
+                                            // alt
+                                            $element.= $ui->draw('Common.Form.Label',array(
+                                                'label'=>'Alt',
+                                                'for'=>''
+                                            ));
+                                            $element.= $ui->draw('Common.Form.Input',array(
+                                                'type'=>'text',
+                                                'id'=>'test-alt-1',
+                                                'value'=>($val && isset($val['image_alt'])?$val['image_alt']:''),
+                                                'name'=>(isset($data['multi'])?"{$name}[$field][$i][image_alt]":"{$name}[$field][image_alt]")
+                                            ));    
+                                            
+                                            // caption
+                                            $element.= $ui->draw('Common.Form.Label',array(
+                                                'label'=>'Caption',
+                                                'for'=>''
+                                            ));                                                       
+                                            $element.= $ui->draw('Common.Form.TextArea',array(
+                                                'id'=>'test-caption-1',
+                                                'value'=>($val && isset($val['image_caption'])?$val['image_caption']:''),
+                                                'name'=>(isset($data['multi'])?"{$name}[$field][$i][image_caption]":"{$name}[$field][image_caption]")
+                                            ));
+                                                            
+                                            // echo '<pre>'; var_dump($val['image_caption']); echo '</pre>';
+                                            
+                                        }
 						
 					// close multiple value list element
 					if( isset($data['multi']) ) {

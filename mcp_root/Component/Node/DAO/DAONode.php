@@ -552,6 +552,8 @@ class MCPDAONode extends MCPDAO {
 			$this->_objMCP->commit();
 			
 		} catch(MCPDBException $e) {
+                    
+                        echo $e->getMessage();
 			
 			/*
 			* If something went wrong rollback transaction 

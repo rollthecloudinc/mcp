@@ -928,7 +928,11 @@ class MCPDAOField extends MCPDAO {
 								// $this->_objMCP->debug($field_value[$index]);
                                                                 unset($field_value[$index]);
 								continue;
-							}
+							} else {
+                                                            // This will make it possible to update images associated meta data such as; title and alt
+                                                            //$this->_objMCP->debug('update meta data '.$index);
+                                                            $objDAOUpload->updateMetaData($field_value[$index]);
+                                                        }
 							
 						}
 					
@@ -938,9 +942,14 @@ class MCPDAOField extends MCPDAO {
 					
 					if($field_value && isset($field_value['error']) && $field_value['error'] != 4) {
 						$field_value = $objDAOUpload->insert($field_value,true);
-					} else {				
-						if(!isset($field_value[$index]['value']) || strlen($field_value[$index]['value']) !== 0) {
-							continue;
+					} else {	
+                                            
+                                                if(isset($field_value['value']) && strlen($field_value['value']) !== 0) {
+                                                    $objDAOUpload->updateMetaData($field_value);
+                                                }
+                                            
+						if(!isset($field_value['value']) || strlen($field_value['value']) !== 0) {
+                                                    continue;
 						}
 					}				
 					
@@ -1318,6 +1327,7 @@ class MCPDAOField extends MCPDAO {
 		*/
 		if(strlen($mixValue) === 0) {
 			// echo "<p>DELETE</p>";
+                        // $this->_objMCP->debug('delete data');
 			return $this->_objMCP->query("DELETE FROM MCP_FIELD_VALUES WHERE field_values_id = {$this->_objMCP->escapeString($intFieldValuesId)}");
 		}
 		
@@ -1481,7 +1491,7 @@ class MCPDAOField extends MCPDAO {
 	
 }
 
-class MCPField extends StdClass {
+class MCPField extends StdClass implements ArrayAccess {
 	
 	private 
 	
@@ -1503,6 +1513,24 @@ class MCPField extends StdClass {
 	public function __toString() {
 		return (string) $this->_value;
 	}
+        
+        public function offsetSet($offset, $value) {
+            if (is_string($offset)) {
+                $this->$offset = $value;
+            }
+        }
+        
+        public function offsetExists($offset) {
+            return isset($this->$offset);
+        }
+        
+        public function offsetUnset($offset) {
+            unset($this->$offset);
+        }
+        
+        public function offsetGet($offset) {
+            return isset($this->$offset)?$this->$offset:null;
+        }
 	
 	
 }

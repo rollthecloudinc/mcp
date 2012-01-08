@@ -328,17 +328,21 @@ class MCPDAOImage extends MCPDAO {
 		/*
 		* Insert image data into database 
 		*/
-		$intId = $this->_objMCP->query(sprintf(
-			"INSERT INTO MCP_MEDIA_IMAGES (sites_id,creators_id,image_label,image_mime,image_size,image_width,image_height,md5_checksum,created_on_timestamp) VALUES (%s,%s,'%s','%s','%s',%s,%s,'%s',NOW())"
-			,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
-			,$this->_objMCP->escapeString($this->_objMCP->getUsersId())
-			,$this->_objMCP->escapeString($arrImage['name'])
-			,$this->_objMCP->escapeString($arrImage['type'])
-			,$this->_objMCP->escapeString($arrImage['size'])
-			,$this->_objMCP->escapeString($arrImage['width'])
-			,$this->_objMCP->escapeString($arrImage['height'])
-			,md5($arrImage['image'],false)
-		));
+		$intId = $this->_objMCP->query(
+			'INSERT INTO MCP_MEDIA_IMAGES (sites_id,creators_id,image_label,image_mime,image_size,image_width,image_height,md5_checksum,image_alt,image_caption,created_on_timestamp) VALUES (:sites_id,:users_id,:name,:type,:size,:width,:height,:checksum,:alt,:caption,NOW())'
+			,array(
+                             ':sites_id'    => $this->_objMCP->getSitesId()
+                            ,':users_id'    => $this->_objMCP->getUsersId()
+                            ,':name'        => $arrImage['name']
+                            ,':type'        => $arrImage['type']
+                            ,':size'        => $arrImage['size']
+                            ,':width'       => $arrImage['width']
+                            ,':height'      => $arrImage['height']
+                            ,':checksum'    => md5($arrImage['image'],false)
+                            ,':alt'         => isset($arrImage['image_alt'])?$arrImage['image_alt']:null
+                            ,':caption'     => isset($arrImage['image_caption'])?$arrImage['image_caption']:null
+                        )
+		);
 		
 		/*
 		* Save image to image file directory or destory it
@@ -353,6 +357,62 @@ class MCPDAOImage extends MCPDAO {
 		return $intId;
 		
 	}
+        
+        /*
+        * This method can be used to update image meta data. When saving a new image the
+        * insert method should be called instead. Otherwise, the image itself will not be properly
+        * moved to the disk and referened in the database. This method only exists to update meta
+        * data like alt and caption associated with an image. 
+        * 
+        * @param array image data 
+        */
+        public function updateMetaData($arrImage) {
+            
+            $arrMetaData = array();
+            
+            /*
+            * Id required to trigger update 
+            */
+            if(isset($arrImage['images_id']) && !empty($arrImage['images_id'])) {
+                $arrMetaData['images_id'] = $arrImage['images_id'];
+            } else if(isset($arrImage['value']) && !empty($arrImage['value'])) {
+                $arrMetaData['images_id'] = $arrImage['value'];
+            } else {
+                return;
+            }
+            
+            /*
+            * Only thing really safe to update will be the caption
+            * and alt. Everything else is derived based on the image itself
+            * thus should not be changed unless the actual image changes.   
+            */
+            foreach(array('image_alt','image_caption') as $field) {
+                if(isset($arrImage[$field])) {
+                    $arrMetaData[$field] = $arrImage[$field];
+                }
+            }
+            
+            /*
+            * Go no further when no meta data exists. 
+            */
+            if(empty($arrMetaData)) {
+                return;
+            }
+            
+            // $this->_objMCP->debug($arrMetaData);
+            
+            /*
+            * Save images meta data to the db 
+            */
+            return $this->_save(
+                 $arrMetaData
+		,'MCP_MEDIA_IMAGES'
+		,'images_id'
+		,array('image_alt','image_caption')
+            );
+            
+        }
+        
 	
 }
 ?>

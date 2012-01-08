@@ -160,6 +160,8 @@ class MCPNodeFormEntry extends MCPModule {
 		* Config used to set static values 
 		*/
 		$arrConfig = $this->_getFrmConfig();
+                
+                // $this->_objMCP->debug($this->_arrFrmPost);
 		
 		/*
 		* Pull values directly from post array 
@@ -597,6 +599,9 @@ class MCPNodeFormEntry extends MCPModule {
 		*/
 		if($intNodeId !== null) {
 			$this->_arrNode = $this->_objDAONode->fetchById($intNodeId);
+                        
+                        // $this->_objMCP->debug($this->_arrNode);
+                        
 		}
 		
 		/*

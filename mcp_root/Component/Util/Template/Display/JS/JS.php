@@ -74,16 +74,20 @@ $(function() {
 			input.name = input.name.replace(/\[[0-9]*\]/,'[' + count + ']');
 			input.id = input.id.replace(/-[0-9]*-/,'-' + (count + 1) + '-');
 
-			var control = $('input:not([type="submit"]):not([type="hidden"]):not(option),select,textarea',clone).get(0);
+			$('input:not([type="submit"]):not([type="hidden"]):not(option),select,textarea',clone).each(function() {
                         
-                        if(control.type === 'file') {
-                            control.name = control.name.replace(/\[[0-9]*\]/,'[' + count + ']');
-                        } else {
-                            control.name = control.name.replace(/\[[0-9]*\]\[value\]/,'[' + count + '][value]');
-                        }
-                        
-			control.id = control.id.replace(/-[0-9]*$/, '-' + (count + 1) );
-			$(control).val('');
+                            if(this.type === 'file') {
+                                this.name = this.name.replace(/\[[0-9]*\]/,'[' + count + ']');
+                            } else {
+                                this.name = this.name.replace(/\[[0-9]*\]\[([a-zA-Z0-9_]*?)\]/,'[' + count + '][$1]');
+                            }
+                            
+                            console.log(this.name);
+
+                            this.id = this.id.replace(/-[0-9]*$/, '-' + (count + 1) );
+                            $(this).val('');
+                            
+                        });
 
 			$('input[type="hidden"]',clone).remove();
 

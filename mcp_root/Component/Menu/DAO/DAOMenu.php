@@ -105,15 +105,8 @@ class MCPDAOMenu extends MCPDAO {
 		           MCP_MENU_LINKS_DATASOURCES d
 		          ON
 		           l.menu_links_id = d.menu_links_id
-		        LEFT OUTER
-		        JOIN
-		           MCP_MENU_LINKS_DYNAMIC v
-		          ON
-		           l.menu_links_id = v.menu_links_id
 		       WHERE 
 		           l.menus_id = :menus_id
-		        AND
-		           v.menu_links_id IS NULL
 		        AND
 		           l.deleted = 0
                       ORDER
