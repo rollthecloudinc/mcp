@@ -71,6 +71,22 @@
   "socks" would only yield products directly associated with socks not those that
   are indirectly associated with socks via child terms such as; "dress socks" or "sports socks".
 
+00009: Implement and integrate video fields
+- Very little work has been here. Respective db schemas have been set-up and that is
+  about all. The Video DAO needs to be implemented and than video fields need to integrated
+  with form builder and Field DAO.
+
+00010: Implement purge for all entities.
+- Purge is the process of removing data from the database. When deleting entities nothing
+  is ever removed the database merely flagged as hidden essentially. Normal users should
+  only be able to delete. However, administrative users with the proper permissions should
+  be able to purge the db of deleted data.
+
+00011: Implement delete for all entities w/ dependencies properly handled.
+- Some work has been done here though I am not able to recall exactly what. Though I am
+  certain that delete does not work for most entities in the system. Perhaps nodes and that is
+  all.
+
 00008 BUG
 If no fields have been created for an entity the create fields button is not showing up. However, once
 a single field is created the button properly shows up for those who have the proper permissions.

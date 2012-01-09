@@ -42,7 +42,7 @@ class Pager implements \UI\Element {
 		    $page_start = $page-(floor($visible_pages/2));
 		    $page_end = $page+(floor($visible_pages/2));
 		}
-		$out=''
+		$out='';
 		
 		$out.= sprintf(
 		    '<div class="summary"><p class="pages">%u %s</p><p class="total">%u %s</p></div>'

@@ -199,7 +199,7 @@ class MCPDAOImageCache extends MCPDAO {
         }
         
         /*
-        * Return success of failure 
+        * Return success or failure 
         */
         return true;
 		
