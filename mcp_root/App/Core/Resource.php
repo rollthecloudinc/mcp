@@ -61,6 +61,15 @@ class MCPResource {
 		return $strPkg;
 		
 	}
+        
+        /*
+        * Shortcut to debug method considering the amount of times it is called. 
+        * - cut down key strokes
+        * 
+        */
+        final public function debug($mixData) {
+            $this->_objMCP->debug($mixData);
+        }
 	
 	/*
 	* Bubble events. By default events will not bubble for basic resource.

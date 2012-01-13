@@ -12,8 +12,8 @@ abstract class MCPTopLevelPermission extends MCPDAO implements MCPPermission {
 	* have a virtual parent of navigation.
 	* 
 	* This method exists because most if not all top level items use the same logic to
-	* derive permissions. I am getting wick of copying and pasting the same SQL so
-	* this method can now be used to create the statement for any entity were it is needed
+	* derive permissions. I am getting sick of copying and pasting the same SQL so
+	* this method can now be used to create the statement for any entity where it is needed
 	* without essentially replicating the same SQL statement and tweaking a few things.
 	* 
 	* - note this uses variable binding. YOU MUST PASS :users_id and :entity_type from the callee
@@ -361,9 +361,9 @@ abstract class MCPTopLevelPermission extends MCPDAO implements MCPPermission {
      
 	}
 
-	public function add($ids) {
+	public function add($ids,$intUserId=null) {
 		
-		$permissions = $this->_c($this->_objMCP->getUsersId());
+		$permissions = $this->_c($intUserId);
 		
 		//echo '<pre>',print_r($permissions),'</pre>';
 		/*$return = array();
@@ -407,9 +407,9 @@ abstract class MCPTopLevelPermission extends MCPDAO implements MCPPermission {
 		
 	}
 	
-	public function read($ids) {
+	public function read($ids,$intUserId=null) {
 		
-		$permissions = $this->_rud($ids,$this->_objMCP->getUsersId());
+		$permissions = $this->_rud($ids,$intUserId);
 		
 		$return = array();
 		foreach($permissions as $permission) {
@@ -432,9 +432,9 @@ abstract class MCPTopLevelPermission extends MCPDAO implements MCPPermission {
 		
 	}
 	
-	public function delete($ids) {
+	public function delete($ids,$intUserId=null) {
 		
-		$permissions = $this->_rud($ids,$this->_objMCP->getUsersId());
+		$permissions = $this->_rud($ids,$intUserId);
 		
 		$return = array();
 		foreach($permissions as $permission) {
@@ -457,9 +457,9 @@ abstract class MCPTopLevelPermission extends MCPDAO implements MCPPermission {
 		
 	}
 	
-	public function edit($ids) {
+	public function edit($ids,$intUserId=null) {
 		
-		$permissions = $this->_rud($ids,$this->_objMCP->getUsersId());
+		$permissions = $this->_rud($ids,$intUserId);
 		
 		$return = array();
 		foreach($permissions as $permission) {

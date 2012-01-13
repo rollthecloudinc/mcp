@@ -40,7 +40,7 @@
 	
 		<p>PlatForm.RealEstate::listing</p>
 		
-		<ul>
+		<ul style="display: none;">
 			<li>	
 				<input type="checkbox" name="" value="1" />
 				<label for="">Read</label>
@@ -60,36 +60,112 @@
 		
 		<ul>
 			<li>
-				<input type="checkbox" name="" value="1" />
-				<label for="">Create Listing</label>
-				<em>Create a listing</em>
+                                <label for="">Create New Site</label>
+				<input type="checkbox" name="" disabled />
+		
 			</li>
 			<li>
-				<input type="checkbox" name="" value="1" />
-				<label for="">Read Listing</label>
-				<em>Read Listings</em>
-				
-				<input type="checkbox" name="" value="1" />
-				<label for="">Only those owned by me</label>
+                                <label for="">Read All Sites</label>
+				<select>
+                                    <option value="">--</option>
+                                    <option value="1">Yes</option>
+                                    <option value="0">No</option>
+                                    <option value="2">Owner</option>
+                                </select>
+	
 			</li>
 			<li>
-				<input type="checkbox" name="" value="1" />
-				<label for="">Edit Listing</label>
-				<em>Edit a listing?</em>
+                                <label for="">Edit All Sites</label>
+				<select>
+                                    <option value="">--</option>
+                                    <option value="1">Yes</option>
+                                    <option value="0">No</option>
+                                    <option value="2">Owner</option>
+                                </select>
 				
-				<input type="checkbox" name="" value="1" />
-				<label for="">Only those I have created</label>
 			</li>
 			<li>
-				<input type="checkbox" name="" value="1" />
-				<label for="">Delete Listing</label>
-				<em>Delete a listing?</em>
-				
-				<input type="checkbox" name="" value="1" />
-				<label for="">Only those owned by me</label>
+                                <label for="">Delete All Sites</label>
+				<select>
+                                    <option value="">--</option>
+                                    <option value="1">Yes</option>
+                                    <option value="0">No</option>
+                                    <option value="2">Owner</option>
+                                </select>
 			</li>
 		</ul>
-	
+
+<table width="100%">
+        <caption>Sites</caption>
+	<thead>
+		<tr>
+			<th>Site</th>
+			<th>Read</th>
+			<th>Update</th>
+			<th>Delete</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>Site 1</td>
+			<td>
+				<input type="checkbox" checked disabled> <!-- current state -->
+				<select>
+					<option value="" selected>Default</option>
+					<option value="1">Yes</option>
+					<option value="0">No</option>
+				</select>
+			</td>
+			<td>
+				<input type="checkbox" checked disabled> <!-- current state -->
+				<select>
+					<option value="">Default</option>
+					<option value="1" selected>Yes</option>
+					<option value="0">No</option>
+				</select>
+			</td>
+			<td>
+				<input type="checkbox" disabled> <!-- current state -->
+				<select>
+					<option value="">Default</option>
+					<option value="1">Yes</option>
+					<option value="0" selected>No</option>
+				</select>
+			</td>
+		</tr>
+		<tr>
+			<td>Site 2</td>
+			<td>
+				<input type="checkbox" disabled> <!-- current state -->
+				<select>
+					<option value="">Default</option>
+					<option value="1">Yes</option>
+					<option value="0" selected>No</option>
+				</select>
+			</td>
+			<td>
+				<input type="checkbox" checked disabled> <!-- current state -->
+				<select>
+					<option value="">Default</option>
+					<option value="1" selected>Yes</option>
+					<option value="0">No</option>
+				</select>
+			</td>
+			<td>
+				<input type="checkbox" disabled> <!-- current state -->
+				<select>
+					<option value="">Default</option>
+					<option value="1">Yes</option>
+					<option value="0" selected>No</option>
+				</select>
+			</td>
+		</tr>
+	</tbody>
+</table>
+                
+                
+                
+                	
 	</fieldset>
 
 </form>

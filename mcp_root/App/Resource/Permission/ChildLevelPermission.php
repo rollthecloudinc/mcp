@@ -404,9 +404,9 @@ abstract class MCPChildLevelPermission extends MCPDAO implements MCPPermission {
       
 	}
 
-	public function add($ids) {
+	public function add($ids,$intUserId=null) {
 		
-		$permissions = $this->_c($ids,$this->_objMCP->getUsersId());
+		$permissions = $this->_c($ids,$intUserId);
 		
 		$return = array();
 		
@@ -449,9 +449,9 @@ abstract class MCPChildLevelPermission extends MCPDAO implements MCPPermission {
 		
 	}
 	
-	public function read($ids) {
+	public function read($ids,$intUserId=null) {
 		
-		$permissions = $this->_rud($ids,$this->_objMCP->getUsersId());
+		$permissions = $this->_rud($ids,$intUserId);
 		
 		$return = array();
 		foreach($permissions as $permission) {
@@ -474,9 +474,9 @@ abstract class MCPChildLevelPermission extends MCPDAO implements MCPPermission {
 		
 	}
 	
-	public function delete($ids) {
+	public function delete($ids,$intUserId=null) {
 		
-		$permissions = $this->_rud($ids,$this->_objMCP->getUsersId());
+		$permissions = $this->_rud($ids,$intUserId);
 		
 		$return = array();
 		foreach($permissions as $permission) {
@@ -499,9 +499,9 @@ abstract class MCPChildLevelPermission extends MCPDAO implements MCPPermission {
 		
 	}
 	
-	public function edit($ids) {
+	public function edit($ids,$intUserId=null) {
 		
-		$permissions = $this->_rud($ids,$this->_objMCP->getUsersId());
+		$permissions = $this->_rud($ids,$intUserId);
 		
 		$return = array();
 		foreach($permissions as $permission) {

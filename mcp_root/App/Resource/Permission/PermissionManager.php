@@ -26,7 +26,7 @@ class MCPPermissionManager extends MCPResource {
 	* @param mix entity id such as; id of nav to delete or id or vocab to add term
 	* @param obj permission object
 	*/
-	public function getPermission($strAction,$strEntity,$arrId=null) {
+	public function getPermission($strAction,$strEntity,$arrId=null,$intUserId=null) {
 	
 		$permissions = array();
 	
@@ -35,19 +35,19 @@ class MCPPermissionManager extends MCPResource {
 		*/
 		switch($strAction) {
 			case MCPPermission::READ:
-				$permissions = $this->_getPlugin($strEntity)->read($arrId);
+				$permissions = $this->_getPlugin($strEntity)->read($arrId,$intUserId);
 				break;
 			
 			case MCPPermission::DELETE:
-				$permissions = $this->_getPlugin($strEntity)->delete($arrId);
+				$permissions = $this->_getPlugin($strEntity)->delete($arrId,$intUserId);
 				break;
 			
 			case MCPPermission::EDIT:
-				$permissions = $this->_getPlugin($strEntity)->edit($arrId);
+				$permissions = $this->_getPlugin($strEntity)->edit($arrId,$intUserId);
 				break;
 			
 			case MCPPermission::ADD:
-				$permissions = $this->_getPlugin($strEntity)->add($arrId);
+				$permissions = $this->_getPlugin($strEntity)->add($arrId,$intUserId);
 				break;
 				
 			default:
@@ -57,6 +57,34 @@ class MCPPermissionManager extends MCPResource {
 		return $permissions;
 	
 	}
+        
+        /*
+        * Get list of all available plugins
+        * 
+        * @return array plugins  
+        */
+        public function getPlugins() {
+            
+            $arrPlugins = array();
+            
+            // Get all plugin files
+            $arrFiles = scandir(dirname(__FILE__).'/Plugin');
+            
+            
+            // Collect all plugins
+            foreach($arrFiles as $strFile) {
+                if(strpos($strFile,'.') !== 0) {
+                    $arrPlugins[] = array(
+                        'entity'=>str_replace('.php','',$strFile)
+                    );
+                    // test $this->_getPlugin(str_replace('.php','',$strFile));
+                }
+                
+            }
+            
+            return $arrPlugins;
+            
+        }
 
 	/*
 	* Get a plugin

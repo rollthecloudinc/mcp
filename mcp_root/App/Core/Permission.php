@@ -12,10 +12,10 @@ interface MCPPermission {
 	,EDIT 		= 4
 	,PURGE		= 5;
 	
-	public function read($ids);
-	public function add($ids);
-	public function delete($ids);
-	public function edit($ids);
+	public function read($ids,$intUserId=null);
+	public function add($ids,$intUserId=null);
+	public function delete($ids,$intUserId=null);
+	public function edit($ids,$intUserId=null);
 	// public function purge($ids); @TODO - removes completely vs. soft delete
 
 }

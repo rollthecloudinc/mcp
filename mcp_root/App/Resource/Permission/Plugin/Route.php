@@ -20,7 +20,7 @@ class MCPPermissionRoute extends MCPDAO implements MCPPermission {
 	* @param array collection of strings representing routes
 	* @return array permissions
 	*/
-	public function read($ids) {
+	public function read($ids,$intUserId=null) {
 		
 		$return = array();
 		
@@ -46,7 +46,7 @@ class MCPPermissionRoute extends MCPDAO implements MCPPermission {
 			
 			$perm = array_pop( $this->_objMCP->query($strSQL,array(
 				 ':item_type'=>"MCP_ROUTE:$id"
-				,':users_id'=>$this->_objMCP->getUsersId()?$this->_objMCP->getUsersId():0
+				,':users_id'=>$intUserId?$intUserId:0
 			)));
 			
 			$return[$id] = array(
@@ -60,15 +60,15 @@ class MCPPermissionRoute extends MCPDAO implements MCPPermission {
 		return $return;
 	}
 	
-	public function add($ids) {
+	public function add($ids,$intUserId=null) {
 		return $this->_deny($ids);
 	}	
 	
-	public function delete($ids) {
+	public function delete($ids,$intUserId=null) {
 		return $this->_deny($ids);
 	}
 	
-	public function edit($ids) {
+	public function edit($ids,$intUserId=null) {
 		return $this->_deny($ids);
 	}
 	

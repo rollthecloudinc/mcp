@@ -26,9 +26,9 @@ class MCPPermissionUser extends MCPTopLevelPermission {
 	/*
 	* Determine whether user is allowed to create a new user
 	*/
-	public function add($ids) {
+	public function add($ids,$intUserId=null) {
 		
-		$permissions = $this->_c($ids,$this->_objMCP->getUsersId());
+		$permissions = $this->_c($ids,$intUserId);
 		
 		$return = array();
 		foreach($permissions as $permission) {

@@ -937,4 +937,34 @@
 			</roles_per_page>
                 </config>
         </mod>
+        <mod pkg="Component.Permission.Module.Form.Role">
+                <frm_general>
+                    <system_name>
+                        <label>System Name</label>
+                        <required>Y</required>
+                        <max>128</max>
+                        <min>5</min>
+                    </system_name>
+                    <human_name>
+                        <label>Human Name</label>
+                        <required>Y</required>
+                        <max>128</max>
+                        <min>5</min>
+                    </human_name>
+                    <pkg>
+                        <label>Pkg</label>
+                        <max>128</max>
+                    </pkg>
+                    <description>
+                        <label>Description</label>
+                        <widget>textarea</widget>
+                    </description>
+                </frm_general>
+                <frm_users>
+                    
+                </frm_users>
+                <frm_perms>
+                    
+                </frm_perms>
+        </mod>
 </modules>

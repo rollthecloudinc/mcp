@@ -780,9 +780,10 @@ class MCP {
 	* @param str permission such as; read, delete, edit or add
 	* @param str entity such as; navigation, navigation link, etc
 	* @param mix entity id such as; id of nav to delete or id or vocab to add term
-	* @param arr permissions
+        * @param int users id 
+	* @return arr permissions
 	*/
-	public function getPermission($strAction,$strEntity,$mixId=null) {
+	public function getPermission($strAction,$strEntity,$mixId=null,$intUserId=null) {
 		
 		/*
 		* get permissions 
@@ -791,6 +792,7 @@ class MCP {
 			 $strAction
 			,$strEntity
 			,$mixId !== null?is_array($mixId)?$mixId:array($mixId):null
+                        ,$intUserId !== null?$intUserId:$this->getUsersId()
 		);
 		
 		/*
@@ -798,6 +800,15 @@ class MCP {
 		*/
 		return is_array($mixId)?$perms:array_pop($perms);
 	}
+        
+        /*
+        * Get all plugin permission definitions
+        * 
+        * @return array permission plugin definitions  
+        */
+        public function getPermissionPlugins() {
+            return $this->_objPermissionHandler->getPlugins();
+        }
 	
 	/*
 	* Login user
