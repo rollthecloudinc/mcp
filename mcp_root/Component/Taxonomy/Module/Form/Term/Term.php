@@ -185,7 +185,7 @@ class MCPTaxonomyFormTerm extends MCPModule {
 					/*
 					* Reformat parent_id to include type 
 					*/
-					$this->_arrFrmValues[$strField] = "{$arrTerm['parent_type']}-{$arrTerm['parent_id']}";
+					$this->_arrFrmValues[$strField] = "{$arrTerm['parent_type']}-".(strcasecmp('vocabulary',$arrTerm['parent_type']) === 0?$arrTerm['vocabulary_id']:$arrTerm['parent_id']);
 					break;
 				
 				default:
@@ -239,16 +239,7 @@ class MCPTaxonomyFormTerm extends MCPModule {
 			$arrSave['terms_id'] = $arrTerm['terms_id'];
 		}
 		
-		/*
-                * @TODO 
-		* Split parent id into parent id (left) and parent type (right)
-		*/
-                //if(isset($arrSave['parent_id'])) {
                 list($strParentType,$intParentId) = explode('-',$arrSave['parent_id'],2);
-                /*} else {
-                    $strParentType = 'vocabulary';
-                    $intParentId = $arrTerm['vocabulary_id'];
-                }*/
                 
                 if(strcmp('vocabulary',$strParentType) === 0) {
                     $arrSave['parent_id'] = null;
@@ -258,29 +249,6 @@ class MCPTaxonomyFormTerm extends MCPModule {
                     $arrSave['parent_id'] = $intParentId;
                     $arrSave['vocabulary_id'] = $arrVocab['vocabulary_id'];
                 }
-                
-                //$arrSave['vocabulary_id'] = $intParentId;
-                //$arrSave['parent_id'] = $intParentId;
-                
-                // $this->_objMCP->debug($strParentType);
-		
-		//if(strcasecmp($strParentType,'vocabulary') !== 0) {
-			
-			// Get the terms vocabulary
-			//$arrVocab = $this->_objDAOTaxonomy->fetchTermsVocabulary($intParentId);
-			
-			//$arrSave['vocabulary_id'] = $arrVocab['vocabulary_id'];
-			//$arrSave['parent_id'] = $intParentId;
-			
-		//} else {
-                        // $this->_objMCP->debug($arrTerm);
-			//$arrSave['vocabulary_id'] = $arrTerm['vocabulary_id'];
-			//unset($arrSave['parent_id']);
-		//}
-                
-                $this->_objMCP->debug($arrSave);
-                
-                //return;
 		
 		/*
 		* Save term
@@ -415,7 +383,7 @@ class MCPTaxonomyFormTerm extends MCPModule {
 			$this->_arrTermOptions = array(
 				array(
 					'label'=>'ROOT'
-					,'value'=>"vocabulary-{$this->_intParentId}"
+					,'value'=>"vocabulary-".($arrTerm !== null?$arrTerm['vocabulary_id']:$this->_intParentId)
 					,'values'=>$this->_objDAOTaxonomy->fetchTerms(
 						$entity_id //$this->_intParentId
 						,'vocabulary'

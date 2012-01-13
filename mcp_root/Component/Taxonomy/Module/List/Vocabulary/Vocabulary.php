@@ -233,7 +233,7 @@ class MCPTaxonomyListVocabulary extends MCPModule {
 		// view terms tree as nested module
 		if(strcmp('Terms',$this->_strRedirect) == 0) {
 			$this->_arrTemplateData['REDIRECT_TPL'] = $this->_objMCP->executeComponent(
-				'Component.Taxonomy.Module.List.Term'
+				'Component.Taxonomy.Module.Tree.Term'
 				,$arrArgs
 				,null
 				,array($this)
@@ -372,9 +372,9 @@ class MCPTaxonomyListVocabulary extends MCPModule {
 		}
 		
 		return sprintf(
-			'<a href="%s/Terms/Vocabulary/%s">Terms</a>'
+			'<a href="%s/Terms/%s">Terms</a>'
 			,$this->getBasePath(false)
-			,$row['vocabulary_id']
+			,empty($row['pkg'])?$row['system_name']:"{$row['pkg']}::{$row['system_name']}"
 		);
 		
 	}

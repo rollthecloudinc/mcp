@@ -79,12 +79,9 @@ abstract class MCPDAO extends MCPResource {
 			,implode(',',$arrValues)
 			,$boolUpdate === true?' ON DUPLICATE KEY UPDATE '.implode(',',$arrUpdate):''
 		);
-		
-		//echo "<p>$strSQL</p>";
-		//echo '<pre>',print_r($arrBind),'</pre>';
                 
-                // $this->_objMCP->debug($strSQL);
-                // $this->_objMCP->debug($arrBind);
+                //$this->debug($strSQL);
+                //$this->debug($arrBind);
 			
 		return $this->_objMCP->query($strSQL,$arrBind);
 		

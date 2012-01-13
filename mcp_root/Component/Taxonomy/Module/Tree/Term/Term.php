@@ -247,6 +247,8 @@ class MCPTaxonomyTreeTerm extends MCPModule {
 			$strTpl = 'Redirect';
 		
 		}
+                
+                // $this->debug($this->_arrTemplateData['terms']);
 		
 		return "Term/$strTpl.php";
 	}
