@@ -334,6 +334,8 @@ class MCPNodeFormEntry extends MCPModule {
 		$this->_arrCachedFrmConfig = $config;
                 
                 // $this->_objMCP->debug($config);
+                
+                // $this->debug($this->_arrCachedFrmConfig); exit;
 		
 		return $this->_arrCachedFrmConfig;
 	

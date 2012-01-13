@@ -520,6 +520,8 @@ class MCPDAOTaxonomy extends MCPDAO {
 	* NOTE: This code is pretty much swipped from the removeLink method
 	* inside the navigation DAO. It is pretty much the same process considering
 	* the tree structure is the takes on a same form and similar dpenedent methods exist.
+        * 
+        * Important: When deleting terms field references also need to be removed. 
 	* 
 	* @param int terms id
 	*/

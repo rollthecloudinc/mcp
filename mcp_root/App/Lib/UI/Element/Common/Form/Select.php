@@ -72,7 +72,7 @@ class Select implements \UI\Element {
 				);	
 									
 				if(isset($option_value['values']) && !empty($option_value['values'])) {
-					$out.= call_user_func($func,$func,$option_value,$value,($runner+1));
+					$out.= call_user_func($func,$func,$option_value,($runner+1));
 				}
 							
 			} 

@@ -1347,9 +1347,12 @@ class MCPDAOField extends MCPDAO {
 		* When the value contains nothing delete it 
 		*/
 		if(strlen($mixValue) === 0) {
-			// echo "<p>DELETE</p>";
-                        // $this->_objMCP->debug('delete data');
-			return $this->_objMCP->query("DELETE FROM MCP_FIELD_VALUES WHERE field_values_id = {$this->_objMCP->escapeString($intFieldValuesId)}");
+			return $this->_objMCP->query(
+                            "DELETE FROM MCP_FIELD_VALUES WHERE field_values_id = :field_values_id"
+                            ,array(
+                                ':field_values_id'=>(int) $intFieldValuesId
+                            )
+                        );
 		}
 		
 		$serialized = base64_encode(serialize($mixValue));
@@ -1370,60 +1373,73 @@ class MCPDAOField extends MCPDAO {
 			       MCP_FIELD_VALUES.db_varchar = (
 			            CASE
 			                WHEN MCP_FIELDS.db_value = 'varchar'
-			                THEN '{$this->_objMCP->escapeString( $mixValue )}'
+			                THEN :varchar
 			                ELSE NULL
 			            END
 			       )    
 			      ,MCP_FIELD_VALUES.db_text = (
 			           CASE
 			               WHEN MCP_FIELDS.db_value = 'text' AND MCP_FIELDS.cfg_serialized = 1
-			               THEN '$serialized'
+			               THEN :serialized
 			               WHEN MCP_FIELDS.db_value = 'text'
-			               THEN '{$this->_objMCP->escapeString( $mixValue )}'
+			               THEN :text
 			               ELSE NULL
 			           END
 			       )		      
 			      ,MCP_FIELD_VALUES.db_int = (
 			           CASE
 			               WHEN MCP_FIELDS.db_value = 'int'
-			               THEN {$this->_objMCP->escapeString( (int) $mixValue )}
+			               THEN :int
 			               ELSE NULL
 			           END
 			       )			      
 			      ,MCP_FIELD_VALUES.db_bool = (
 			           CASE
 			               WHEN MCP_FIELDS.db_value = 'bool'
-			               THEN {$this->_objMCP->escapeString( (int) ((bool) $mixValue) )}
+			               THEN :bool
 			               ELSE NULL
 			           END
 			       )			      
 			      ,MCP_FIELD_VALUES.db_price = (
 			           CASE
 			               WHEN MCP_FIELDS.db_value = 'price'
-			               THEN '{$this->_objMCP->escapeString( $mixValue )}'
+			               THEN :price
 			               ELSE NULL
 			           END
 			       )
 			      ,MCP_FIELD_VALUES.db_timestamp = (
 			           CASE
 			               WHEN MCP_FIELDS.db_value = 'timestamp'
-			               THEN '{$this->_objMCP->escapeString( $mixValue )}'
+			               THEN :timestamp
 			               ELSE NULL
 			           END
 			       )	
 			      ,MCP_FIELD_VALUES.db_date = (
 			           CASE
 			               WHEN MCP_FIELDS.db_value = 'date'
-			               THEN '{$this->_objMCP->escapeString( $mixValue )}'
+			               THEN :date
 			               ELSE NULL
 			           END
 			       )	
-			       ,MCP_FIELD_VALUES.weight = ".($intWeight === null?'NULL':$intWeight)."      
+			       ,MCP_FIELD_VALUES.weight = :weight      
 			  WHERE
-			      MCP_FIELD_VALUES.field_values_id = {$this->_objMCP->escapeString($intFieldValuesId)}";
+			      MCP_FIELD_VALUES.field_values_id = :field_values_id";
 		
-		// echo "<p>$strSQL</p>";
-		return $this->_objMCP->query($strSQL);
+		return $this->_objMCP->query(
+                    $strSQL
+                    ,array(
+                         ':varchar'         => (string) $mixValue
+                        ,':serialized'      => $serialized
+                        ,':text'            => (string) $mixValue
+                        ,':int'             => (int) $mixValue
+                        ,':bool'            => (int) ((bool) $mixValue)
+                        ,':price'           => (string) $mixValue
+                        ,':timestamp'       => (string) $mixValue
+                        ,':date'            => (string) $mixValue
+                        ,':weight'          => ($intWeight === null?null:((int) $intWeight))
+                        ,':field_values_id'  => (int) $intFieldValuesId
+                    )
+                );
 		
 	}
 	
@@ -1452,61 +1468,75 @@ class MCPDAOField extends MCPDAO {
 			"INSERT IGNORE INTO MCP_FIELD_VALUES (fields_id,rows_id,db_varchar,db_text,db_int,db_bool,db_price,db_timestamp,db_date,weight)
 				    SELECT
 				         fields_id
-				         ,{$this->_objMCP->escapeString( $intRowsId )} rows_id
+				         ,:rows_id rows_id
 				         
 				         ,CASE
 				             WHEN db_value = 'varchar'
-				             THEN '{$this->_objMCP->escapeString( $mixValue )}'
+				             THEN :varchar
 				             ELSE NULL
 				          END db_varchar
 				          
 				         ,CASE
 				             WHEN db_value = 'text' AND cfg_serialized = 1
-				             THEN '$serialized'
+				             THEN :serialized
 				             WHEN db_value = 'text'
-				             THEN '{$this->_objMCP->escapeString( $mixValue )}'
+				             THEN :text
 				             ELSE NULL
 				          END db_text
 				          
 				         ,CASE
 				             WHEN db_value = 'int'
-				             THEN {$this->_objMCP->escapeString( (int) $mixValue )}
+				             THEN :int
 				             ELSE NULL
 				          END db_int
 				          
 				         ,CASE
 				             WHEN db_value = 'bool'
-				             THEN {$this->_objMCP->escapeString( (int) ( (bool) $mixValue) )}
+				             THEN :bool
 				             ELSE NULL
 				          END db_bool
 				          
 				         ,CASE
 				            WHEN db_value = 'price'
-				            THEN '{$this->_objMCP->escapeString( $mixValue )}'
+				            THEN :price
 				            ELSE NULL
 				          END db_price
 				          
 				         ,CASE
 				            WHEN db_value = 'timestamp'
-				            THEN '{$this->_objMCP->escapeString( $mixValue )}'
+				            THEN :timestamp
 				            ELSE NULL
 				          END db_timestamp
 				          
 				         ,CASE
 				            WHEN db_value = 'date'
-				            THEN '{$this->_objMCP->escapeString( $mixValue )}'
+				            THEN :date
 				            ELSE NULL
 				          END db_date
 				          
-				          ,".($intWeight === null?'NULL':$intWeight)." weight
+				          ,:weight weight
 				          
 				      FROM
 				         MCP_FIELDS
 				     WHERE
-				         fields_id = {$this->_objMCP->escapeString( $intFieldsId )}";
+				         fields_id = :fields_id";
 		
-		//echo "<p>$strSQL</p>";
-		return $this->_objMCP->query($strSQL);
+		return $this->_objMCP->query(
+                    $strSQL
+                    ,array(
+                         ':varchar'         => (string) $mixValue
+                        ,':serialized'      => $serialized
+                        ,':text'            => (string) $mixValue
+                        ,':int'             => (int) $mixValue
+                        ,':bool'            => (bool) ((int) $mixValue)
+                        ,':price'           => (string) $mixValue
+                        ,':timestamp'       => (string) $mixValue
+                        ,':date'            => (string) $mixValue
+                        ,':weight'          => $intWeight === null?null:((int) $intWeight)
+                        ,':fields_id'       => (int) $intFieldsId
+                        ,':rows_id'         => (int) $intRowsId
+                    )
+                );
 		
 	}
 	
