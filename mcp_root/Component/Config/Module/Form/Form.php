@@ -24,12 +24,7 @@ class MCPConfigForm extends MCPModule {
 	/*
 	* Form errors 
 	*/
-	,$_arrFrmErrors
-	
-	/*
-	* Update success flag 
-	*/
-	,$_boolSuccess;
+	,$_arrFrmErrors;
 	
 	public function __construct(MCP $objMCP,MCPModule $objParentModule=null,$arrConfig=null) {
 		parent::__construct($objMCP,$objParentModule,$arrConfig);
@@ -157,16 +152,30 @@ class MCPConfigForm extends MCPModule {
 	* Save form data to db 
 	*/
 	private function _frmSave() {
+            
+                try {
 		
-		/*
-		* Update sites configuration settings w/ new values 
-		*/
-		$this->_objMCP->setMultiConfigValues($this->_arrFrmValues);
-		
-		/*
-		* Set success flag 
-		*/
-		$this->_boolSuccess = true;
+                    /*
+                    * Update sites configuration settings w/ new values 
+                    */
+                    $this->_objMCP->setMultiConfigValues($this->_arrFrmValues);
+                    
+                    /*
+                    *Provide status message for successful save operation 
+                    */
+                    $this->_objMCP->addSystemStatusMessage('Config has been successfully updated.');
+                
+                    /*
+                    * Reset form values to reflect new values
+                    */
+                    $this->_setFrmEdit();
+                    
+                    
+                } catch(Exception $e) {
+                    
+                    $this->_objMCP->addSystemErrorMessage('An error has occurred that prevented configuation form saving. Please try again.');
+                    
+                }
 		
 	}
 	
@@ -223,7 +232,6 @@ class MCPConfigForm extends MCPModule {
 		$this->_arrTemplateData['config'] = $this->_getFrmConfig();
 		$this->_arrTemplateData['values'] = $this->_arrFrmValues;
 		$this->_arrTemplateData['errors'] = $this->_arrFrmErrors;
-		$this->_arrTemplateData['success'] = $this->_boolSuccess;
 		$this->_arrTemplateData['legend'] = 'Site Config';
 		
 		// echo '<pre>',print_r($this->_arrFrmValues),'</pre>';

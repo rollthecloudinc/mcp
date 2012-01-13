@@ -20,7 +20,7 @@ class MCPDAOConfig extends MCPDAO {
 	/*
 	* Cached complete config 
 	*/
-	,$arrCachedConfig;
+	,$_arrCachedConfig;
 	
 	public function __construct(MCP $objMCP) {
 		parent::__construct($objMCP);
@@ -133,16 +133,6 @@ class MCPDAOConfig extends MCPDAO {
 			return $this->_getDynamicConfigValue($strName);
 		}
 		
-		/*
-		* Fetch site specific config value but default to global setting
-		* when site specific setting doesn't exist. 
-		*/
-		/* $strSQL = sprintf(
-			"SELECT config_value FROM MCP_CONFIG WHERE sites_id = %s AND config_name = '%s'"
-			,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
-			,$this->_objMCP->escapeString($strName)
-		);*/
-		
 		$arrRow = array_pop($this->_objMCP->query(
 			'SELECT config_value FROM MCP_CONFIG WHERE sites_id = :sites_id AND config_name = :config_name'
 			,array(
@@ -163,36 +153,58 @@ class MCPDAOConfig extends MCPDAO {
 	* @return bool success/failure
 	*/
 	public function setConfigValueByName($strName,$strValue) {	
-		/*
-		* Check for valid configuration setting name
-		*/
-		if(!$this->_isConfigValue($strName)) return false;
+              
+            
+                /*
+                * Check for valid configuration setting name
+                */
+                if(!$this->_isConfigValue($strName)) return false;
+            
+                try {
+                    
+                    // begin transaction
+                    $this->_objMCP->begin();
+
+                    /*
+                    * Check dynamic config first 
+                    */
+                    if( $this->_isDynamicConfigValue($strName) ) {
+                        
+                        $this->_saveDynamicFieldValues(array($strName=>$strValue));
+                            
+                        // commit transaction
+                        $this->_objMCP->commit();
+                            
+                        return true;
+                            
+                    } else {
+                        
+                        $this->_objMCP->query(
+                                'INSERT IGNORE INTO MCP_CONFIG (sites_id,config_name,config_value) VALUES (:sites_id,:config_name,:config_value) ON DUPLICATE KEY UPDATE config_value = VALUES(config_value)'
+                                ,array(
+                                        ':sites_id'=>(int) $this->_objMCP->getSitesId()
+                                        ,':config_name'=>(string) $strName
+                                        ,':config_value'=>(string) $strValue
+                                )
+                        );
+                    
+                        // commit transaction
+                        $this->_objMCP->commit();
 		
-		/*
-		* Check dynamic config first 
-		*/
-		if( $this->_isDynamicConfigValue($strName) ) {
-			$this->_saveDynamicFieldValues(array($strName=>$strValue));
-			return true;
-		}
-		
-		/*$strSQL = sprintf(
-			"INSERT IGNORE INTO MCP_CONFIG (sites_id,config_name,config_value) VALUES (%s,'%s','%s') ON DUPLICATE KEY UPDATE config_value = VALUES(config_value)"
-			,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
-			,$this->_objMCP->escapeString($strName)
-			,$this->_objMCP->escapeString($strValue)
-		);*/
-		
-		$this->_objMCP->query(
-			'INSERT IGNORE INTO MCP_CONFIG (sites_id,config_name,config_value) VALUES (:sites_id,:config_name,:config_value) ON DUPLICATE KEY UPDATE config_value = VALUES(config_value)'
-			,array(
-				':sites_id'=>(int) $this->_objMCP->getSitesId()
-				,':config_name'=>(string) $strName
-				,':config_value'=>(string) $strValue
-			)
-		);
-		
-		return true;
+                        return true;
+                        
+                    }
+                
+                
+                } catch(Exception $e) {
+                    
+                    // rollback
+                    $this->_objMCP->rollback();
+                    
+                    throw new Exception($e->getMessage());
+                    
+                }
+                
 	}
 	
 	/*
@@ -225,14 +237,6 @@ class MCPDAOConfig extends MCPDAO {
 				continue;
 			}
 			
-			// build separate insert statements
-			/*$arrInsert[] = sprintf(
-				"(%s,'%s','%s')"
-				,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
-				,$this->_objMCP->escapeString($strName)
-				,$this->_objMCP->escapeString($strValue)
-			);*/
-			
 			// Build out bind insert string
 			$arrInsert[] = "(:sites_id_{$intCounter},:config_name_{$intCounter},:config_value_{$intCounter})";
 			
@@ -251,14 +255,36 @@ class MCPDAOConfig extends MCPDAO {
 			'INSERT IGNORE INTO MCP_CONFIG (sites_id,config_name,config_value) VALUES %s ON DUPLICATE KEY UPDATE config_value = VALUES(config_value)'
 			,implode(',',$arrInsert)
 		);
+                
+                try {
+                    
+                    // start transaction
+                    $this->_objMCP->begin();
 		
-		// save dynamic field values
-		if(!empty($fields)) {
+                    // save dynamic field values
+                    if(!empty($fields)) {
 			$this->_saveDynamicFieldValues($fields);
-		}
+                    }
 		
-		// run query
-		return $this->_objMCP->query($strSQL,$arrBind);
+                    // run query
+                    $mixReturn = $this->_objMCP->query($strSQL,$arrBind);
+                    
+                    // commit transaction
+                    $this->_objMCP->commit();
+                    
+                    // Update cached configuration
+                    $this->_arrCachedConfig = $this->fetchEntireConfig();
+                    
+                    return $mixReturn;
+                    
+                } catch(Exception $e) {
+                    
+                    // rollback
+                    $this->_objMCP->rollback();
+                    
+                    throw new MCPDBException($e->getMessage());
+                    
+                }
 		
 	}
 	
