@@ -1,0 +1,107 @@
+
+
+- Delete (use inherited) -f field null using default
+- Yes
+- No
+
+(root type)
+
+--------------------------------------------------------------
+
+x Add new site     
+x Edit All Sites     x if owned by user
+x Delete All Sites   x if owned by user
+x Read All Sites     x if owned by user
+
+----------------------------------------------------------------------------------
+   Site 1      |    x x  x Delete     |      x Edit    |         x Read    
+----------------------------------------------------------------------------------
+   Site 2      |    x Delete     |      x Edit    |         x Read    
+----------------------------------------------------------------------------------
+   Site 3      |    x Delete     |      x Edit    |         x Read    
+----------------------------------------------------------------------------------
+   Site 4      |    x Delete     |      x Edit    |         x Read    
+----------------------------------------------------------------------------------
+
+
+
+<table width="100%">
+	<thead>
+		<tr>
+			<th>Site</th>
+			<th>Read</th>
+			<th>Update</th>
+			<th>Delete</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>Site 1</td>
+			<td>
+				<input type="checkbox" checked disabled> <!-- current state -->
+				<select>
+					<option value="" selected>Default</option>
+					<option value="1">Yes</option>
+					<option value="0">No</option>
+				</select>
+			</td>
+			<td>
+				<input type="checkbox" disabled> <!-- current state -->
+				<select>
+					<option value="">Default</option>
+					<option value="1" selected>Yes</option>
+					<option value="0">No</option>
+				</select>
+			</td>
+			<td>
+				<input type="checkbox" disabled> <!-- current state -->
+				<select>
+					<option value="">Default</option>
+					<option value="1">Yes</option>
+					<option value="0" selected>No</option>
+				</select>
+			</td>
+		</tr>
+	</tbody>
+</table>
+
+
+
+
+
+
+---------------------------------------
+
+- Delete   (clear) - Edit (clear)    - Read  (clear)
+
+clear - use inherited permissions
+
+
+
+-------------------
+root item 1      Delete     Edit      Read
+-------------------
+root item 2      Delete     Edit      Read
+-------------------
+root item 3
+-------------------
+
+(child type)
+---------------------------------------------------------
+- Add new Project
+- Edit All Projects
+- Delete All Projects
+- Read All Projects
+
+- If user created project type allow add
+- If user created project type allow delete
+- If user created project type allow read
+- If user created project type allow edit
+
+----------------------------------
+node 1   Delete      Edit       Read
+----------------------------------
+node 2
+----------------------------------
+node 3
+----------------------------------

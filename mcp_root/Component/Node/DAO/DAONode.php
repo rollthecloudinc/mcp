@@ -553,7 +553,7 @@ class MCPDAONode extends MCPDAO {
 			
 		} catch(MCPDBException $e) {
                     
-                        echo $e->getMessage();
+                        // echo $e->getMessage();
 			
 			/*
 			* If something went wrong rollback transaction 
