@@ -28,11 +28,20 @@ class MCPPermissionRoute extends MCPDAO implements MCPPermission {
 
 			$strSQL =
 				"SELECT
-				       u.users_id item_id
-				      ,pu.read allow_read
+				       u.users_id item_id                               
+                                       ,CASE
+                                          WHEN pu.read IS NOT NULL
+				          THEN pu.read
+                                          
+                                          WHEN MAX(pr.read) IS NOT NULL
+                                          THEN MAX(pr.read)
+                                          
+                                          ELSE 0
+                                       END allow_read
+
 				   FROM
 				      MCP_USERS u
-				  INNER
+				   LEFT OUTER
 				   JOIN
 				      MCP_PERMISSIONS_USERS pu
 				     ON
@@ -41,8 +50,35 @@ class MCPPermissionRoute extends MCPDAO implements MCPPermission {
 				      pu.item_id = 0
 				    AND
 				      pu.item_type = :item_type
+                                   LEFT OUTER
+                                   JOIN
+                                      MCP_USERS_ROLES u2r
+                                     ON
+                                      u.users_id = u2r.users_id
+                                   LEFT OUTER
+                                   JOIN
+                                      MCP_ROLES r
+                                     ON
+                                      u2r.roles_id = r.roles_id
+                                    AND
+                                      r.deleted = 0
+                                   LEFT OUTER
+                                   JOIN
+                                      MCP_PERMISSIONS_ROLES pr
+                                     ON
+                                      r.roles_id = pr.roles_id
+                                    AND
+                                      pr.item_type = :item_type
+                                    AND
+                                      pr.item_id = 0
 				  WHERE
-				      u.users_id = :users_id";
+				      u.users_id = :users_id
+                                  GROUP
+                                     BY
+                                      u.users_id";
+                        
+                        
+                        // $this->debug(str_replace(array(':users_id',':item_type'),array($intUserId?$intUserId:0,"MCP_ROUTE:$id"),$strSQL));
 			
 			$perm = array_pop( $this->_objMCP->query($strSQL,array(
 				 ':item_type'=>"MCP_ROUTE:$id"
