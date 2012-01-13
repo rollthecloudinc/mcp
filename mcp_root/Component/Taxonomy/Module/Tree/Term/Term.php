@@ -85,6 +85,78 @@ class MCPTaxonomyTreeTerm extends MCPModule {
 		});
 	
 	}
+        
+        /*
+        * get headers for each table column
+        *
+        * @return array table headers   
+        */
+        protected function _getHeaders() {
+            
+            $mod = $this;
+            $mcp = $this->_objMCP;
+            
+            return array(
+                array(
+                    'label'=>'Term'
+                    ,'column'=>'human_name'
+                    ,'mutation'=>null
+                )
+                ,array(
+                    'label'=>'Edit'
+                    ,'column'=>'terms_id'
+                    ,'mutation'=>function($mixValue,$arrTerm) use ($mcp,$mod) {
+                        if($arrTerm['allow_edit']) {
+                            return $mcp->ui('Common.Field.Link',array(
+                                'label'=>'Edit'
+                                ,'url'=>"{$mod->getBasePath(false)}/Edit/{$arrTerm['terms_id']}"
+                            ));
+                        } else {
+                            return 'Edit';
+                        }
+                    }
+                )
+                ,array(
+                    'label'=>'Add Child'
+                    ,'column'=>'terms_id'
+                    ,'mutation'=>function($mixValue,$arrTerm) use ($mcp,$mod) {
+                
+                        if( $arrTerm['allow_add'] ) {
+                            return $mcp->ui('Common.Field.Link',array(
+				'url'=>"{$mod->getBasePath(false)}/Add/Term/{$arrTerm['terms_id']}"
+				,'label'=>'+'
+                            ));
+                        } else {
+                            return '+';
+                        }
+                        
+                    }
+                )
+                ,array(
+                    'label'=>'Delete'
+                    ,'column'=>'terms_id'
+                    ,'mutation'=>function($mixValue,$arrTerm) use ($mcp) {
+           		return $mcp->ui('Common.Form.Submit',array(
+                            'label'=>'Delete'
+                            ,'name'=>"frmTermList[action][delete][{$arrTerm['terms_id']}]"
+                            ,'disabled'=>!$arrTerm['allow_delete']
+                        ));         
+                    }
+                )
+                ,array(
+                    'label'=>'Remove'
+                    ,'column'=>'terms_id'
+                    ,'mutation'=>function($mixValue,$arrTerm) use ($mcp) {
+           		return $mcp->ui('Common.Form.Submit',array(
+                            'label'=>'Remove'
+                            ,'name'=>"frmTermList[action][remove][{$arrTerm['terms_id']}]"
+                            ,'disabled'=>!$arrTerm['allow_delete']
+                        ));         
+                    }
+                )
+            );
+            
+        }
 	
 	/*
 	* Resolve vocabulary name to vocabulary id (primary key)
@@ -167,8 +239,14 @@ class MCPTaxonomyTreeTerm extends MCPModule {
 			* Mixin term permissions -------------------------------------------------
 			*/
 			$mcp = $this->_objMCP;
+                        
+                        // add permission based on vocabulary
+                        $arrVocab = $this->_getVocabulary($this->_strVocabulary);
+                        $arrAdd = $mcp->getPermission(MCP::ADD,'Term',$arrVocab['vocabulary_id']);
 			
-			$func = function($term,$func) use ($mcp) {
+                        //$this->debug($this->_arrTemplateData['terms']);
+                        
+			$func = function($term,$func) use ($mcp,$arrAdd) {
 			
 				if(!isset($term['terms']) || empty($term['terms'])) return array();
 				
@@ -177,20 +255,21 @@ class MCPTaxonomyTreeTerm extends MCPModule {
 				}
 				
 				$ids = array();
-				foreach($term['terms'] as $item) {
+				foreach($term['terms'] as &$item) {
 					$ids[] = $item['terms_id'];
 				}
 			
 				if(!empty($ids)) {
 					$deletePerms = $mcp->getPermission(MCP::DELETE,'Term',$ids);
-					$addPerms = $mcp->getPermission(MCP::ADD,'Term',$ids);
+                                        $editPerms = $mcp->getPermission(MCP::EDIT,'Term',$ids);
 				}
 			
 				foreach($term['terms'] as &$item) {
 					$item['allow_delete'] = $deletePerms[$item['terms_id']]['allow'];
+                                        $item['allow_edit'] = $editPerms[$item['terms_id']]['allow'];
 				
-					// @TODO: resolve this properly
-					$item['allow_add'] = true; // $addPerms[$term['terms_id']]['allow'];
+					// Add is based on whether someone is allowed to add terms to vocabulary
+					$item['allow_add'] = $arrAdd['allow'];
 				}
 				
 				return $term['terms'];
@@ -202,11 +281,6 @@ class MCPTaxonomyTreeTerm extends MCPModule {
 		}
 		
 		/* ----------------------------------------------------------------------- */
-		
-		/*
-		* Mutation for each term 
-		*/
-		$this->_arrTemplateData['mutation'] = array($this,'displayTermAsLink');
 		
 		/*
 		* Back link for nested redirects 
@@ -227,6 +301,11 @@ class MCPTaxonomyTreeTerm extends MCPModule {
 		* Form method 
 		*/
 		$this->_arrTemplateData['frm_method'] = 'POST';
+                
+                /*
+                * Table headers 
+                */
+                $this->_arrTemplateData['headers'] = $this->_getHeaders();
 		
 		/*
 		* Resolve redirect if requested 
@@ -273,55 +352,6 @@ class MCPTaxonomyTreeTerm extends MCPModule {
 		
 		return $strBasePath;
 		
-	}
-	
-	/*
-	* Display each term as a link (tree builder callback) 
-	* 
-	* @param value that would be printed
-	* @param array term data
-	* @return str mutation
-	*/
-	public function displayTermAsLink($value,$arrTerm) {
-		
-		// Create new child term quick link
-		if( $arrTerm['allow_add'] ) {
-			$add = $this->_objMCP->ui('Common.Field.Link',array(
-				'url'=>"{$this->getBasePath(false)}/Add/Term/{$arrTerm['terms_id']}"
-				,'label'=>'+'
-			));
-		} else {
-			$add = '+';
-		}
-		
-		// Delete term action
-		$delete = $this->_objMCP->ui('Common.Form.Submit',array(
-			'label'=>'Delete'
-			,'name'=>"frmTermList[action][delete][{$arrTerm['terms_id']}]"
-			,'disabled'=>!$arrTerm['allow_delete']
-		));
-		
-		// Remove term action
-		$remove = $this->_objMCP->ui('Common.Form.Submit',array(
-			'label'=>'Remove'
-			,'name'=>"frmTermList[action][remove][{$arrTerm['terms_id']}]"
-			,'disabled'=>!$arrTerm['allow_delete']
-		));
-		
-		// Place actions into a list
-		$actions = $this->_objMCP->ui('Common.Listing.Tree',array(
-			'data'=>array(
-				array('value'=>$add)
-				,array('value'=>$delete)
-				,array('value'=>$remove)
-			)
-		));
-		
-		// link to edit term
-		return $this->_objMCP->ui('Common.Field.Link',array(
-			'url'=>"{$this->getBasePath(false)}/Edit/{$arrTerm['terms_id']}"
-			,'label'=>$value
-		)).$actions;
 	}
 	
 }

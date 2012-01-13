@@ -1,14 +1,8 @@
-<?php 
-echo $this->ui('Common.Listing.Tree',array(
+<?php
+echo $this->ui('Common.Listing.Table',array(
 	'data'=>$terms
-	,'value_key'=>'human_name'
+	,'tree'=>true // enable tree support
 	,'child_key'=>'terms'
-	,'list_element'=>'ul'
-	,'mutation'=>$mutation
-	,'form'=>true
-	,'form_legend'=>$vocabulary?$vocabulary['human_name']:''
-	,'form_action'=>$frm_action
-	,'form_method'=>$frm_method
-	,'form_name'=>$frm_name
-)); 
+	,'headers'=>$headers
+));
 ?>
