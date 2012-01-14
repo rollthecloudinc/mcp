@@ -221,9 +221,9 @@ class MCPViewView extends MCPModule {
 			// Assign URL to create base view entity and label to use
 			$this->_arrTemplateData['create'] = $this->_getCreateBaseEntityURL();
 			$this->_arrTemplateData['create_label'] = $this->_getCreateBaseEntityLabel();
-			
+                        
 			// When a wrapper template has been defined use that to wrap the content otherwise use default
-			$strTpl = $objView->template_wrap?$objView->template_wrap:$strTpl;
+			$strTpl = $this->_objView->template_wrap?$this->_objView->template_wrap:$strTpl;
 			
 		}
 		

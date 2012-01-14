@@ -635,7 +635,7 @@ class MCPDAOView extends MCPDAO {
 			}
 		}
 		
-		// echo '<pre>',print_r($view),'</pre>';
+                //$this->debug($view);
 		
 		// ----------------------------------------------------------------------------
 		// Replace arguments with actual values for field options, filter values and sorting priorities
@@ -662,16 +662,23 @@ class MCPDAOView extends MCPDAO {
 		// filter values argument resolution
 		foreach($view->filters as &$filter) {
 			if( !isset($filter['values']) ) continue;
+                        
+                        // Path data reference
+                        $arrPath = $this->fetchFieldByViewPath($filter['path']);
+                        
 			foreach($filter['values'] as &$value) {
-				if( strcmp('argument',$value['type']) != 0) continue;
+                            
+				if( strcmp('argument',$value['type']) === 0) {
 				
-				$value['actual_value'] = $this->_getArgumentsActualValue(
+                                    $value['actual_value'] = $this->_getArgumentsActualValue(
 					 $view->arguments[ $value['value'] ]['value']
 					,$view->arguments[ $value['value'] ]['context']
 					,$view->arguments[ $value['value'] ]['type']
 					,$view->arguments[ $value['value'] ]['routine']
 					,$view->arguments[ $value['value'] ]['args']
-				);
+                                    );
+                                
+                                }
 				
 			}
 		}
@@ -722,6 +729,11 @@ class MCPDAOView extends MCPDAO {
 		}
 		
 		// echo '<pre>',print_r($view),'</pre>';
+                //$this->debug($view);
+                
+                /*foreach($view->filters as $filter) {
+                    $this->debug($this->fetchFieldByViewPath($filter['path']));
+                }*/
 		
 		return $view;
 		
@@ -769,6 +781,7 @@ class MCPDAOView extends MCPDAO {
 		
 		foreach($objView->filters as $arrFilter) {
 			
+                        $arrPath = $this->fetchFieldByViewPath($arrFilter['path']);
 			$arrParts = array();
 			
 			// @todo: handle special IN and NOT IN case
@@ -786,9 +799,44 @@ class MCPDAOView extends MCPDAO {
 					*/
 					if( strcmp('argument',$arrValue['type']) === 0 && $arrValue['actual_value'] === null ) {
 						continue;
-					}
-					
-					// @todo determine whether value needs to enclosed in quotes or use placehodlers w/ binding
+                                        }
+                                        
+                                        /*
+                                        * This magic here given a term reference by id will activate a full tree search. For example
+                                        * When the category News exists and has several child categories such as; local, sports, etc
+                                        * Searching for the News term will pull back all data assigned to children of News as well. So
+                                        * in this example all news, sports, local, etc stories would be pulled back. 
+                                        * 
+                                        * Right now this is only compatible with a term reference by id. this is because all other
+                                        * information is not unique. For example, given a system_name of News it is possible that a news
+                                        * term exists at mutiple places in a tree under the same vocabulary. So the only concrete way
+                                        * At this way to find a single unique term for a vocabulary is by id.
+                                        * 
+                                        * The exception would be using a path search such as; /News/Topics but this is not supported
+                                        * yet and would require additional Taxonomy DAO methods and integration into views via magical
+                                        * search fields to be supported. So for now term id will be the only thing tht triggers this
+                                        * for simplicity. 
+                                        * 
+                                        * @todo: Add option for recursive search to term id filter value          
+                                        */
+                                        if(isset($arrPath['table']) && strcmp($arrFilter['comparision'],'=') === 0 && strcasecmp($arrPath['table'],'Term') === 0 && strcmp($arrPath['path'],'id') === 0) {
+                                            
+                                            // Get taxonomy DAO
+                                            $objDAOTax = $this->_objMCP->getInstance('Component.Taxonomy.DAO.DAOTaxonomy',array($this->_objMCP));
+                                            
+                                            // Set all subterms (at every depth below passed term)
+                                            $arrTerms = $objDAOTax->getAllSubTerms($arrValue['actual_value']);
+                                            
+                                            // push root term
+                                            $arrTerms[] = $objDAOTax->fetchTermById($arrValue['actual_value']);
+                                            
+                                            // Add parts and values for each term and the child
+                                            $arrParts[] = '{#column#}'.' IN ('.implode(',',array_map(function($term) use (&$arrBind,&$intBind) { 
+                                                $arrBind[':bind_var_'.(++$intBind)] = $term['terms_id'];
+                                                return ":bind_var_$intBind";
+                                            },$arrTerms)).')';
+                                            
+                                        } else {
 					
 					// like, regex and fulltext edge case handling w/ default
 					switch($arrFilter['comparision']) {
@@ -874,6 +922,8 @@ class MCPDAOView extends MCPDAO {
 							
 					}
 				}
+                                
+                                } // end if/else
 			}
 			
 			// The conditional will determine the format of the values and separator ie. and | or
@@ -1149,7 +1199,7 @@ class MCPDAOView extends MCPDAO {
 		// echo '<pre>',print_r($arrBind),'</pre>';
 		// $this->_objMCP->addSystemStatusMessage("View Query: $strSQL");
                         
-                // $this->_objMCP->debug($strSQL);
+                $this->debug($strSQL);
 		
 		// ------------------------------------------------------------------
 		// fetch result set
@@ -1159,10 +1209,7 @@ class MCPDAOView extends MCPDAO {
 			$arrRows = $this->_objMCP->query($strSQL,$arrBind);
 			
 		} catch( MCPDBException $e) {
-			
-			/*
-			* View query failure debug 
-			*/
+                        
 			$this->_objMCP->addSystemStatusMessage("View Query Failed: $strSQL");
 			return;
 			
@@ -1317,7 +1364,10 @@ class MCPDAOView extends MCPDAO {
 	* @return array view entity field
 	*/
 	private function _tableColumnToField($arrColumn,$strTable) {
+            
+                $arrTable = $this->_fetchTableByName($strTable);
 		
+                $table          = $arrTable['system_name'];
 		$label 		= $arrColumn['Field'];
 		$path 		= $arrColumn['Field'];
 		$column		= $arrColumn['Field'];
@@ -1480,7 +1530,8 @@ class MCPDAOView extends MCPDAO {
 		}
 		
 		return array(
-			'label'=>$label
+                         'table'=>$table // table that owns field
+			,'label'=>$label
 			,'path'=>$path 
 			,'column'=>$column
 			,'type'=>$type
@@ -1516,6 +1567,22 @@ class MCPDAOView extends MCPDAO {
 		);
 		
 	}
+        
+        /*
+        * Get details for a table by name. 
+        * 
+        * @param table name
+        * @return array table definition 
+        */
+        private function _fetchTableByName($strName) {
+            
+            foreach($this->_arrTables as $table) {
+                if(strcasecmp($strName,$table['table']) === 0) {
+                    return $table;
+                }
+            }
+            
+        }
 	
 	/*
 	* Get dynamic columns for view type 

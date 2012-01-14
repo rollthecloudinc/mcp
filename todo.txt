@@ -54,7 +54,7 @@
   will be necessary for roles and views UI. Though I tend to think that both of these will
   not be able to use the default form Builder UI but we will see.
 
-00004: Rebuild Taxonomy term list module/look. 
+00004: Rebuild Taxonomy term list module/look. ----- COMPLETE
 - Make it more like the new menu display. In which all terms are shown on a single page in a table with indenting.
 
 00005: Implement and integrate configuration permission plugin.
