@@ -817,9 +817,9 @@ class MCPDAOView extends MCPDAO {
                                         * search fields to be supported. So for now term id will be the only thing tht triggers this
                                         * for simplicity. 
                                         * 
-                                        * @todo: Add option for recursive search to term id filter value          
+                                        * @todo: Determine method to turn off recursive search.       
                                         */
-                                        if(isset($arrPath['table']) && strcmp($arrFilter['comparision'],'=') === 0 && strcasecmp($arrPath['table'],'Term') === 0 && strcmp($arrPath['path'],'id') === 0) {
+                                        if(isset($arrPath['origin']) && strcmp($arrFilter['comparision'],'=') === 0 && strcasecmp($arrPath['origin'],'Term') === 0 && strcmp($arrPath['path'],'id') === 0) {
                                             
                                             // Get taxonomy DAO
                                             $objDAOTax = $this->_objMCP->getInstance('Component.Taxonomy.DAO.DAOTaxonomy',array($this->_objMCP));
@@ -1199,7 +1199,8 @@ class MCPDAOView extends MCPDAO {
 		// echo '<pre>',print_r($arrBind),'</pre>';
 		// $this->_objMCP->addSystemStatusMessage("View Query: $strSQL");
                         
-                $this->debug($strSQL);
+                //$this->debug($strSQL);
+                //$this->debug($arrBind);
 		
 		// ------------------------------------------------------------------
 		// fetch result set
@@ -1228,6 +1229,7 @@ class MCPDAOView extends MCPDAO {
 		$toEntity = function($arrNodes,$objParent,$toEntity,$checkBelongs=null) use (&$arrRows,$objDAOView) {
 			
 			$arrDomainRows = array();
+                        //$objDAOView->debug($arrNodes);
 			
 			foreach($arrNodes as $arrNode) {
 				
@@ -1258,6 +1260,8 @@ class MCPDAOView extends MCPDAO {
 						if( array_key_exists($strExpectedAlias,$arrRow) && ($checkBelongs === null || $checkBelongs($arrRow) )) {
 							
 							// Map the raw row column to domain row column
+                                                        //$objDAOView->debug($strExpectedAlias);
+                                                        //$objDAOView->debug($arrRow[$strExpectedAlias]);
 							$arrDomainRows[ $arrRow[$strUniqueRowAlias] ][$arrField['path']] = $arrRow[$strExpectedAlias];
 						
 						}
@@ -1307,6 +1311,7 @@ class MCPDAOView extends MCPDAO {
 		
 		// echo '<pre>',print_r($arrRows),'</pre>';
 		// echo '<pre>',print_r($arrDomainRows),'</pre>';
+                // $this->debug($arrDomainRows);
 		
 		/*
 		* Add "magical" boolean allow_delete,allow_edit and allow_delete
@@ -1367,7 +1372,9 @@ class MCPDAOView extends MCPDAO {
             
                 $arrTable = $this->_fetchTableByName($strTable);
 		
-                $table          = $arrTable['system_name'];
+                $origin         = $arrTable['system_name'];
+                unset($arrTable); // no longer need this
+                
 		$label 		= $arrColumn['Field'];
 		$path 		= $arrColumn['Field'];
 		$column		= $arrColumn['Field'];
@@ -1530,7 +1537,8 @@ class MCPDAOView extends MCPDAO {
 		}
 		
 		return array(
-                         'table'=>$table // table that owns field
+                         'origin'=>$origin // table that owns field
+                    
 			,'label'=>$label
 			,'path'=>$path 
 			,'column'=>$column
@@ -1947,13 +1955,15 @@ class MCPDAOView extends MCPDAO {
 				break;
 				
 			case 'Term':
-				// @TODO: this requires a little more though considering the hierarchy
-				// $objQuery->where[] = "t1.vocabulary_id = {$this->_objMCP->escapeString($intId)}";
+				// Get all terms in vocabulary.
+                                // In the future it would be nice to create a hierarhical formatter
+				$objQuery->where[] = "t1.vocabulary_id = {$this->_objMCP->escapeString($intId)} AND t1.deleted = 0";
 				break;
 				
 			case 'User':
-				// @todo: need to figure out the initial intention here
-				// $objQuery->where[] = "t1.sites_id = {$this->_objMCP->escapeString($this->_getSitesId())}";
+				// Id is ignored here and the current site will be used.
+                                // @todo: in theory the id should be passed based on the site which the display is assigned
+				$objQuery->where[] = "t1.sites_id = {$this->_objMCP->escapeString($this->_objMCP->getSitesId())} AND t1.deleted = 0";
 				break;
 				
 			case 'Config':

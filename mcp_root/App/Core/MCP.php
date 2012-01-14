@@ -327,6 +327,14 @@ class MCP {
 		* Instatiate UI drawing library 
 		*/
 		$this->_objUI = new \UI\Manager(ROOT.'/App/Lib/UI/Element');
+                
+                /*
+                * Register some UI plugin paths. This will probably need to crawl
+                * all component directories eventually to automatically discover
+                * them. However, for testing integration at this point hard coding
+                * them seems fine.    
+                */
+                $this->_objUI->registerPath(ROOT.'/Component/Node/Theme');
 		
 		/*
 		* Assign default master template path

@@ -25,7 +25,12 @@ class Manager {
 	/*
 	* Loaded UI elements
 	*/
-	,$_loaded = array();
+	,$_loaded = array()
+        
+        /*
+        * Additional paths registered to look for plugins. 
+        */
+        ,$_paths = array();
 
 	/*
 	* @param str absolute path to element plugin directory
@@ -60,6 +65,19 @@ class Manager {
 		return $element->html($settings,$this);
 	
 	}
+        
+        /*
+        * Register custom UI plugin directories.  
+        * 
+        * When creating UI elements that are specific to application
+        * goals is is best to keep them outside of this main UI directory
+        * and instead register the path. This also makes it possible to
+        * override existing plugins. The first one with the matching name
+        * will be picked up by the sysetm.   
+        */
+        public function registerPath($strPath) {
+            $this->_paths[] = $strPath;
+        }
 	
 	/*
 	* Extend default UI element settings with argument overrides
@@ -110,16 +128,26 @@ class Manager {
 	
 		// check to see if UI element has already been loaded
 		if(isset($this->_loaded[$name])) return $this->_loaded[$name];
+                
+                // copy paths
+                $paths = $this->_paths;
+                $paths[] = $this->_dir;
+                
+                // When paths have been registerd look in those first
+                $path = null;
+                foreach($paths as $base) {
+                    if( file_exists("$base/".str_replace('\\','/',$name).".php") ) {
+                        $path = "$base/".str_replace('\\','/',$name).".php";
+                        break;
+                    }
+                }
 	
-		// Build file location path
-		$path = "{$this->_dir}/".str_replace('\\','/',$name).".php";
-	
-		// Make sure UI element declarion exists
-		if(!file_exists($path)) {
+		// When path is null the file was not found
+		if($path === null) {
 			throw new Exception\InvalidFile($name,$path);
 		}
 		
-		// include plugin directory
+		// include plugin file
 		require_once($path);
 		
 		// build class name
