@@ -117,6 +117,13 @@ class MCPNodeViewEntry extends MCPModule {
 			,null
 			,array($this)
 		);
+                
+                /*
+                * Testing view type stuff 
+                */
+                $objDAOView = $this->_objMCP->getInstance('Component.View.DAO.DAOView',array($this->_objMCP));
+                $arrFields = $objDAOView->fetchFieldsByViewPath("Node:{$this->_arrTemplateData['node']['node_types_id']}");
+                $this->_arrTemplateData['schema'] = $arrFields;
 		
 		return $strTpl;
 	}

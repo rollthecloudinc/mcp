@@ -184,7 +184,7 @@ class MCPFieldList extends MCPModule {
 		/*
 		* Redirection back label 
 		*/
-		$this->_arrTemplateData['back_label'] = 'Back To Fields';
+		$this->_arrTemplateData['back_label'] = 'Fields';
 		
 		/*
 		* Handle internal module redirects 

@@ -811,6 +811,14 @@
                   <max>48</max>
                   <description>Link shown when viewing an individual entity to go back to list of entities.</description>
               </back_label> 
+              <disclose_flag>
+                  <label>Disclose Flag</label>
+                  <required>N</required>
+                  <type>text</type>
+                  <max>28</max>
+                  <default>View</default>
+                  <description>Flag used in URL when disclosing an entity.</description>
+              </disclose_flag> 
            </config> 
         </mod>
 	<mod pkg="Component.View.Module.Form">

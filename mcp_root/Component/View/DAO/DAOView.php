@@ -752,7 +752,9 @@ class MCPDAOView extends MCPDAO {
 	* may be nested.
 	* @return ?
 	*/
-	public function fetchRows($objView,$intOffset=null,$objModule=null) {
+	public function fetchRows($view,$intOffset=null,$objModule=null) {
+            
+                $objView = clone $view;
 		
 		$arrReturn = array();
 		$arrBind = array();
@@ -770,6 +772,32 @@ class MCPDAOView extends MCPDAO {
 			*/
 			$arrReturn[ $arrField['path'] ]['select'] = $arrField;
 		}
+                
+                /*
+                * Supplement all module configuartion references ------------------------------- 
+                */
+                
+                /*
+                * This is quick and dirty considering the state of view is modified here. What we
+                * really should do is copy the view so that any direct changes do it are not
+                * saved cosndiering objects pass by reference.
+                * 
+                * cloning the view will get around the above issue for now. 
+                */
+                foreach($objView->arguments as &$argument) {
+                    if(strcasecmp('cfg',$argument['context']) === 0) {
+                        foreach($objView->filters as &$filter) {
+                            foreach($filter['values'] as &$filter_value) {
+                                if(strcasecmp('argument',$filter_value['type']) === 0 && $filter_value['value'] == $argument['id']) {
+                                    $filter_value['actual_value'] = $objModule->getConfigValue($argument['value']);
+                               }     
+                            }
+                            
+                        }
+                    }
+                }
+                
+                //$this->debug($objView);
 		
 		/*
 		* Filter Handler --------------------------------------------------------------- 
@@ -1780,7 +1808,7 @@ class MCPDAOView extends MCPDAO {
 				// second argument is the view module instance - use getBasePath() to get URL relative to current page for building
 				// pages that nest within one another.
 				,'preprocess_select'=>function($strColumn,$arrOptions,$objModule) use ($mcp) {
-					return "IF($strColumn IS NOT NULL,CONCAT('{$mcp->escapeString( $objModule->getBasePath(true,true) )}/View/',$strColumn,'{$mcp->getQueryString()}'),NULL)";
+					return "IF($strColumn IS NOT NULL,CONCAT('{$mcp->escapeString( $objModule->getBasePath(true,true) )}/{$objModule->getConfigValue('disclose_flag')}/',$strColumn,'{$mcp->getQueryString()}'),NULL)";
 				}
 				
 				,'postprocess_select'=>function($intNodesId) {

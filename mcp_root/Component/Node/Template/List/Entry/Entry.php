@@ -11,6 +11,7 @@ if($allow_node_create) {
 	echo $this->ui('Common.Field.Link',array(
 		'url'=>$create_link
 		,'label'=>"Create $create_label"
+                ,'class'=>'node create'
 	));
 }
 

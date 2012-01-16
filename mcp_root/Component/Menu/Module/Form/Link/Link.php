@@ -409,8 +409,34 @@ class MCPMenuFormLink extends MCPModule {
             
             $arrLink = $this->_getMenuLink();
             
+            //$this->debug($arrLink);
+            
             if($arrLink !== null && isset($arrLink['target']) && strcasecmp('module',$arrLink['target']) === 0 ) {
-                return $this->_objMCP->getModConfig($arrLink['mod_path']);
+                $arrConfig =  $this->_objMCP->getModConfig($arrLink['mod_path']);
+                
+                /*
+                * When binding link to a view make it possible to set configuation
+                * exposed by via arguments.  
+                */
+                if(strcasecmp('Component.View.Module.View',$arrLink['mod_path']) === 0 && isset($arrLink['mod_args'],$arrLink['mod_args'][0]) && is_numeric($arrLink['mod_args'][0])) {
+                    
+                    $objDAOView = $this->_objMCP->getInstance('Component.View.DAO.DAOView',array($this->_objMCP));
+                    $view = $objDAOView->fetchViewById($arrLink['mod_args'][0]);
+                    
+                    if($view) {
+                        foreach($view->arguments as $argument) {
+                           if(strcmp('cfg',$argument['context']) === 0) {
+                               $arrConfig[$argument['value']] = array(
+                                   'label'=>$argument['human_name']
+                               );
+                           } 
+                        }
+                    }
+                    
+                }
+                
+                return $arrConfig;
+                
             } else {
                 return array();
             }

@@ -65,7 +65,7 @@
 - Right now CSS and JS are merely embedded in templates. However, there whould be a way for modules and templates
   to add files via method of the MCP facade or something.
 
-00007: When term is input as a view filter parameter match against all child terms as well.
+COMPLETE 00007: When term is input as a view filter parameter match against all child terms as well.
 - Right now when a term is used as a view filter the match is explicit to that term
   only not children. Therefore, given a store with a category structure a search for
   "socks" would only yield products directly associated with socks not those that
@@ -86,6 +86,18 @@
 - Some work has been done here though I am not able to recall exactly what. Though I am
   certain that delete does not work for most entities in the system. Perhaps nodes and that is
   all.
+
+00012:
+When terms, nodes or users are deleted delete any field references. This is probably
+going to require a listener for when entities of a type get deleted and hand off
+to the field dao so that is can clean-up any entity references. Unlike most things
+field values will be deleted immediately rather than hidden.
+
+00013:
+Update user login module to use the form builder and follow pattern(s)
+used to handle/process forms throughout the rest of the system. Also add
+automatic login functionality. There is a check box but right now it doesn't
+actually do anything.
 
 00008 BUG
 If no fields have been created for an entity the create fields button is not showing up. However, once

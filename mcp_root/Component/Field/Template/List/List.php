@@ -7,6 +7,7 @@ if($allow_create) {
 	echo $this->ui('Common.Field.Link',array(
 		'url'=>$create_link
 		,'label'=>'New Field'
+                ,'class'=>'field create'
 	));
 }
 

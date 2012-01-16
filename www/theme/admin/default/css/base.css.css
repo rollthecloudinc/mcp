@@ -1,6 +1,6 @@
 body {
     margin: 0;
-    padding: 2em 0 0 0;
+    padding: 5em 0 0 0;
 }
 
 #masthead,
@@ -18,32 +18,57 @@ body {
     overflow: hidden;
     list-style: none;
     margin: 0;
-    padding: .5em 0;
+    padding: 0 0;
     
     background-color: black;
+    background-image: -moz-linear-gradient(#000,#686868);
     
     top: 0;
     position: fixed;
     width: 100%;
+    z-index: 100;
 }
 
 #nav-admin-nav > li {
     float: left;
-}
-
-#nav-admin-nav > li {
-    border-left: 1px solid #999;
-}
-
-#nav-admin-nav > li:first-child {
-    border: none;
+    padding: .5em 0;
 }
 
 #nav-admin-nav a {
     color: white;
     text-decoration: none;
     display: block;
-    padding: 0 .75em;
+    padding: 0 .75em;    
+    border-left: 1px solid #999;
+}
+
+#nav-admin-nav > li:first-child a {
+    border: none;
+}
+
+#nav-admin-nav li:hover {
+    background-color: rgba(255,0,0,.6);
+}
+
+/*
+* When user is logged in display the logout button on the far
+* right side over top of the admin menu.
+*/
+#nav-admin-nav + form,
+#nav-admin-nav + form fieldset {
+    margin: 0;
+    padding: 0;
+}
+
+#nav-admin-nav + form legend {
+    display: none;
+}
+
+#nav-admin-nav + form {
+    position: fixed;
+    top: .45em;
+    right: 1em;
+    z-index: 101;
 }
 
 /*
@@ -94,8 +119,11 @@ body {
 * Common buttons
 * ----------------------------------------------------------
 */
-a[href~=Create],
-a[href$=Add]{
+a.create {
+    position: fixed;
+    top: 2.25em;
+    right: 1em;
+    z-index: 1000;
 }
 
 /*
@@ -103,12 +131,62 @@ a[href$=Add]{
 * Data grid
 * -------------------------------------------------------
 */
-table tbody tr:hover {
-    background-color: #ccc;
+
+form fieldset legend:first-child {
+    /*border: none;*/
+    font-size: 1.5em;
+    letter-spacing: .1em;
+    color: #990033;
+}
+form fieldset {
+    border-radius: .5em;
+}
+
+table thead {
+    background-color: black;
+    color: white;
+    font-weight: lighter;
+    
+    background-image: -moz-linear-gradient(#660033,#990033 70%);
+}
+
+table thead th {
+    padding: .35em 0;
+    text-align: left;
+}
+
+div table tbody tr:hover td {
+    background-color: rgba(100,0,0,.1);;
 }
 
 table tbody td {
     padding: .25em 0;
+    border-bottom: 1px solid #ccc;
+    background-color: #F8F8F8;
+}
+
+table tbody tr.odd td {
+    background-color: 	#F0F0F0;
+}
+
+table thead tr th:first-child,
+table tbody tr td:first-child {
+    padding-left: .5em;
+}
+
+table tbody a {
+    color: #990033;
+    text-decoration: none;
+    text-transform: lowercase;
+}
+
+table tbody a:hover {
+    text-decoration: underline;
+}
+
+table tbody tr td:first-child a {
+    color: #383838;
+    text-transform: none;
 }
 
 /*
@@ -163,13 +241,16 @@ form fieldset > ul {
 
 form fieldset > ul > li {
     margin-top: .5em;
+    overflow: hidden;
 }
 
-label {
+form fieldset > ul > li > label {
     margin-right: .5em;
+    width: 7em;
+    float: left;
 }
 
-label .required {
+form label .required {
     color: red;
 }
 
@@ -187,6 +268,11 @@ form select[size] {
     display: block;
 }
 
+.widget-textarea label + *,
+.widget-multi-select label + * {
+    clear: left;
+}
+
 /*
 * -------------------------------------------------------------
 * System messages
@@ -196,6 +282,7 @@ form select[size] {
     margin: 0;
     list-style: none;
     padding: 1em;
+    margin: 0 1em;
     border-style: solid;
     border-width: 2px;
 }
@@ -213,4 +300,62 @@ form select[size] {
 .message.note {
     border-color: gray;
     color: black;
+}
+
+/*
+* -----------------------------------------------------------
+* Breadcrumb nav
+* -----------------------------------------------------------
+*/
+#breadcrumbs {
+    overflow: hidden;
+    margin: 0;
+    padding: .25em 0;
+    list-style: none;
+    background-color: #F0F0F0;
+    border-top: 1px solid white;
+    
+    -webkit-box-shadow: 0 0 5px 5px #C0C0C0;
+    -moz-box-shadow: 0 0 5px 5px #C0C0C0;
+    box-shadow: 0 0 5px 5px #C0C0C0;
+    
+    position: fixed;
+    top: 2em;
+    width: 100%;
+}
+
+#breadcrumbs li {
+    float: left;
+    margin: 0 .25em;
+}
+
+#breadcrumbs li:first-child {
+    padding-left: .5em;
+}
+
+#breadcrumbs a:before {
+    content: ">>";
+}
+
+#breadcrumbs li:first-child a:before {
+    content: "";
+}
+
+#breadcrumbs a {
+    text-decoration: none;
+    color: #C8C8C8;
+}
+
+#breadcrumbs a:hover span {
+    text-decoration: underline;
+}
+
+#breadcrumbs span {
+    margin-left: .4em;
+    color: #CC0033;
+    text-transform: lowercase;
+}
+
+#breadcrumbs li:first-child span {
+    margin-left: 0;
 }

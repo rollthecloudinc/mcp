@@ -50,6 +50,17 @@ abstract class MCPModule extends MCPResource {
 				$this->_arrModConfig[$strSetting] = !isset($arrConfig[$strSetting])?isset($arrConfigSetting['default'])?$arrConfigSetting['default']:null:$arrConfig[$strSetting];
 			}
 		}
+                
+                /*
+                * Additional settings 
+                * 
+                * - Define settings not explictily declared in config. 
+                */
+                foreach($arrConfig as $strSetting=>$mixValue) {
+                    if(!isset($this->_arrModConfig[$strSetting])) {
+                        $this->_arrModConfig[$strSetting] = $mixValue;
+                    }
+                }
 		
 	}
 

@@ -148,7 +148,7 @@ class MCPViewView extends MCPModule {
 		$this->_intPage = !empty($arrArgs) && is_numeric($arrArgs[0])?array_shift($arrArgs):1;
 		
 		// Internal redirect - sued to switch between edit and read nested modules
-		$this->_strRequest = !empty($arrArgs) && in_array($arrArgs[0],array('Edit','Create','View'))?array_shift($arrArgs):null;
+		$this->_strRequest = !empty($arrArgs) && in_array($arrArgs[0],array('Edit','Create',$this->getConfigValue('disclose_flag')))?array_shift($arrArgs):null;
 		
 		// Set view data
 		if($intViewsId !== null) {
@@ -258,7 +258,7 @@ class MCPViewView extends MCPModule {
 				
 			}
 			
-		} else if ( $this->_objView && strcmp('View',$this->_strRequest) === 0 ) {
+		} else if ( $this->_objView && strcmp($this->getConfigValue('disclose_flag'),$this->_strRequest) === 0 ) {
 			
 			switch($this->_objView->base) {
 				
@@ -293,8 +293,8 @@ class MCPViewView extends MCPModule {
 	public function getBasePath($redirect=true,$page=false) {
 		$strBasePath = parent::getBasePath();
 		
-		if( $this->_objView !== null ) {
-			// $strBasePath.= "/{$this->_objView->id}";
+		if( $this->_objParentModule === null && $this->_objView !== null ) {
+                    $strBasePath.= "/{$this->_objView->id}";
 		}
 		
 		// add the page

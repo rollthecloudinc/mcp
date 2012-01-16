@@ -146,7 +146,7 @@ class MCPNodeListType extends MCPModule {
 		$mcp = $this->_objMCP;
 		return array(
 			array(
-				'label'=>'Classification'
+				'label'=>'Name'
 				,'column'=>'node_types_id'
 				,'mutation'=>array($this,'DisplayNodeTypeName')
 			)	

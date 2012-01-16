@@ -198,6 +198,13 @@ class MCPTemplate extends MCPResource {
 		}
 		
 	}
+        
+	/*
+	* Short-cut to print breadcrumbs
+	*/
+	public function breadcrumbs() {
+            echo $this->_objMCP->executeComponent('Component.Util.Module.Breadcrumb');
+	}
 	
 	/*
 	* Short-cut to echo global request content HTML

@@ -148,6 +148,11 @@ class MCP {
         * Meta data associated with page request. 
         */
         ,$_arrMetaData = array()
+                
+        /*
+        * Breadcrumbs 
+        */
+        ,$_arrBreadcrumbs = array()
 	
 	/*
 	* List of system messages 
@@ -1665,6 +1670,24 @@ class MCP {
 	public function getSystemMessages() {
 		return $this->_arrSystemMessages;
 	}
+        
+        /*
+        * Add new breadcrumb
+        * 
+        * @param Common.Field.Link config array   
+        */
+        public function addBreadcrumb($arrLink) {
+            $this->_arrBreadcrumbs[] = $arrLink;
+        }
+        
+        /*
+        * Get all breadcrumbs
+        * 
+        * @return array breadcrumbs  
+        */
+        public function getBreadcrumbs() {
+            return $this->_arrBreadcrumbs;
+        }
         
         /*
         * Add debug message 

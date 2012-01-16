@@ -116,7 +116,7 @@ class MCPTaxonomyListVocabulary extends MCPModule {
 		}
                 
                 $pages = array_shift($data);
-                $this->_objMCP->addSystemStatusMessage($pages);
+                //$this->_objMCP->addSystemStatusMessage($pages);
 		
 		// return number of found rows
 		return $pages;

@@ -1,13 +1,10 @@
-<ol>
+<?php if(empty($breadcrumbs)) return; ?>
+
+<ol id="breadcrumbs">
 <?php
 foreach($breadcrumbs as $breadcrumb) {
-	
-	printf(
-		'<li><a href="%s">%s</a></li>'
-		,$breadcrumb['href']
-		,$breadcrumb['label']
-	);
-	
+    $breadcrumb['label'] = "<span>{$breadcrumb['label']}</span>";
+    echo '<li>',$this->ui('Common.Field.Link',$breadcrumb),'</li>';
 }
 ?>
 </ol>

@@ -51,7 +51,7 @@ abstract class MCPDAO extends MCPResource {
 			}
 			
 			if(!is_array($mixValue) && strlen($mixValue) == 0 && !in_array($strField,$ignoreNullCast)) {
-				$mixValue = null; /*'NULL';*/
+				$mixValue = null;
 			} else if(in_array($strField,$arrStrings)) {
 				$mixValue = (string) $mixValue;
 			} else if(in_array($strField,$arrSerialized)) {
@@ -61,7 +61,7 @@ abstract class MCPDAO extends MCPResource {
 			}
 			
 			$arrColumns[] = $strField;  
-			$arrValues[] = '?'; /*$mixValue;*/
+			$arrValues[] = '?';
 			$arrBind[] = $mixValue;
 			
 		}
