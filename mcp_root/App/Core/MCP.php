@@ -17,7 +17,10 @@ class MCP {
 	,ADD 		= 2
 	,DELETE 	= 3
 	,EDIT 		= 4
-	,PURGE		= 5;
+	,PURGE		= 5
+              
+        // Name of session value that stores assets
+        ,SESSION_ASSET_KEY = 'mcp_assets';
 
 	private
 	
@@ -153,6 +156,14 @@ class MCP {
         * Breadcrumbs 
         */
         ,$_arrBreadcrumbs = array()
+                
+        /*
+        * JavaScript and CSS Assets 
+        */        
+        ,$_arrAssets = array(
+             'css'    => array()
+            ,'js'     => array()
+        )
 	
 	/*
 	* List of system messages 
@@ -1690,6 +1701,31 @@ class MCP {
         }
         
         /*
+        * Add CSS File 
+        * 
+        * @param css 
+        */
+        public function addCss($arrCss) {
+            $this->_arrAssets['css'][] = $arrCss;
+        }
+        
+        /*
+        * Add JS file 
+        * 
+        * @param js 
+        */
+        public function addJs($arrJs) {
+            $this->_arrAssets['js'][] = $arrJs;
+        }
+        
+        /*
+        * Get JS files 
+        */
+        public function getJs() {
+            return $this->_arrAssets['js'];
+        }
+        
+        /*
         * Add debug message 
         * 
         * IMPORTANT: 
@@ -1871,6 +1907,11 @@ class MCP {
 	}
 	
 	public function __destruct() {
+            
+                // Set CSS and JS when accessing site via main access point
+                if(strcmp(basename($_SERVER['SCRIPT_NAME']),'index.php') === 0) {
+                    $this->setSessionValue(MCP::SESSION_ASSET_KEY,$this->_arrAssets);
+                }
 		
 		// write session data before closing database connection
 		session_write_close();

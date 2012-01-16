@@ -9,6 +9,9 @@ class MCPUtilMaster extends MCPModule {
 	
 	public function execute($arrArgs) {
 		switch(basename($_SERVER['SCRIPT_NAME'])) {
+			case 'asset.php':
+				return $this->_executeAsset();
+                    
 			case 'css.php':
 				return $this->_executeCSS();
 				
@@ -55,6 +58,30 @@ class MCPUtilMaster extends MCPModule {
 		
                 $this->_objMCP->setMetaData('title',$this->_objMCP->getConfigValue('site_title'));
                 
+                // assets ---------------------------------------------------------
+                
+                $this->_objMCP->addCss(array(
+                    'path'=>'/lib/jquery-plugin/ui/v1.8.13/css/ui-lightness/jquery-ui-1.8.13.custom.css'
+                ));
+                $this->_objMCP->addJs(array(
+                    'path'=>'/lib/jquery/v1.5/jquery-1.5.min.js'
+                ));
+                $this->_objMCP->addJs(array(
+                    'path'=>'/lib/jquery-plugin/ui/v1.8.13/js/jquery-ui-1.8.13.custom.min.js'
+                ));
+                $this->_objMCP->addJs(array(
+                     'path'=>'/lib/ckeditor/v3.5.2/ckeditor.js'
+                    ,'bundle'=>false
+                ));
+                $this->_objMCP->addJs(array(
+                    'path'=>'/lib/ckeditor/v3.5.2/adapters/jquery.js'
+                    ,'bundle'=>false
+                ));
+                $this->_objMCP->addJs(array(
+                    'path'=>'/theme/admin/default/js/form.js'
+                ));
+                
+                // -----------------------------------------------------------------
                 
                 $this->_objMCP->assign('REQUEST_CONTENT',$this->_objMCP->executeModule("Site.$strSite.Module.$strRequestModule",$arrRequestArgs));
 		
@@ -202,6 +229,74 @@ class MCPUtilMaster extends MCPModule {
 		
 		return str_replace(ROOT,'',$this->getTemplatePath()).'/JS/JS.php';
 	}
+        
+        /*
+        * Asset request 
+        */
+        protected function _executeAsset() {
+            
+                $files = array();
+                $type = $this->_objMCP->getModule();
+                
+                if(!in_array($type,array('css','js'))) {
+                    throw new Exception('Asset type must be one of css or js');
+                }
+            
+                $assets = $this->_objMCP->getSessionValue(MCP::SESSION_ASSET_KEY);
+                
+                foreach($assets[$type] as &$data) {
+                    
+                    if(isset($data['bundle']) && !$data['bundle']) {
+                        continue;
+                    }
+                    
+                    $path = null;
+                    
+                    if(strpos($data['path'],DS) === 0) {
+                        $path = WWW.$data['path'];
+                    } else {
+                        $path = ROOT.$data['path'];
+                    }
+                    
+                    if(isset($data['inline'])) {
+                    
+                        $files[] = array('inline'=>$data['inline']);
+                        
+                    } else if(preg_match('/.*?\/\*$/',$path)) {
+                            foreach(scandir(rtrim(rtrim($path,'*'),DS)) as $file) {
+                                if(strpos($file,".$type") !== false) {
+                                    $files[] = array('file'=>rtrim($path,'*').$file);
+                                }
+                            }
+                    } else {
+                        
+                        if($path === null || !file_exists($path)) {
+                            throw new Exception('Unable to locate asset file.');
+                        } else {
+                            $files[] = array('file'=>$path);
+                        }
+                        
+                    }
+                    
+                }
+                
+                $this->_arrTemplateData['assets'] = $files;
+                
+                switch($type) {
+                   case 'js':
+                       header("Content-Type: text/javascript");
+                       break;
+                   
+                   case 'css':
+                       header("Content-Type: text/css");
+                       break;
+                   
+                   default:
+                }
+                
+                return str_replace(ROOT,'',$this->getTemplatePath()).'/Asset/Asset.php';
+            
+        }
 	
 	/*
 	* Public download folder access - serves up files in download directly for download

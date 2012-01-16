@@ -359,3 +359,42 @@ form select[size] {
 #breadcrumbs li:first-child span {
     margin-left: 0;
 }
+
+/*
+* ----------------------------------------------------------------------------------
+* Editorial form customization testing
+* ---------------------------------------------------------------------------------
+*/
+form.editorial .tabs {
+    overflow: hidden;
+    margin-bottom: 1em;
+}
+
+form.editorial .tabs li {
+    float: left;
+    margin-right: .5em;
+}
+
+form.editorial fieldset > fieldset {
+    display: none;
+    
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+form.editorial fieldset > fieldset legend {
+    display: none;
+}
+
+form.editorial fieldset:target {
+    display: block;
+}
+
+form.editorial #ed-general {
+    display: block;
+}
+
+form.editorial fieldset:target ~ fieldset {
+    display: none !important;
+}

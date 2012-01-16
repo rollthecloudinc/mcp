@@ -53,6 +53,13 @@ class MCPUtilAdmin extends MCPModule {
 		*/
 		$this->_strShortName = !empty($arrArgs) && isset($this->_arrMappings[$arrArgs[0]])?array_shift($arrArgs):null;
 		
+                /*
+                * Add admin CSS and JS 
+                */
+                $this->_objMCP->addCss(array(
+                    'path'=>'/theme/admin/default/css/*'
+                ));
+                
 		/*
 		* Pass the request to requested component 
 		*/
