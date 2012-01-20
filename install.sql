@@ -49,7 +49,7 @@ CREATE TABLE `MCP_CACHED_IMAGES` (
   `cached_images_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `base_images_id` blob NOT NULL,
   PRIMARY KEY (`cached_images_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=290 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=302 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -68,7 +68,7 @@ CREATE TABLE `MCP_CACHED_IMAGES_OPTIONS` (
   UNIQUE KEY `cached_images_id` (`cached_images_id`,`images_option`,`images_value`),
   KEY `cached_images_id_2` (`cached_images_id`),
   CONSTRAINT `mcp_cached_images_options_ibfk_1` FOREIGN KEY (`cached_images_id`) REFERENCES `mcp_cached_images` (`cached_images_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=314 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=326 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -250,10 +250,14 @@ CREATE TABLE `MCP_FIELDS` (
   `db_bool` tinyint(3) unsigned DEFAULT NULL,
   `db_timestamp` timestamp NULL DEFAULT NULL,
   `db_date` date DEFAULT NULL,
+  `updated_on_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `created_on_timestamp` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `deleted_on_timestamp` timestamp NULL DEFAULT NULL,
+  `deleted` tinyint(3) unsigned DEFAULT '0',
   PRIMARY KEY (`fields_id`),
-  UNIQUE KEY `sites_id` (`sites_id`,`entity_type`,`entities_id`,`cfg_name`),
+  UNIQUE KEY `sites_id_2` (`sites_id`,`entity_type`,`entities_id`,`cfg_name`,`deleted`),
   KEY `entity_type` (`entity_type`,`entities_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=113 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=113 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -275,16 +279,22 @@ CREATE TABLE `MCP_FIELD_VALUES` (
   `db_timestamp` timestamp NULL DEFAULT NULL,
   `db_date` date DEFAULT NULL,
   `weight` mediumint(9) DEFAULT '0',
+  `updated_on_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `created_on_timestamp` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `deleted_on_timestamp` timestamp NULL DEFAULT NULL,
+  `deleted` tinyint(3) unsigned DEFAULT '0',
   PRIMARY KEY (`field_values_id`),
   KEY `db_varchar` (`db_varchar`),
   KEY `db_int` (`db_int`),
   KEY `db_price` (`db_price`),
   KEY `db_bool` (`db_bool`),
-  KEY `fields_id` (`fields_id`,`rows_id`),
   KEY `weight` (`weight`),
   KEY `db_timestamp` (`db_timestamp`),
-  KEY `db_date` (`db_date`)
-) ENGINE=InnoDB AUTO_INCREMENT=684 DEFAULT CHARSET=utf8;
+  KEY `db_date` (`db_date`),
+  KEY `fields_id_2` (`fields_id`,`rows_id`,`deleted`),
+  KEY `fields_id` (`fields_id`),
+  CONSTRAINT `mcp_field_values_ibfk_1` FOREIGN KEY (`fields_id`) REFERENCES `mcp_fields` (`fields_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=715 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -343,7 +353,7 @@ CREATE TABLE `MCP_MEDIA_IMAGES` (
   KEY `deleted` (`deleted`),
   CONSTRAINT `mcp_media_images_ibfk_1` FOREIGN KEY (`creators_id`) REFERENCES `mcp_users` (`users_id`),
   CONSTRAINT `mcp_media_images_ibfk_2` FOREIGN KEY (`sites_id`) REFERENCES `mcp_sites` (`sites_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=250 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=261 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -429,7 +439,7 @@ CREATE TABLE `MCP_MENUS` (
   KEY `menu_location` (`menu_location`),
   KEY `sites_id` (`sites_id`),
   KEY `users_id` (`users_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -476,7 +486,7 @@ CREATE TABLE `MCP_MENU_LINKS` (
   CONSTRAINT `mcp_menu_links_ibfk_4` FOREIGN KEY (`content_footer_type`) REFERENCES `mcp_enum_content_types` (`system_name`),
   CONSTRAINT `mcp_menu_links_ibfk_5` FOREIGN KEY (`creators_id`) REFERENCES `mcp_users` (`users_id`),
   CONSTRAINT `mcp_menu_links_ibfk_6` FOREIGN KEY (`menus_id`) REFERENCES `mcp_menus` (`menus_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8 COMMENT='New version of navigation component';
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8 COMMENT='New version of navigation component';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -530,12 +540,13 @@ CREATE TABLE `MCP_NODES` (
   KEY `node_types_id` (`node_types_id`),
   KEY `content_type` (`content_type`),
   KEY `intro_type` (`intro_type`),
+  KEY `node_types_id_2` (`node_types_id`,`deleted`),
   CONSTRAINT `mcp_nodes_ibfk_1` FOREIGN KEY (`content_type`) REFERENCES `mcp_enum_content_types` (`system_name`),
   CONSTRAINT `mcp_nodes_ibfk_2` FOREIGN KEY (`intro_type`) REFERENCES `mcp_enum_content_types` (`system_name`),
   CONSTRAINT `mcp_nodes_ibfk_3` FOREIGN KEY (`sites_id`) REFERENCES `mcp_sites` (`sites_id`),
   CONSTRAINT `mcp_nodes_ibfk_4` FOREIGN KEY (`authors_id`) REFERENCES `mcp_users` (`users_id`),
   CONSTRAINT `mcp_nodes_ibfk_5` FOREIGN KEY (`node_types_id`) REFERENCES `mcp_node_types` (`node_types_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=125 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=128 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -689,7 +700,7 @@ CREATE TABLE `MCP_SESSIONS` (
   UNIQUE KEY `sid` (`sid`),
   KEY `users_id` (`users_id`),
   CONSTRAINT `mcp_sessions_ibfk_1` FOREIGN KEY (`users_id`) REFERENCES `mcp_users` (`users_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=22088 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=1453 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -745,7 +756,7 @@ CREATE TABLE `MCP_TERMS` (
   CONSTRAINT `mcp_terms_ibfk_1` FOREIGN KEY (`vocabulary_id`) REFERENCES `mcp_vocabulary` (`vocabulary_id`),
   CONSTRAINT `mcp_terms_ibfk_2` FOREIGN KEY (`creators_id`) REFERENCES `mcp_users` (`users_id`),
   CONSTRAINT `mcp_terms_ibfk_3` FOREIGN KEY (`parent_id`) REFERENCES `mcp_terms` (`terms_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=396 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=401 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -812,7 +823,7 @@ CREATE TABLE `MCP_VIEW_ARGUMENTS` (
   `human_name` varchar(128) NOT NULL COMMENT 'title/label of argument',
   `value` longtext NOT NULL COMMENT 'This may be a class name, function name, get ref, post ref, view ref, static value, etc based on the context. The context will determine how the value is handled within the application.',
   `type` enum('string','int','bool','float') DEFAULT NULL COMMENT 'The value type to cast the string to on the application end',
-  `context` enum('static','post','get','request','global_arg','module_arg','dao','function','class','view') NOT NULL,
+  `context` enum('static','post','get','request','global_arg','module_arg','dao','function','class','view','cfg') NOT NULL,
   `context_routine` varchar(128) DEFAULT NULL COMMENT 'The function or method name to call to derive the true value for dao, class and function contexts',
   `context_args` longtext COMMENT 'Serialized array of arguments to pass to a method or function call for dao, function and class context',
   `required` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT 'For context other than static whether the argument is required to build the view',
@@ -825,7 +836,7 @@ CREATE TABLE `MCP_VIEW_ARGUMENTS` (
   UNIQUE KEY `displays_id` (`displays_id`,`system_name`,`deleted`),
   UNIQUE KEY `displays_id_2` (`displays_id`,`human_name`,`deleted`),
   KEY `displays_id_3` (`displays_id`,`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=5 DEFAULT CHARSET=utf8 COMMENT='Contains arguments that may be referenced via select options';
+) ENGINE=MyISAM AUTO_INCREMENT=6 DEFAULT CHARSET=utf8 COMMENT='Contains arguments that may be referenced via select options';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -856,7 +867,7 @@ CREATE TABLE `MCP_VIEW_DISPLAYS` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `parent_type` (`parent_id`,`system_name`,`deleted`),
   UNIQUE KEY `parent_type_2` (`parent_id`,`human_name`,`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=12 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=13 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -881,7 +892,7 @@ CREATE TABLE `MCP_VIEW_FIELDS` (
   `deleted` tinyint(3) unsigned DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `displays_id` (`displays_id`,`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=46 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=52 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -906,7 +917,7 @@ CREATE TABLE `MCP_VIEW_FIELD_OPTIONS` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `fields_id` (`fields_id`,`option_name`,`deleted`),
   KEY `fields_id_2` (`fields_id`,`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=7 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=8 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -933,7 +944,7 @@ CREATE TABLE `MCP_VIEW_FILTERS` (
   `deleted` tinyint(3) unsigned DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `displays_id` (`displays_id`,`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=14 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=15 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -958,7 +969,7 @@ CREATE TABLE `MCP_VIEW_FILTER_VALUES` (
   `deleted` tinyint(3) unsigned DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `filters_id` (`filters_id`,`deleted`)
-) ENGINE=MyISAM AUTO_INCREMENT=14 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=15 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1037,7 +1048,7 @@ CREATE TABLE `MCP_VOCABULARY` (
   KEY `sites_id_3` (`sites_id`),
   KEY `creators_id_2` (`creators_id`),
   CONSTRAINT `mcp_vocabulary_ibfk_1` FOREIGN KEY (`creators_id`) REFERENCES `mcp_users` (`users_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -1049,4 +1060,4 @@ CREATE TABLE `MCP_VOCABULARY` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2012-01-13 14:14:48
+-- Dump completed on 2012-01-20  0:41:46

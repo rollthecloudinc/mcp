@@ -653,6 +653,8 @@ class MCPDAONode extends MCPDAO {
 	* @todo: support variable binding
 	*/
 	public function deleteNodes($mixNodeId) {
+            
+                $time = time();
 
 		/*
 		* nodes will be deleted. Fields and field
@@ -662,18 +664,70 @@ class MCPDAONode extends MCPDAO {
 		* have been accidently deleted. The same will hold true for comments.
 		*/
 		$strSQL = sprintf(
-			'UPDATE
-			      MCP_NODES
+			"UPDATE
+			      MCP_NODES n
+                           LEFT OUTER
+                           JOIN
+                              MCP_FIELDS f
+                             ON
+                              n.node_types_id = f.entities_id
+                            AND
+                              f.entity_type = 'MC_NODE_TYPES'
+                            AND
+                              f.deleted = 0
+                           LEFT OUTER
+                           JOIN
+                              MCP_FIELD_VALUES fv
+                             ON
+                              f.fields_id = fv.fields_id
+                            AND
+                              n.nodes_id = fv.rows_id
+                            AND
+                              fv.deleted = 0
+                           LEFT OUTER
+                           JOIN
+                              MCP_FIELDS r
+                             ON
+                              r.db_ref_table = 'MCP_NODES'
+                            AND
+                              r.db_ref_col = 'nodes_id'
+                            AND
+                              r.deleted = 0
+                           LEFT OUTER
+                           JOIN
+                              MCP_FIELD_VALUES rv
+                             ON
+                              r.fields_id = rv.fields_id
+                            AND
+                              n.nodes_id = r.db_int
+                            AND
+                              r.deleted = 0
 			    SET
-			      MCP_NODES.deleted = NULL
+			       n.deleted = NULL
+                              ,n.deleted_on_timestamp = FROM_UNIXTIME(".$time.")
+                              
+                              ,fv.deleted = NULL
+                              ,fv.deleted_on_timestamp = FROM_UNIXTIME(".$time.")
+                                  
+                              ,r.deleted = NULL
+                              ,r.deleted_on_timestamp = FROM_UNIXTIME(".$time.")
+                                  
+                              ,rv.deleted = NULL
+                              ,rv.deleted_on_timestamp = FROM_UNIXTIME(".$time.")
 			  WHERE
-			      MCP_NODES.nodes_id IN (%s)'
+			      n.nodes_id IN (%s)"
 			      
 			,is_array($mixNodeId) ? $this->_objMCP->escapeString(implode(',',$mixNodeId)) : $this->_objMCP->escapeString($mixNodeId)
 		);
+                
+                /*
+                * Also need to delete any virtual fk references 
+                */
+                
+                $this->debug($strSQL);
 		
 		// echo "<p>$strSQL</p>";
-		return $this->_objMCP->query($strSQL);
+		//return $this->_objMCP->query($strSQL);
 	
 	}
 	

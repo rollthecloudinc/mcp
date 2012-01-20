@@ -108,6 +108,12 @@ class MCPDAOField extends MCPDAO {
 					'value'=>'select'
 					,'label'=>'ComboBox'
 				);
+                                
+                                // try out linked list
+				$arrWidgets[] = array(
+					'value'=>'linkedlist'
+					,'label'=>'Linked List'
+				);
 				break;
 
 			case 'price':
@@ -237,12 +243,16 @@ class MCPDAOField extends MCPDAO {
 			     fv.fields_id = f.fields_id
 			   AND
 			     fv.rows_id = %s
+                           AND
+                             fv.deleted = 0
 			 WHERE
 			     f.sites_id = %s
 			  AND
 			     f.entity_type = '%s'
 			  AND
 			     f.entities_id %s
+                          AND
+                             f.deleted = 0
 			ORDER
 			   BY
 			     fv.weight ASC"
@@ -414,7 +424,7 @@ class MCPDAOField extends MCPDAO {
 		$fields = $this->listFields(
 			'f.*'
 			,sprintf(
-				"f.entity_type = '%s' AND f.sites_id = %s AND f.entities_id %s"
+				"f.entity_type = '%s' AND f.sites_id = %s AND f.entities_id %s AND f.deleted = 0"
 				,$this->_objMCP->escapeString($strEntityType)
 				,$this->_objMCP->escapeString($intSitesId === null?$this->_objMCP->getSitesId():$intSitesId)
 				,$intEntitiesId === null?'IS NULL':" = {$this->_objMCP->escapeString($intEntitiesId)}"
@@ -845,7 +855,7 @@ class MCPDAOField extends MCPDAO {
 			,'MCP_FIELDS'
 			,'fields_id'
 			,array('entity_type','entities_id','cfg_name','cfg_label','cfg_description','cfg_required','cfg_default','cfg_type','cfg_values','cfg_sql','cfg_dao_pkg','cfg_dao_method','db_value','cfg_media','db_ref_table','db_ref_col','db_ref_context','cfg_widget')
-			,null
+			,'created_on_timestamp'
 			,array('cfg_dao_args')
 		);
 	}
@@ -890,7 +900,7 @@ class MCPDAOField extends MCPDAO {
 			* Get field definition
 			*/
 			$arrField = array_pop($this->listFields('f.*',sprintf(
-				"f.sites_id = %s AND f.entity_type = '%s' AND f.entities_id %s AND f.cfg_name = '%s'"
+				"f.sites_id = %s AND f.entity_type = '%s' AND f.entities_id %s AND f.cfg_name = '%s' and f.deleted = 0"
 				,$this->_objMCP->escapeString($intSitesId !== null?$intSitesId:$this->_objMCP->getSitesId())
 				,$this->_objMCP->escapeString($strEntityType)
 				,$intEntitiesId !== null?"= {$this->_objMCP->escapeString($intEntitiesId)}":' IS NULL'
@@ -1019,7 +1029,7 @@ class MCPDAOField extends MCPDAO {
 		* Fetch field data 
 		*/
 		$field = array_pop($this->listFields('f.cfg_media',sprintf(
-			"f.cfg_name = '%s' AND f.entity_type = '%s' AND f.entities_id %s AND f.sites_id = %s"
+			"f.cfg_name = '%s' AND f.entity_type = '%s' AND f.entities_id %s AND f.sites_id = %s and f.deleted = 0"
 			,$this->_objMCP->escapeString($strField)
 			,$this->_objMCP->escapeString($strEntity)
 			,$intEntitiesId === null?'IS NULL':" = {$this->_objMCP->escapeString($intEntitiesId)}"
@@ -1285,6 +1295,8 @@ class MCPDAOField extends MCPDAO {
 			      fields_id = %s
 			    AND
 			      rows_id = %s
+                            AND
+                              deleted = 0
 			  LIMIT
 			      1"
 			,$this->_objMCP->escapeString($intFieldsId)
@@ -1465,7 +1477,7 @@ class MCPDAOField extends MCPDAO {
 		* storage type. 
 		*/
 		$strSQL =
-			"INSERT IGNORE INTO MCP_FIELD_VALUES (fields_id,rows_id,db_varchar,db_text,db_int,db_bool,db_price,db_timestamp,db_date,weight)
+			"INSERT IGNORE INTO MCP_FIELD_VALUES (fields_id,rows_id,db_varchar,db_text,db_int,db_bool,db_price,db_timestamp,db_date,weight,created_on_timestamp)
 				    SELECT
 				         fields_id
 				         ,:rows_id rows_id
@@ -1515,6 +1527,7 @@ class MCPDAOField extends MCPDAO {
 				          END db_date
 				          
 				          ,:weight weight
+                                          ,NOW()
 				          
 				      FROM
 				         MCP_FIELDS

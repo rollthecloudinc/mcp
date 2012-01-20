@@ -305,6 +305,10 @@ class Form implements \UI\Element {
                                                         * Linked list @todo
                                                         */
                                                         case 'linkedlist':
+                                                            $element.= $ui->draw('Common.Form.LinkedList',array(
+                                                                 'data'=>$data
+                                                                ,'value'=>isset($data['multi'])?isset($values[$field][$i])?$values[$field][$i]:'':$values[$field]
+                                                            ));
                                                             break;
                                                                 
 								

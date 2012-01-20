@@ -1751,7 +1751,7 @@ class MCPDAOView extends MCPDAO {
 			 ,NULL preprocess_select
 			 ,NULL postprocess_select" // NOTE: sites_id,entity_type, entities_id, entities_primary_key are necessary to build join for dynamic fields
 		   ,sprintf(
-				"f.sites_id = %s AND f.entity_type = '%s' AND f.entities_id %s"
+				"f.sites_id = %s AND f.entity_type = '%s' AND f.entities_id %s AND f.deleted = 0"
 				,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
 				,$this->_objMCP->escapeString($entity_type)
 				,$entities_id === null?"IS NULL":"= {$this->_objMCP->escapeString($entities_id)}"
@@ -2309,13 +2309,17 @@ class MCPDAOView extends MCPDAO {
 		                        $mid.entities_id = {$arrField['entities_id']} 
 		                      AND 
 		                        $mid.cfg_name = '{$arrField['name']}' 
+                                      AND
+                                        $mid.deleted = 0
 		                     LEFT OUTER 
 		                     JOIN 
 		                        MCP_FIELD_VALUES {$objBranch->alias} 
 		                       ON 
 		                        $mid.fields_id = {$objBranch->alias}.fields_id 
 		                      AND 
-		                        {$objBranch->alias}.rows_id = {$objParent->alias}.{$arrField['entities_primary_key']} ";		
+		                        {$objBranch->alias}.rows_id = {$objParent->alias}.{$arrField['entities_primary_key']} 
+                                      AND
+                                        {$objBranch->alias}.deleted = 0 ";		
 			
 		
 		/*
