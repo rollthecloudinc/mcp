@@ -1060,6 +1060,61 @@ class MCPDAOField extends MCPDAO {
 	public function deleteFieldValue($intFieldValuesId) {
 		echo "<p>Delete field value</p>";
 	}
+        
+        /*
+        * Field clean-up process required upon deleting any entity.
+        * 
+        * @param array row ids
+        * @param str row id context   
+        */
+        public function doDeleteEntity($arrRowIds,$strContext) {
+            
+            // First process is simple - remove all field values for the entities
+            $sql = '
+                UPDATE 
+                     MCP_FIELD_VALUES fv
+                   SET
+                     fv.deleted = NULL
+            ';
+            
+            // Remove any field value foreign key references to deleted entities
+            $sql = '
+                UPDATE
+                     MCP_FIELDS f
+                 INNER
+                  JOIN
+                     MCP_FIELD_VALUES fv
+                    ON
+                     f.fields_id = fv.fields_id
+                   SET
+                     fv.deleted = NULL
+                 WHERE
+                     f.db_ref_table = :db_ref_table
+                   AND
+                     fv.db_int IN ()
+            ';
+            
+            // For container types such as; node type and vocabulary
+            // delete all fields and field values.
+            $sql = '
+                UPDATE
+                     MCP_FIELDS f
+                 INNER
+                  JOIN
+                     MCP_FIELD_VALUES fv
+                    ON
+                     f.fields_id = fv.fields_id
+                   SET
+                     f.deleted = NULL,
+                     fv.deleted = NULL
+                 WHERE
+                     f.entity_type = :entity_type
+                   AND
+                     f.entities_id = :entities_id
+            ';
+
+            
+        }
 	
 	/*
 	* Determine whether name conflicts with existing concrete column

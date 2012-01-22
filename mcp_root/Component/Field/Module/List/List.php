@@ -43,7 +43,7 @@ class MCPFieldList extends MCPModule {
 	*/
 	protected function _getFilter() {
 		return sprintf(
-			"f.sites_id = %s AND f.entity_type = '%s' AND f.entities_id %s"
+			"f.sites_id = %s AND f.entity_type = '%s' AND f.entities_id %s and f.deleted = 0"
 			,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
 			,$this->_objMCP->escapeString($this->_strEntityType)
 			,$this->_intEntitiesId !== null?"= {$this->_objMCP->escapeString($this->_intEntitiesId)}":'IS NULL'
@@ -95,10 +95,12 @@ class MCPFieldList extends MCPModule {
 				,'column'=>'fields_id'
 				,'mutation'=>function($value,$row) use($mcp) {
 					
-					return $mcp->ui('Common.Form.Submit',array(
+					return $mcp->ui('Common.Form.Input',array(
 						'name'=>'frmFieldList[action][delete]['.$value.']'
-						,'label'=>'Delete'
+						,'value'=>'Delete'
 						,'disabled'=>!$row['allow_delete']
+                                                ,'type'=>'submit'
+                                                ,'class'=>'btn danger'
 					));
 					
 				}

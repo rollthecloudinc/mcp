@@ -166,10 +166,12 @@ class MCPNodeListType extends MCPModule {
 				'label'=>'&nbsp;'
 				,'column'=>'node_types_id'
 				,'mutation'=>function($value,$row) use ($mcp) {
-					return $mcp->ui('Common.Form.Submit',array(
-						'label'=>'Delete'
+					return $mcp->ui('Common.Form.Input',array(
+						'value'=>'Delete'
 						,'name'=>"frmNodeTypeList[action][delete][$value]"
 						,'disabled'=>!$row['allow_delete']
+                                                ,'type'=>'Submit'
+                                                ,'class'=>'btn danger'
 					));
 				}
 			)

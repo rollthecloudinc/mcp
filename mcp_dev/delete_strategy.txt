@@ -1,0 +1,25 @@
+MCP_NODE_TYPES
+MCP_CONFIG
+MCP_SITES
+MCP_VOCABULARY
+
+
+
+delete('MCP_NODE_TYPES',array(1,4,5,6));
+
+- delete any fields associated with entity
+
+entity_type = 'MCP_NODE_TYPES' AND entities_id ON (1,4,5,6)
+
++ delete those fields values
+
++ delete any contextual references
+MCP_NODE_TYPES = MCP_NODES
+MCP_VOCABULARY = MCP_TERMS
+
+db_ref_table = MCP_NODES AND db_ref_context_id IN (1,4,5,6)
+- need to remove all field values for these fields
+
+db_ref_table = MCP_NODE_TYPES
+db_int IN (1,4,5,6)
+

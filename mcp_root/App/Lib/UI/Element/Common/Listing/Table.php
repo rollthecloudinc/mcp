@@ -14,6 +14,9 @@ class Table implements \UI\Element {
 			,'caption'=>array(
 				'default'=>null
 			)
+                        ,'class'=>array(
+                            'default'=>null
+                        )
 			
 			/*
 			* Suppport for trees 
@@ -56,11 +59,13 @@ class Table implements \UI\Element {
 		
 		if($form === true) {
 			$out.= sprintf(
-				'<form name="%s" action="%s" method="%s"><fieldset><legend>%s</legend>'
+				'<form name="%s" action="%s" method="%s"%s><fieldset><legend>%s</legend>'
 				,$form_name
 				,$form_action
 				,$form_method
+                                ,$class !== null?' class="'.$class.'"':''
 				,$form_legend
+         
 			);
 		}
 		

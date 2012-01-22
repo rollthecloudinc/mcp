@@ -1,10 +1,17 @@
 <?php if(empty($breadcrumbs)) return; ?>
 
-<ol id="breadcrumbs">
+<ul class="breadcrumb">
 <?php
-foreach($breadcrumbs as $breadcrumb) {
-    $breadcrumb['label'] = "<span>{$breadcrumb['label']}</span>";
-    echo '<li>',$this->ui('Common.Field.Link',$breadcrumb),'</li>';
+foreach($breadcrumbs as $index=>$breadcrumb) {
+    //$breadcrumb['label'] = "<span>{$breadcrumb['label']}</span>";
+    
+    $divider = '<span class="divider">/</span>';
+    
+    if($index == (count($breadcrumbs) - 1)) {
+        $divider = '';
+    }
+    
+    echo '<li>',$this->ui('Common.Field.Link',$breadcrumb),' '.$divider.'</li>';
 }
 ?>
-</ol>
+</ul>

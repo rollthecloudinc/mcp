@@ -125,9 +125,10 @@ class MCPTaxonomyTreeTerm extends MCPModule {
                             return $mcp->ui('Common.Field.Link',array(
 				'url'=>"{$mod->getBasePath(false)}/Add/Term/{$arrTerm['terms_id']}"
 				,'label'=>'+'
+                                ,'class'=>'btn info'
                             ));
                         } else {
-                            return '+';
+                            return '<a class="btn info" href="#">+</a>';
                         }
                         
                     }
@@ -136,10 +137,12 @@ class MCPTaxonomyTreeTerm extends MCPModule {
                     'label'=>'Delete'
                     ,'column'=>'terms_id'
                     ,'mutation'=>function($mixValue,$arrTerm) use ($mcp) {
-           		return $mcp->ui('Common.Form.Submit',array(
-                            'label'=>'Delete'
+           		return $mcp->ui('Common.Form.Input',array(
+                            'value'=>'Delete'
                             ,'name'=>"frmTermList[action][delete][{$arrTerm['terms_id']}]"
                             ,'disabled'=>!$arrTerm['allow_delete']
+                            ,'type'=>'submit'
+                            ,'class'=>'btn danger'
                         ));         
                     }
                 )
@@ -147,10 +150,12 @@ class MCPTaxonomyTreeTerm extends MCPModule {
                     'label'=>'Remove'
                     ,'column'=>'terms_id'
                     ,'mutation'=>function($mixValue,$arrTerm) use ($mcp) {
-           		return $mcp->ui('Common.Form.Submit',array(
-                            'label'=>'Remove'
+           		return $mcp->ui('Common.Form.Input',array(
+                            'value'=>'Remove'
                             ,'name'=>"frmTermList[action][remove][{$arrTerm['terms_id']}]"
                             ,'disabled'=>!$arrTerm['allow_delete']
+                            ,'type'=>'submit'
+                            ,'class'=>'btn danger'
                         ));         
                     }
                 )

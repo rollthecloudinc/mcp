@@ -175,10 +175,12 @@ class MCPTaxonomyListVocabulary extends MCPModule {
 				'label'=>'&nbsp;'
 				,'column'=>'vocabulary_id'
 				,'mutation'=>function($value,$row) use ($mcp) {
-					return $mcp->ui('Common.Form.Submit',array(
-						'label'=>'Delete'
+					return $mcp->ui('Common.Form.Input',array(
+						 'value'=>'Delete'
 						,'name'=>"frmVocabularyList[action][delete][$value]"
 						,'disabled'=>!$row['allow_delete']
+                                                ,'class'=>'btn danger'
+                                                ,'type'=>'submit'
 					));
 				}
 			)
@@ -389,11 +391,11 @@ class MCPTaxonomyListVocabulary extends MCPModule {
 	public function displayAddTermToVocabLink($value,$row) {
 		
 		if(!$row['allow_add_term']) {
-			return '+';
+			return '<span class="btn info disabled">+</span>';
 		}
 
 		return sprintf(
-			'<a href="%s/Add/Vocabulary/%u">+</a>'
+			'<a class="btn info" href="%s/Add/Vocabulary/%u">+</a>'
 			,$this->getBasePath(false)
 			,$row['vocabulary_id']
 		);

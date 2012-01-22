@@ -11,7 +11,7 @@ if($allow_node_type_create) {
 	echo $this->ui('Common.Field.Link',array(
 		'label'=>'Create Classification'
 		,'url'=>$create_link
-                ,'class'=>'node-type create'
+                ,'class'=>'node-type create btn success'
 	));
 }
 

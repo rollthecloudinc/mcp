@@ -42,7 +42,7 @@ class Pager implements \UI\Element {
 		    $page_start = $page-(floor($visible_pages/2));
 		    $page_end = $page+(floor($visible_pages/2));
 		}
-		$out='';
+		$out='<div class="pagination">';
 		
 		$out.= sprintf(
 		    '<div class="summary"><p class="pages">%u %s</p><p class="total">%u %s</p></div>'
@@ -51,15 +51,15 @@ class Pager implements \UI\Element {
 		    ,$found_rows
 		    ,$found_rows == 1?$label:$label
 		);
-		$out.= sprintf('<ul class="pagination">');
+		$out.= sprintf('<ul>');
 		$out.= sprintf(
-		    '<li class="first">%s%s%s</li>'
+		    '<li class="first prev">%s%s%s</li>'
 		    ,$page == 1?'':sprintf('<a href="%s/%u/">',$base_path,1)
 		    ,'First'
 		    ,$page == 1?'':'</a>'
 		);    
 		$out.= sprintf(
-		    '<li class="previous">%s%s%s</li>'
+		    '<li class="previous prev">%s%s%s</li>'
 		    ,$page == 1?'':sprintf('<a href="%s/%u/">',$base_path,($page-1))
 		    ,'Previous'
 		    ,$page == 1?'':'</a>'
@@ -82,12 +82,12 @@ class Pager implements \UI\Element {
 		    ,$page == $total_pages?'':'</a>'
 		);
 		$out.= sprintf(
-		    '<li class="last">%s%s%s</li>'
+		    '<li class="last next">%s%s%s</li>'
 		    ,$page == $total_pages?'':sprintf('<a href="%s/%u/">',$base_path,$total_pages)
 		    ,'Last'
 		    ,$page == $total_pages?'':'</a>'
 		);
-		$out.= sprintf('</ul>');
+		$out.= sprintf('</ul></div>');
 		
 		return $out;
 		

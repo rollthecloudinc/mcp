@@ -80,6 +80,9 @@ class MCPUtilMaster extends MCPModule {
                 $this->_objMCP->addJs(array(
                     'path'=>'/theme/admin/default/js/form.js'
                 ));
+                $this->_objMCP->addCss(array(
+                    'path'=>'/lib/bootstrap/v1.4.0/bootstrap.css'
+                ));
                 
                 // -----------------------------------------------------------------
                 

@@ -1227,7 +1227,7 @@ class MCPDAOView extends MCPDAO {
 		// echo '<pre>',print_r($arrBind),'</pre>';
 		// $this->_objMCP->addSystemStatusMessage("View Query: $strSQL");
                         
-                //$this->debug($strSQL);
+                //$this->debug('<p>'.$strSQL.'</p>');
                 //$this->debug($arrBind);
 		
 		// ------------------------------------------------------------------

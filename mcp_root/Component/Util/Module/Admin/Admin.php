@@ -57,7 +57,7 @@ class MCPUtilAdmin extends MCPModule {
                 * Add admin CSS and JS 
                 */
                 $this->_objMCP->addCss(array(
-                    'path'=>'/theme/admin/default/css/*'
+                    'path'=>'/theme/admin/default/css/base2.css'
                 ));
                 
 		/*

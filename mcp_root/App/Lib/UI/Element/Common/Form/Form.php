@@ -108,7 +108,7 @@ class Form implements \UI\Element {
 		
 		if(!empty($config)) {
 			
-			$form.= '<ul>';
+			//$form.= '<ul>';
 				
 			foreach($config as $field=>$data) {
 				
@@ -139,13 +139,15 @@ class Form implements \UI\Element {
 				*/
 				$strDisabled = isset($data['disabled']) && $data['disabled'] == 'Y'?' disabled="disabled"':'';
 				
-				$form.= '<li class="widget-'.($widget?str_replace('_','-',$widget):'null').' '.(isset($data['multi'])?'many':'one').'"><?php echo $'.$field.'; ?>';
+				$form.= '<div class="clearfix widget-'.($widget?str_replace('_','-',$widget):'null').' '.(isset($data['multi'])?'many':'one').' '.($errors[$field]?'error':'').'"><?php echo $'.$field.'; ?>';
 					
 				$element.= $ui->draw('Common.Form.Label',array(
 					'for'=>$idbase.strtolower(str_replace('_','-',$field))
 					,'label'=>$data['label']
 					,'required'=>isset($data['required']) && $data['required'] == 'Y'?true:false
 				));
+                                
+                                $element.= '<div class="input">';
 
 				// Multi-values with checkbox group only require a single loop, same for multi-select
 				$loops = isset($data['multi']) && !in_array($widget,array('checkbox_group','multi_select')) && isset($values[$field]) && is_array($values[$field])?count($values[$field]):1;	
@@ -165,10 +167,11 @@ class Form implements \UI\Element {
 						,'name'=>"{$name}[action][add][{$field}]"
 						,'value'=>'+'
 						,'id'=>$idbase.strtolower(str_replace('_','-',$field)).'-add'
+                                                ,'class'=>'btn info'
 					));				
 					
 					$element.= sprintf(
-						'<ol id="%s" class="ui-widget-multi">'
+						'<ol id="%s" class="ui-widget-multi unstyled">'
 						,$idbase.strtolower(str_replace('_','-',$field)) // for multiple values label references container
 					);
 				}
@@ -185,6 +188,7 @@ class Form implements \UI\Element {
 							,'name'=>"{$name}[action][delete][{$field}][{$i}]"
 							,'value'=>'-'
 							,'id'=>$idbase.strtolower(str_replace('_','-',$field)).'-'.($i+1).'-delete'
+                                                        ,'class'=>'btn danger'
 						));
 						
 					}
@@ -263,6 +267,7 @@ class Form implements \UI\Element {
 										}
 										
 									));
+                             
 									
 									break;
 								}
@@ -298,6 +303,8 @@ class Form implements \UI\Element {
 									,'disabled'=>$strDisabled?true:false
 									,'multiple'=>true
 								));
+                                                                        
+                               
 								break;
                                                                 
                                                                 
@@ -596,11 +603,14 @@ class Form implements \UI\Element {
 				/*
 				* Print field errors 
 				*/
-				if(isset($errors[$field])) $element.= sprintf('<p>%s</p>',$errors[$field]);
+				if(isset($errors[$field])) $element.= sprintf('<span class="help-inline">%s</span>',$errors[$field]);
 				
-				$form.= '</li>';
+				//$form.= '</li>';
+                                
+                                
+                                $form.= '</div>';
 				
-				$elements[$field] = $element;
+				$elements[$field] = $element.'</div>';
 				
 			}
 			
@@ -614,8 +624,8 @@ class Form implements \UI\Element {
                             /*
                             * Submit button 
                             */
-                            $submit = sprintf('<input type="submit" name="%s[save]" value="%s" id="%s%s">',$name,$submit,$idbase,'save');
-                            $form.= "<li class=\"save\">$submit</li>";
+                            $submit = sprintf('<input type="submit" name="%s[save]" class="btn primary" value="%s" id="%s%s">',$name,$submit,$idbase,'save');
+                            $form.= "<div class=\"save actions\">$submit</div>";
 			
 				
                             /*
@@ -627,7 +637,7 @@ class Form implements \UI\Element {
                             
                         }
 				
-			$form.= '</ul>';
+			// $form.= '</ul>';
 			
 		} else {
 			$form.= '<p>No form available</p>';

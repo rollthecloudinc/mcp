@@ -1,5 +1,5 @@
 <?php 
-echo '<p class="message note"><strong>Note:</strong>&nbsp;Blank fields fallback to global defaults</p>';
+echo '<div class="alert-message info"><p class="message note"><strong>Note:</strong>&nbsp;Blank fields fallback to global defaults</p></div>';
 echo $this->ui('Common.Form.Form',array(
 	'name'=>$name
 	,'action'=>$action

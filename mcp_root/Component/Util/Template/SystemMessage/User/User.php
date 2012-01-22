@@ -3,17 +3,27 @@
 foreach($messages as $type => &$msgs) {
 	
 	if( empty($msgs) ) continue;
+        
+        
+        switch($type) {
+            case 'status':
+                $cls = 'success';
+                break;
+            
+            default:
+                $cls = $type;
+        }
 	
-	echo '<ul class="message '.$type.'">';
+	echo '<div class="alert-message '.$cls.'">';
 	
 	foreach($msgs as $message) {
 		printf(
-			'<li>%s</li>'
+			'<p>%s</p>'
 			,htmlentities($message['normal'])
 		);
 	}
 	
-	echo '</ul>';
+	echo '</div>';
 	
 }
 

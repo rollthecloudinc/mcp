@@ -1864,6 +1864,25 @@ class MCP {
 		return $objDAOField->saveFieldValues($arrFields,$intRowsId,$strEntityType,$intEntitiesId);
 		
 	}
+        
+        /*
+        * This method is required to be called upon deletion of any any entity. This
+        * will properly clean-up any field values or fields that need to be deleted
+        * when an entity of the given type is deleted.   
+        */
+        public function doDeleteEntity() {
+            
+            /*
+            * Hand off process to the field DAO
+            */
+            $objDAOField = $this->getInstance('Component.Field.DAO.FieldDAO',array($this));
+            
+            /*
+            * Do delete/clean-up procedure 
+            */
+            return $objDAOField->doDeleteEntity();
+            
+        }
 	
 	/*
 	* reCaptcha valid?
