@@ -5,7 +5,7 @@
 echo $this->ui('Common.Field.Link',array(
 	'url'=>$create_link
 	,'label'=>'Create Menu'
-        ,'class'=>'menu create'
+        ,'class'=>'btn menu create'
 ));
 
 /*

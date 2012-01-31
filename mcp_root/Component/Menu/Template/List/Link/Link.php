@@ -7,7 +7,7 @@ if($allow_link_create) {
 	echo $this->ui('Common.Field.Link',array(
 		'url'=>$create_link
 		,'label'=>"Create $create_label"
-                ,'class'=>'link create'
+                ,'class'=>'btn link create'
 	));
 }
 

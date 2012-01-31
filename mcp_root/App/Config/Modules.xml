@@ -22,6 +22,29 @@
 			</visible_pages>
 		</config>
 	</mod>
+        <mod pkg="Component.User.Module.Login">
+            <frm>
+                <username>
+                    <label>Username</label>
+                    <required>Y</required>
+                    <min>1</min>
+                    <max>25</max>
+                </username>
+                <password>
+                    <label>Password</label>
+                    <required>Y</required>
+                    <min>1</min>
+                    <max>10</max>
+                    <widget>password</widget>
+                </password>
+                <rememeber>
+                    <label>Remember Me</label>
+                    <required>N</required>
+                    <type>bool</type>
+                    <widget>checkbox</widget>
+                </rememeber>
+            </frm>
+        </mod>
 	<mod pkg="Component.User.Module.Registration.Form">
 		<frm>
 			<username>

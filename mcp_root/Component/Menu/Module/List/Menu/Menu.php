@@ -229,12 +229,13 @@ class MCPMenuListMenu extends MCPModule {
 				,'mutation'=>function($value,$row) use ($mod,$mcp) {
 					
 					if(!$row['allow_add']) {
-						return '+';
+						return '<a href="#" class="btn create disabled">+</a>';
 					}
 					
 					return $mcp->ui('Common.Field.Link',array(
 						'url'=>"{$mod->getBasePath(false)}/Create-Link/Menu/{$value}/"
 						,'label'=>'+'
+                                                ,'class'=>'btn create'
 					));
 					
 				}
@@ -244,10 +245,12 @@ class MCPMenuListMenu extends MCPModule {
 				'label'=>'&nbsp;'
 				,'column'=>'menus_id'
 				,'mutation'=>function($value,$row) use ($mcp) {
-					return $mcp->ui('Common.Form.Submit',array(
-						'label'=>'Delete'
+					return $mcp->ui('Common.Form.Input',array(
+						'value'=>'Delete'
+                                                ,'type'=>'submit'
 						,'name'=>"frmMenuList[action][delete][$value]"
 						,'disabled'=>!$row['allow_delete']
+                                                ,'class'=>'btn delete'
 					));
 				}
 			)

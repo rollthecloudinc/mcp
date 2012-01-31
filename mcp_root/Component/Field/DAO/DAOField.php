@@ -980,7 +980,8 @@ class MCPDAOField extends MCPDAO {
                                                 }
                                             
 						if(!isset($field_value['value']) || strlen($field_value['value']) !== 0) {
-                                                    continue;
+                                                    //$this->debug('here');
+                                                    //continue;
 						}
 					}				
 					
@@ -1359,17 +1360,22 @@ class MCPDAOField extends MCPDAO {
 		);
 		
 		$arrFieldValue = array_pop($this->_objMCP->query($strSQL));
+                
+                /*
+                * When array is passed get the value stored in the value key. 
+                */
+                $strActualVal = is_array($mixValue)?$mixValue['value']:$mixValue;
 		
 		/*
 		* insert / update switch 
 		*/
 		if($arrFieldValue !== null) {
 			
-			return $this->_updateFieldValue($arrFieldValue['field_values_id'],$mixValue);
+			return $this->_updateFieldValue($arrFieldValue['field_values_id'],$strActualVal);
 			
 		} else {
 			
-			return $this->_insertFieldValue($intFieldsId,$intRowsId,$mixValue);
+			return $this->_insertFieldValue($intFieldsId,$intRowsId,$strActualVal);
 			
 		}
 		
@@ -1414,6 +1420,7 @@ class MCPDAOField extends MCPDAO {
 		* When the value contains nothing delete it 
 		*/
 		if(strlen($mixValue) === 0) {
+                        $this->debug('delete');
 			return $this->_objMCP->query(
                             "DELETE FROM MCP_FIELD_VALUES WHERE field_values_id = :field_values_id"
                             ,array(

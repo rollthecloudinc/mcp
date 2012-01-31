@@ -132,5 +132,16 @@
 		<value></value>
 		<type>text</type>
 	</recaptcha_publickey>
+        <auto_login_enabled>
+                <label>Auto login Enabled</label>
+                <value>0</value>
+                <type>bool</type>
+        </auto_login_enabled>
+        <auto_login_cookie_name>
+                <label>Auto login Cookie Name</label>
+                <value>vhg67hnbGhfjRtghjCvfDcdqLLLp</value>
+                <min>10</min>
+                <max>48</max>
+        </auto_login_cookie_name>
 	
 </config>

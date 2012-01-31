@@ -14,11 +14,26 @@ class MCPUserLogin extends MCPModule {
 	* Unique instance number for object
 	*/
 	$_intInstance
-	
-	/*
-	* Message to display above form
-	*/
-	,$_strMessage;
+        
+        /*
+        * Validation object 
+        */
+        ,$_objValidator
+        
+        /*
+        * Form raw post values 
+        */
+        ,$_arrFrmPost
+                
+        /*
+        * Form derived values 
+        */
+        ,$_arrFrmValues
+           
+        /*
+        * Form field errors
+        */
+        ,$_arrFrmErrors;
 	
 	public function __construct(MCP $objMCP,MCPModule $objParentModule=null,$arrConfig=null) {
 		parent::__construct($objMCP,$objParentModule,$arrConfig);
@@ -26,39 +41,147 @@ class MCPUserLogin extends MCPModule {
 		$this->_init();
 	}
 	
-	private function _init() {
+        /*
+        * Intial set-up 
+        */
+	protected function _init() {
+            
+            
+                // Get validator
+                $this->_objValidator = $this->_objMCP->getInstance('App.Lib.Validation.Validator',array());
+            
+                // Get post data
+                $this->_arrFrmPost = $this->_objMCP->getPost($this->_getFrmName());
+                
+                // Set values and errors array
+                $this->_arrFrmValues = array();
+                $this->_arrFrmErrors = array();
+                
+        }
+        
+        /*
+        * Process any submitted form values. 
+        */
+        protected function _process() {
+            
+		/*
+		* Set form values 
+		*/
+		$this->_setFrmValues();
 		
-		$arrPost = $this->_objMCP->getPost();
-		$arrFrmData = isset($arrPost["frmUtilLogin_{$this->_intInstance}"])?$arrPost["frmUtilLogin_{$this->_intInstance}"]:null;
-		
-		$this->_arrTemplateData['frm_values'] = array();
-		foreach($this->_getFrmConfig() as $strField=>$arrConfig) {
-			$this->_arrTemplateData['frm_values'][$strField] = $arrFrmData === null || !isset($arrFrmData[$strField])?'':$arrFrmData[$strField]; 
-		}
-		
-		if($arrFrmData === null) return;
-		
-		if(empty($this->_arrTemplateData['frm_values']['username']) && empty($this->_arrTemplateData['frm_values']['password'])) {
-			$this->_strMessage = 'Username and Password required';
-			return;
-		} else if(empty($this->_arrTemplateData['frm_values']['username'])) {
-			$this->_strMessage = 'Username required';
-			return;
-		} else if(empty($this->_arrTemplateData['frm_values']['password'])) {
-			$this->_strMessage = 'Password required.';
-			return;
+		/*
+		* Validate form 
+		*/
+		if($this->_arrFrmPost !== null) {
+			$this->_arrFrmErrors = $this->_objValidator->validate($this->_getFrmConfig(),$this->_arrFrmValues);
 		}
 		
 		/*
-		* Attempt user login
+		* Authenticate user
 		*/
-		if($this->_objMCP->loginUser($this->_arrTemplateData['frm_values']['username'],$this->_arrTemplateData['frm_values']['password'])) {
-			$this->_strMessage = 'logged in!';
-		} else {
-			$this->_strMessage = 'Login failed';
+		if($this->_arrFrmPost !== null && empty($this->_arrFrmErrors) ) {
+			$this->_frmSave();
 		}
 		
-		
+	}
+        
+        /*
+        * Determine the propr handler to use for setting form values based
+        * on whether the form has been sumbitted yet or not.  
+        */
+        protected function _setFrmValues() {
+            if($this->_arrFrmPost !== null) {
+                $this->_setFrmAuth();
+            } else {
+                $this->_setFrmLogin();
+            }
+        }
+        
+        /*
+        * When form has been submitted this handler will run to set the form
+        * values based on the posted values. 
+        */
+        protected function _setFrmAuth() {
+            
+           foreach($this->_getFrmFields() as $strField) {
+                switch($strField) {
+                    
+                    case 'rememeber':
+                        $this->_arrFrmValues[$strField] = isset($this->_arrFrmPost[$strField])?$this->_arrFrmPost[$strField]:0;
+                        continue;
+                    
+                    default:
+                        $this->_arrFrmValues[$strField] = isset($this->_arrFrmPost[$strField])?$this->_arrFrmPost[$strField]:'';
+                }                 
+           }
+            
+        }
+        
+        /*
+        * When form has not been submitted this handler will run to set-up any
+        * defaults for the form values.  
+        */
+        protected function _setFrmLogin() {
+            
+            foreach($this->_getFrmFields() as $strField) {
+                switch($strField) {
+                    
+                    case 'rememeber':
+                        $this->_arrFrmValues[$strField] = 0;
+                        continue;
+                    
+                    default:
+                        $this->_arrFrmValues[$strField] = '';
+                }
+            }
+            
+        }
+        
+        /*
+        * When form is sumbitted successfully without eror this handler
+        * handler will be called in order to authenticate the user, set any necessary
+        * cookies, etc. 
+        */
+        protected function _frmSave() {
+            
+            /*
+            * All the logic to handle logging in a user is handled else where. Theerefore,
+            * the only thing to do is here is check whether authentication fails and if
+            * so provide an error message and clear the form values.  
+            */
+            if($this->_objMCP->loginUser($this->_arrFrmValues['username'],$this->_arrFrmValues['password'],((bool) $this->_arrFrmValues['rememeber']) ) === false) {
+                $this->_setFrmLogin();
+                $this->_objMCP->addSystemErrorMessage('Unable to login user.');
+            }
+            
+            
+        }
+        
+        /*
+        * Get the derived form name
+        * 
+        * @return str form name  
+        */
+        protected function _getFrmName() {
+            return "frmUtilLogin_{$this->_intInstance}";
+        }
+        
+        /*
+        * Get form field names
+        * 
+        * @return array form field names  
+        */
+        protected function _getFrmFields() {
+            return array_keys($this->_getFrmConfig());
+        }
+	
+	/*
+	* Get login forms configuration
+	*
+	* @return array login form configuration settings
+	*/
+	protected function _getFrmConfig() {  
+                return $this->_objMCP->getFrmConfig($this->getPkg(),'frm',false);
 	}
 	
 	public function redo() {
@@ -66,51 +189,22 @@ class MCPUserLogin extends MCPModule {
 	}
 
 	public function execute($arrArgs) {
+            
+                // process the form
+                $this->_process();
 	
-		$this->_arrTemplateData['frm_name'] = "frmUtilLogin_{$this->_intInstance}";
-		$this->_arrTemplateData['frm_action'] = $this->_objMCP->getBasePath();
-		$this->_arrTemplateData['frm_method'] = 'post';
-		$this->_arrTemplateData['frm_config'] = $this->_getFrmConfig();
-		$this->_arrTemplateData['frm_errors'] = array();
+                // set template data
+		$this->_arrTemplateData['name'] = $this->_getFrmName();
+		$this->_arrTemplateData['action'] = $this->_objMCP->getBasePath();
+		$this->_arrTemplateData['method'] = 'post';
+		$this->_arrTemplateData['config'] = $this->_getFrmConfig();
+		$this->_arrTemplateData['errors'] = $this->_arrFrmErrors;
+                $this->_arrTemplateData['values'] = $this->_arrFrmValues;
+                $this->_arrTemplateData['legend'] = 'Login';
 		$this->_arrTemplateData['instance_num'] = $this->_intInstance;
-		$this->_arrTemplateData['base_url'] = $this->_objMCP->getBaseUrl();
 		
+                // form render template
 		return 'Login/Login.php';
-	}
-	
-	/*
-	* Called form within template to print messages above form
-	*/
-	public function paintHeaderMessages() {
-		if($this->_strMessage) {
-			echo "<p>{$this->_strMessage}</p>";
-		}
-	}
-	
-	/*
-	* Get login forms configuration
-	*
-	* @return array login form configuration settings
-	*/
-	private function _getFrmConfig() {
-		return array(
-			'username'=>array(
-				'label'=>'Username'
-				,'required'=>'Y'
-				,'max'=>'25'
-				,'min'=>'1'
-			)
-			,'password'=>array(
-				'label'=>'Password'
-				,'required'=>'Y'
-				,'max'=>'10'
-				,'min'=>'1'
-			)
-			,'remember'=>array(
-				'label'=>'Remember Me'
-				,'required'=>'N'
-			)
-		);
 	}
 	
 }

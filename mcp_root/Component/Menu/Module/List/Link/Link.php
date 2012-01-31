@@ -91,12 +91,13 @@ class MCPMenuListLink extends MCPModule {
 					
 					// dynamically derived links can have children added to them via the UI
 					if(!$row['allow_add']) {
-						return '+';
+						return '<a href="#" class="btn create disabled">+</a>';
 					}
 					
 					return $mcp->ui('Common.Field.Link',array(
 						'label'=>'+'
 						,'url'=>$mod->getBasePath().'/Create/Link/'.$value
+                                                ,'class'=>'btn create'
 					));	
 					
 				}
@@ -131,6 +132,7 @@ class MCPMenuListLink extends MCPModule {
 						,'name'=>"frmMenuLink[$row]"
 						,'type'=>'submit'
 						,'disabled'=>!$row['allow_delete']
+                                                ,'class'=>'btn delete'
 					));
 				}
 			)

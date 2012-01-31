@@ -21,7 +21,7 @@ class MCPDAOSessionHandler extends MCPDAO {
 		parent::__construct($objMCP);
 		
 		$this->_intRequestTime = time();
-		$this->_intMaxLife = 5*60;
+		$this->_intMaxLife = 1*60;
 	}
 	
 	/*

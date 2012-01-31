@@ -57,7 +57,7 @@ class MCPUtilAdmin extends MCPModule {
                 * Add admin CSS and JS 
                 */
                 $this->_objMCP->addCss(array(
-                    'path'=>'/theme/admin/default/css/base2.css'
+                    'path'=>'/theme/admin/default/css/admin.css'
                 ));
                 
 		/*
@@ -72,6 +72,22 @@ class MCPUtilAdmin extends MCPModule {
 				,array($this)
 			);
 		}
+                
+                /*
+                * A single template exists to handle the admin area for now.
+                */
+                $this->_objMCP->setMasterTemplate('Component/Util/Template/Admin/Layout.php');
+                
+                /*
+                * Admin area uses bootstrap for the time being to handle
+                * just about all styling. Things are much simpler this way
+                * and we can focus on functionality. Bootstrap will not be included
+                * on the front end considering it is up to the front-end developer
+                * to design the site as necessary for optimization, etc.  
+                */
+                $this->_objMCP->addCss(array(
+                    'path'=>'/lib/bootstrap/v1.4.0/bootstrap.css'
+                ));
 		
 		return 'Admin/Admin.php';
 	}

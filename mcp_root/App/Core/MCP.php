@@ -839,10 +839,11 @@ class MCP {
 	*
 	* @param str username
 	* @param str password
+        * @param bool can be used to enable auto login based on cookie
 	* @return bool true/false
 	*/
-	public function loginUser($strUsername,$strPassword) {
-		return $this->_objUser->authenticate($strUsername,$strPassword);
+	public function loginUser($strUsername,$strPassword,$boolEnableAuto=false) {
+		return $this->_objUser->authenticate($strUsername,$strPassword,$boolEnableAuto);
 	}
 	
 	/*

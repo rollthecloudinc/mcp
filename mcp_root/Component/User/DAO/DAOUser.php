@@ -116,26 +116,6 @@ class MCPDAOUser extends MCPDAO {
 	* @return array user data
 	*/
 	public function fetchUserByLoginCredentials($strUsername,$strPassword,$intSitesId) {
-		
-		/*$strSQL = 
-			sprintf(
-		          "SELECT 
-		                users_id 
-		             FROM
-		                MCP_USERS
-		            WHERE
-		                sites_id = %s
-		              AND
-		                username = '%s'
-		              AND
-		                pwd = SHA1( CONCAT('%s','%s',created_on_timestamp) )
-		              AND
-		                deleted = 0"
-		           ,$this->_objMCP->escapeString($intSitesId)
-		           ,$this->_objMCP->escapeString($strUsername)
-		           ,$this->_objMCP->escapeString($strPassword)
-		           ,$this->_objMCP->escapeString($this->_objMCP->getSalt())
-		 	);*/
 
 		 return array_pop($this->_objMCP->query(
                   'SELECT 
@@ -158,20 +138,153 @@ class MCPDAOUser extends MCPDAO {
 		 	)
 		 ));
 	}
+        
+        /*
+        * This is somewhat of a helper method to easily map auto login cookie
+        * credentials to a user. When a sucessful mapping exists the user id
+        * will be returned. Otherwise, null will be returned.   
+        * 
+        * @param sites id
+        * @return int  
+        */
+        public function fetchUsersIdByAutoLoginCredentials($intSitesId) {
+            
+            // First check to make sure auto login is on.
+            if($this->_objMCP->getConfigValue('auto_login_enabled') != 1) {
+                return;
+            }
+            
+            // Get the cookie name
+            $strCookie = $this->_objMCP->getConfigValue('auto_login_cookie_name');
+            
+            // Attempt to get the cookie value
+            $strValue = $this->_objMCP->getCookieValue($strCookie);
+            
+            //$this->debug($strValue);
+            
+            // When cookie does not exist we are finished
+            if(!$strValue) {
+                return;
+            }
+            
+            // Otheriwse attempt to make the match           
+            $arrUsers = $this->_objMCP->query(
+                 'SELECT users_id FROM MCP_USERS WHERE sites_id = :sites_id AND uuid = SHA1( CONCAT(:key,users_id,:salt,created_on_timestamp) )',
+                 array(
+                      ':sites_id'=> (int) $intSitesId
+                     ,':key'=>(string) $strValue
+                     ,':salt'=>(string)  $this->_objMCP->getSalt()
+                 )
+            );
+            
+            // In the rare case that more than one is matched return nothing
+            if(count($arrUsers) > 1) {
+                return;
+            }
+            
+            // Otherwise pop the first of the stack and return the users id
+            $arrUser = array_pop($arrUsers);
+            
+            if($arrUser) {
+                $this->_objMCP->addSystemStatusMessage('Auto login success');
+                return $arrUser['users_id'];
+            }
+            
+        }
+        
+        /*
+        * Auto login provides a mechanism that allows a user to close session
+        * and next time they come to the site will be logged back in automatically. This
+        * will be accomplished by dropping a random string in a cookie and matching it to
+        * the uuid stored in the users table. Upon intial entry into the application when a user
+        * is detected with a cookie that has a correlating UUID they will automatically be logged
+        * back in. I think it will best though to allow sites to turn this feature on and off for
+        * security reasons. Some sites may need to be more secure than other. In which case this
+        * feature can be turned on but will off by default since why it does provide an enhanced
+        * user experience will make the site more susceptible to hacking. 
+        * 
+        * @param int users id
+        * @return bool       
+        */
+        public function enableAutoLogin($intId) {
+            
+            // for now the time will be good enough
+            $strKey = md5((string) time());
+            
+            // Grab the salt
+            $strSalt = (string) $this->_objMCP->getSalt();
+            
+            // Config value for cookie authentication (used as cookie name)
+            $strCookie = $this->_objMCP->getConfigValue('auto_login_cookie_name');
+            
+            try {
+                
+                // Set encrypted passcode
+                $this->_objMCP->query(
+                        'UPDATE MCP_USERS SET uuid = SHA1( CONCAT(:key,users_id,:salt,created_on_timestamp) ) WHERE users_id = :users_id',
+                        array(
+                             ':key'=> $strKey
+                            ,':salt'=> $strSalt
+                            ,':users_id'=>(int) $intId
+                        )
+                );
+                
+                // drop cookie 
+                $this->_objMCP->setCookieValue($strCookie,$strKey);
+                
+                return true;
+                
+            } catch(MCPDBException $e) {
+                
+                throw new MCPDAOException('Unable to create auto login credentials.');
+                
+            }
+            
+        }
+        
+        /*
+        * Disable auto account login for user. 
+        */
+        public function disableAutoLogin($intId) {
+            
+            // Config value for cookie authentication (used as cookie name)
+            $strCookie = $this->_objMCP->getConfigValue('auto_login_cookie_name');
+            
+            try {
+                
+                // unset uuid
+                $this->_objMCP->query(
+                     'UPDATE MCP_USERS SET uuid = NULL WHERE users_id = :users_id',
+                     array(
+                         ':users_id'=> (int) $intId
+                     )
+                );
+                
+                // destroy cookie (set expires in past)
+                $this->_objMCP->setCookieValue($strCookie,'',false,(time()-3600));
+                
+                return true;
+                
+            } catch(MCPDBException $e) {
+                
+                throw new MCPDAOException('Unable to disable auto login for given user.');
+                
+            }
+            
+        }
 	
 	/*
 	* Update users data 
+        * 
+        * Think of this as preferences. Why I didn't call it preferences before
+        * aludes me but that is essentially what user data is. Any configuration
+        * per user basis. Where as, session data is lost once a users session is ended
+        * user data (preferences) will not be lost. 
 	* 
 	* @param int users id
 	* @param array user data
 	*/
 	public function updateUsersData($intId,$arrUserData) {
-		
-		/*$strSQL = sprintf(
-			"UPDATE MCP_USERS SET user_data = '%s' WHERE users_id = %s"
-			,base64_encode(serialize($arrUserData))
-			,$this->_objMCP->escapeString($intId)
-		);*/
 		
 		return $this->_objMCP->query(
 			'UPDATE MCP_USERS SET user_data = :user_data WHERE users_id = :users_id'

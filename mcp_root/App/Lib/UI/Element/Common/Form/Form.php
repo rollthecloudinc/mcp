@@ -179,17 +179,21 @@ class Form implements \UI\Element {
 				for($i=0;$i<$loops;$i++) {
 					
 					// multi_select and checkbox_group don't need/support delete control
-					if( isset($data['multi']) && !in_array($widget,array('multi_select','checkbox_group')) ) {
-						$element.= '<li>';
+					if( (isset($data['multi']) && !in_array($widget,array('multi_select','checkbox_group'))) || isset($data['media']) ) {
+						
+                                                if($data['multi']) {
+                                                    $element.= '<li>';
+                                                }
+                                                
 						
 						// create control to delete value
-						$element.= $ui->draw('Common.Form.Input',array(
+						$element.= '<div>'.$ui->draw('Common.Form.Input',array(
 							'type'=>'submit'
 							,'name'=>"{$name}[action][delete][{$field}][{$i}]"
 							,'value'=>'-'
 							,'id'=>$idbase.strtolower(str_replace('_','-',$field)).'-'.($i+1).'-delete'
                                                         ,'class'=>'btn danger'
-						));
+						)).'</div>';
 						
 					}
 				
@@ -393,7 +397,15 @@ class Form implements \UI\Element {
 						*/
 						if(isset($data['media'])) {
 							$input_type = 'file';
+                                                        $element.= '<div>';
 						}
+                                                
+                                                /*
+                                                * Special password widget type 
+                                                */
+                                                if(isset($data['widget']) && strcmp('password',$data['widget']) === 0) {
+                                                    $input_type = 'password';
+                                                }
                                                 
 							
 						$element.= $ui->draw('Common.Form.Input',array(
@@ -406,6 +418,10 @@ class Form implements \UI\Element {
 							,'disabled'=>$strDisabled?true:false
 							,'class'=>!empty($widget)?"ui-widget-$widget":null
 						));
+                                                
+                                                if(isset($data['media'])) {
+                                                    $element.= '</div>';
+                                                }
                                                 
 							
 						/*
@@ -426,7 +442,7 @@ class Form implements \UI\Element {
                                                                 /*$element.= $ui->draw('Common.Field.Thumbnail',array(
 								'src'=>( $image_path !== null?sprintf($image_path,(string) $mixMediaId):$mixMediaId )
                                                                 ));*/
-                                                                $element.= '<div class="preview" style="background-image: url('.( $image_path !== null?sprintf($image_path,(string) $mixMediaId):$mixMediaId ).');"></div>';
+                                                                $element.= '<div><div class="preview" style="background-image: url('.( $image_path !== null?sprintf($image_path,(string) $mixMediaId):$mixMediaId ).');"></div></div>';
                                                             }
                                                         }
                                                         
@@ -469,27 +485,27 @@ class Form implements \UI\Element {
                                         if(isset($data['media']) && strcasecmp($data['media'],'image') === 0) {
                                             
                                             // alt
-                                            $element.= $ui->draw('Common.Form.Label',array(
+                                            $element.= '<div>'.$ui->draw('Common.Form.Label',array(
                                                 'label'=>'Alt',
                                                 'for'=>''
                                             ));
-                                            $element.= $ui->draw('Common.Form.Input',array(
+                                            $element.= '<div class="input">'.$ui->draw('Common.Form.Input',array(
                                                 'type'=>'text',
                                                 'id'=>'test-alt-1',
                                                 'value'=>($val && isset($val['image_alt'])?$val['image_alt']:''),
                                                 'name'=>(isset($data['multi'])?"{$name}[$field][$i][image_alt]":"{$name}[$field][image_alt]")
-                                            ));    
+                                            )).'</div></div>';    
                                             
                                             // caption
-                                            $element.= $ui->draw('Common.Form.Label',array(
+                                            $element.= '<div>'.$ui->draw('Common.Form.Label',array(
                                                 'label'=>'Caption',
                                                 'for'=>''
                                             ));                                                       
-                                            $element.= $ui->draw('Common.Form.TextArea',array(
+                                            $element.= '<div class="input">'.$ui->draw('Common.Form.TextArea',array(
                                                 'id'=>'test-caption-1',
                                                 'value'=>($val && isset($val['image_caption'])?$val['image_caption']:''),
                                                 'name'=>(isset($data['multi'])?"{$name}[$field][$i][image_caption]":"{$name}[$field][image_caption]")
-                                            ));
+                                            )).'</div></div>';
                                                             
                                             // echo '<pre>'; var_dump($val['image_caption']); echo '</pre>';
                                             

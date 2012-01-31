@@ -53,6 +53,17 @@ class MCPUser extends MCPResource {
 		* If a user exists
 		*/
 		$this->_intUsersId = $this->_objMCP->getSessionValue('users_id',true);
+                
+                /*
+                * When user exists no need to go any further. Otherwise, check to see if
+                * auto login has been turned on. If is has attempt to login user automatically.  
+                */
+                if(!$this->_intUsersId) {
+                    $this->_intUsersId = $this->_objDAOUser->fetchUsersIdByAutoLoginCredentials($this->_objMCP->getSitesId());
+                    if($this->_intUsersId) {
+                        $this->_objMCP->setSessionValue('users_id',$this->_intUsersId,true);
+                    }
+                }
 		
 		if(!$this->_intUsersId) return;
 		
@@ -84,9 +95,10 @@ class MCPUser extends MCPResource {
 	* 
 	* @param str username
 	* @param str password
+        * @param bool can be used to enable auto login via cookie 
 	* @return bool
 	*/
-	public function authenticate($strUsername,$strPassword) {
+	public function authenticate($strUsername,$strPassword,$boolAuto=false) {
 		/*
 		* Attempt to match login credentials to user for current site
 		*/
@@ -96,6 +108,13 @@ class MCPUser extends MCPResource {
 		if($arrRow === null) {
 			return false;
 		}
+                
+                // enable or disable auto login
+                if($boolAuto === true) {
+                    $this->_objDAOUser->enableAutoLogin($arrRow['users_id']);
+                } else {
+                    $this->_objDAOUser->disableAutoLogin($arrRow['users_id']);
+                }
 		
 		/*
 		* Set the sessions user id
@@ -111,6 +130,7 @@ class MCPUser extends MCPResource {
 	* Logout the current user
 	*/
 	public function logout() {
+                $this->_objDAOUser->disableAutoLogin($this->_intUsersId);
 		$this->_objMCP->setSessionValue('users_id',null,true);
 		$this->_init();
 		return true;

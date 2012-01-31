@@ -13,7 +13,7 @@ $(function() {
 			evt.stopPropagation();
 	
 			// the way values get deleted is by setting them to an empty string
-			$(evt.target).parent().find('input:not([type="submit"]):not([type="hidden"]):not(option),select,textarea').each(function() {
+			$(evt.target).closest('li').find('input:not([type="submit"]):not([type="hidden"]):not(option),select,textarea').each(function() {
 				
 				if(this.nodeName == 'SELECT') {
 					var option = document.createElement('option');
@@ -32,9 +32,29 @@ $(function() {
 				$(this).val('');
 			});
 	
-			$(evt.target).parent().hide();
+			$(evt.target).closest('li').hide();
 			
 		});
+                
+                // single media field delete handler
+                $('.one input[type="submit"][name*="[delete]"]').live('click',function(evt) {
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                    
+                    //var name = $(evt.target).closest('.input').find('input[type=file]').attr('name');
+                    //$(evt.target).closest('.input').find('input[type="hidden"][name="' + name + '[value]"]').val('');
+                    
+                    // clear all other fields
+                    $(evt.target).closest('.input').find('input,textarea,select').each(function() {
+                        if(this !== evt.target) {
+                            $(this).val('');
+                        }
+                    });
+                    
+                    $(evt.target).closest('.input').find('.preview').css('background-image','none');
+                    
+                    
+                });
 
 		$('input[name*="[action][add]"]').live('click',function(evt) {
 			evt.preventDefault();

@@ -1,3 +1,47 @@
+// CSS Reset
+@import "../../../../lib/bootstrap/v1.4.0/lib/reset.less";
+
+// Core variables and mixins
+@import "../../../../lib/bootstrap/v1.4.0/lib/variables.less"; // Modify this for custom colors, font-sizes, etc
+
+@baseColor:         @red;                  // Set a base color
+@complement:        spin(@baseColor, 180);  // Determine a complementary color
+@split1:            spin(@baseColor, 158);  // Split complements
+@split2:            spin(@baseColor, -158);
+@triad1:            spin(@baseColor, 135);  // Triads colors
+@triad2:            spin(@baseColor, -135);
+@tetra1:            spin(@baseColor, 90);   // Tetra colors
+@tetra2:            spin(@baseColor, -90);
+@analog1:           spin(@baseColor, 22);   // Analogs colors
+@analog2:           spin(@baseColor, -22);
+
+@import "../../../../lib/bootstrap/v1.4.0/lib/mixins.less";
+
+// Grid system and page structure
+@import "../../../../lib/bootstrap/v1.4.0/lib/scaffolding.less";
+
+// Styled patterns and elements
+@import "../../../../lib/bootstrap/v1.4.0/lib/type.less";
+@import "../../../../lib/bootstrap/v1.4.0/lib/forms.less";
+@import "../../../../lib/bootstrap/v1.4.0/lib/tables.less";
+@import "../../../../lib/bootstrap/v1.4.0/lib/patterns.less";
+
+.btn {
+
+    // delete button extends error
+    &.delete {
+        color: @white;
+        .gradientBar(#ee5f5b, #c43c35);
+    }
+
+    // Create button extends success
+    &.create {
+        color: @white;
+        .gradientBar(#62c462, #57a957);
+    }
+
+}
+
 /*
 * ----------------------------------------------------------------------------------
 * Additional styles needed for data entry forms
