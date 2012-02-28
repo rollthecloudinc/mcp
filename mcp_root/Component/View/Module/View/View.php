@@ -149,7 +149,7 @@ class MCPViewView extends MCPModule {
 		
 		// Internal redirect - sued to switch between edit and read nested modules
 		$this->_strRequest = !empty($arrArgs) && in_array($arrArgs[0],array('Edit','Create',$this->getConfigValue('disclose_flag')))?array_shift($arrArgs):null;
-		
+                
 		// Set view data
 		if($intViewsId !== null) {
 			$this->_objView = $this->_objDAOView->fetchViewById($intViewsId);
@@ -184,6 +184,8 @@ class MCPViewView extends MCPModule {
 			
 			// Theme the data
 			foreach( $this->_arrTemplateData['rows'] as $id=>$row) {
+                            
+                                // $this->debug($row);
 				
 				// ---------------------------------------------------------------------------
 				
@@ -223,7 +225,7 @@ class MCPViewView extends MCPModule {
 			$this->_arrTemplateData['create_label'] = $this->_getCreateBaseEntityLabel();
                         
 			// When a wrapper template has been defined use that to wrap the content otherwise use default
-			$strTpl = $this->_objView->template_wrap?$this->_objView->template_wrap:$strTpl;
+			$strTpl = $this->_objView->template_wrap?str_replace('*',$this->_objMCP->getSite(),$this->_objView->template_wrap):$strTpl;
 			
 		}
 		
@@ -259,7 +261,7 @@ class MCPViewView extends MCPModule {
 			}
 			
 		} else if ( $this->_objView && strcmp($this->getConfigValue('disclose_flag'),$this->_strRequest) === 0 ) {
-			
+                    
 			switch($this->_objView->base) {
 				
 				case 'Node': // view node content

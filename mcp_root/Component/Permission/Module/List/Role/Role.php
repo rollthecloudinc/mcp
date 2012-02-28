@@ -128,7 +128,7 @@ class MCPPermissionListRole extends MCPModule {
 					
 					return $mcp->ui('Common.Field.Link',array(
 						'label'=>'Configure'
-						,'url'=>"{$mod->getBasePath(false)}/Configure/{$value}"
+						,'url'=>"{$mod->getBasePath(false)}/Configure/General/{$value}"
 					));
 					
 				}
@@ -171,13 +171,30 @@ class MCPPermissionListRole extends MCPModule {
 		
 		// Create new role URL
 		$this->_arrTemplateData['create_link'] = "{$this->getBasePath(false)}/Create";
+                
+                // Create back link
+                $this->_arrTemplateData['back_link'] = $this->getBasePath(false);
 		
 		// Form action,name and method
 		$this->_arrTemplateData['frm_action'] = $this->getBasePath();
 		$this->_arrTemplateData['frm_name'] = 'frmVocabularyList';
 		$this->_arrTemplateData['frm_method'] = 'POST';
+                
+                // Redirect handling
+                $strTpl = 'Role';
+                $this->_arrTemplateData['TPL_REDIRECT'] = '';
+                
+                if(strcmp('Create',$this->_strRedirect) === 0 || strcmp('Configure',$this->_strRedirect) === 0) {
+			$this->_arrTemplateData['TPL_REDIRECT'] = $this->_objMCP->executeComponent(
+				'Component.Permission.Module.Form.Role'
+				,$arrArgs
+				,null
+				,array($this)
+			);
+			$strTpl = 'Redirect';
+                }
 		
-		return 'Role/Role.php';
+		return "Role/$strTpl.php";
 	}
 	
 	/*

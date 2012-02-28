@@ -1345,7 +1345,11 @@ class MCP {
 	public function query($strSQL,$arrBind=array()) {
 		static $i=0;
 		
-		// echo "<p>".($i++).": $strSQL</p>";
+                /*$this->debug(array(
+                    'num'=>++$i,
+                    'sql'=>$strSQL,
+                    'bind'=>$arrBind
+                ));*/
 		
 		return $this->_objDB->query($strSQL,$arrBind);
 	}

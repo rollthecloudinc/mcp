@@ -357,7 +357,7 @@ class MCPTaxonomyFormVocabulary extends MCPModule {
 		* Build filter to see if vocabulary already exists 
 		*/
 		$strFilter = sprintf(
-			"v.deleted = 0 AND v.sites_id = %s AND v.human_name = '%s' AND v.pkg %s"
+			"v.deleted = 0 AND v.sites_id = %s AND v.human_name = '%s' AND v.pkg %s %s"
 			,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
 			,$this->_objMCP->escapeString($mixValue)
 			

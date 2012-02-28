@@ -55,6 +55,7 @@ class MCPDAONode extends MCPDAO {
 		);
 		
 		//echo '<p>',$strSQL,'</p>';
+                // $this->debug($strSQL);
 		
 		$arrNodes = $this->_objMCP->query($strSQL,$arrBound);
 		
@@ -199,6 +200,8 @@ class MCPDAONode extends MCPDAO {
 		if($strLimit === null) {
 			return $arrNodeTypes;
 		}
+                
+                //$this->debug(array($strSQL,$arrBound));
 		
 		/*
 		* Otherwise grab number of found rows also 

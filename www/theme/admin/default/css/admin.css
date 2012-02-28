@@ -2490,6 +2490,9 @@ button.btn::-moz-focus-inner, input[type=submit].btn::-moz-focus-inner {
   border-color: #57a957 #57a957 #3d773d;
   border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
 }
+#container {
+  margin-top: 40px;
+}
 /*
 * ----------------------------------------------------------------------------------
 * Additional styles needed for data entry forms
@@ -2540,29 +2543,29 @@ form .preview {
 * Editorial form customization testing
 * ---------------------------------------------------------------------------------
 */
-form.editorial .tabs {
+form .tabs {
   overflow: hidden;
   margin-bottom: 1em;
 }
-form.editorial .tabs li {
+form .tabs li {
   float: left;
   margin-right: .5em;
 }
-form.editorial fieldset > fieldset {
+form fieldset > .tab {
   display: none;
   border: none;
   padding: 0;
   margin: 0;
 }
-form.editorial fieldset > fieldset legend {
+form fieldset > .tab legend {
   display: none;
 }
-form.editorial fieldset:target {
+form .tab:target {
   display: block;
 }
-form.editorial #ed-general {
-  display: block;
+form fieldset > .tab.last {
+  display: block !important;
 }
-form.editorial fieldset:target ~ fieldset {
+form .tab:target ~ .tab {
   display: none !important;
 }

@@ -139,7 +139,7 @@ class Form implements \UI\Element {
 				*/
 				$strDisabled = isset($data['disabled']) && $data['disabled'] == 'Y'?' disabled="disabled"':'';
 				
-				$form.= '<div class="clearfix widget-'.($widget?str_replace('_','-',$widget):'null').' '.(isset($data['multi'])?'many':'one').' '.($errors[$field]?'error':'').'"><?php echo $'.$field.'; ?>';
+				$element.= '<div class="clearfix widget-'.($widget?str_replace('_','-',$widget):'null').' '.(isset($data['multi'])?'many':'one').' '.($errors[$field]?'error':'').'"><?php echo $'.$field.'; ?>';
 					
 				$element.= $ui->draw('Common.Form.Label',array(
 					'for'=>$idbase.strtolower(str_replace('_','-',$field))
@@ -199,8 +199,11 @@ class Form implements \UI\Element {
 				
 					/*
 					* Print the field input, select, radio, checkbox, etc 
+                                        * 
+                                        * Service allows elements to be populated dynamicallt via AJAX request
+                                        * Right now the only element that will support a service binding is autocomplete.  
 					*/
-					if(isset($data['values'])) {
+					if(isset($data['values']) || isset($data['service'])) {
 							
 						switch( $widget ) {
 							
@@ -327,7 +330,11 @@ class Form implements \UI\Element {
 							* Auto complete field @todo
 							*/
 							case 'autocomplete':
-								break;
+                                                            $element.= $ui->draw('Common.Form.Autocomplete',array(
+                                                                'service'=>$data['service']['pkg']
+                                                                ,'name'=>sprintf('%s[%s]%s',$name,$field,(isset($data['multi'])?$dynamic_field?"[$i][value]":"[$i]":''))
+                                                            ));    
+                                                            break;
 								
 							/*
 							* External look-up - pop-up window with options and return - good for large data sets 
@@ -624,9 +631,12 @@ class Form implements \UI\Element {
 				//$form.= '</li>';
                                 
                                 
-                                $form.= '</div>';
+                                $element.= '</div>';
 				
 				$elements[$field] = $element.'</div>';
+                                
+                                $form.= '<?php echo $'.$field.';?>';
+                                
 				
 			}
 			

@@ -57,7 +57,7 @@ class MCPPermissionFormRole extends MCPModule {
     protected function _init() {
         
         // Get validation object
-        $this->_objValdidator = $this->_objMCP->getInstance('App.Lib.Validation.Validator',array());
+        $this->_objValidator = $this->_objMCP->getInstance('App.Lib.Validation.Validator',array());
         
         // get permission DAO
         $this->_objDAOPerm = $this->_objMCP->getInstance('Component.Permission.DAO.DAOPermission',array($this->_objMCP));
@@ -69,6 +69,86 @@ class MCPPermissionFormRole extends MCPModule {
         $this->_arrFrmValues = array();
         $this->_arrFrmErrors = array();
         
+        // Add custom validation rules
+        $this->_addCustomValidationRules();
+        
+    }
+    
+    /*
+    * Define custom validation rules specific to this form only. 
+    */
+    protected function _addCustomValidationRules() {
+        
+        $dao = $this->_objDAOPerm;
+        $values =& $this->_arrFrmValues;
+        $role = $this->_getRole();
+        $mcp = $this->_objMCP;
+        $mod = $this;
+        
+        // system name
+        $this->_objValidator->addRule('role_system_name',function($value,$label) use ($dao,&$values,$mod,$mcp) {
+            
+            $role = $mod->getRole();
+            
+            /*
+            * Check system name conforms to standard convention 
+            */
+            if(!preg_match('/^[a-z0-9_]*?$/',$value)) {
+		return "$label may only contain numbers, underscores and lower alphabetic characters.";
+            }
+            
+            /*
+            * Build filter to see if role already exists 
+            */
+            $strFilter = sprintf(
+                "r.deleted = 0 AND r.sites_id = %s AND r.system_name = '%s' AND r.pkg %s %s"
+                ,$mcp->escapeString($mcp->getSitesId())
+		,$mcp->escapeString($value)
+			
+		// edit edge case
+		,$role !== null?" AND r.roles_id <> {$mcp->escapeString($role['roles_id'])}":''
+		,empty($values['pkg'])?"= ''":"= '{$mcp->escapeString($values['pkg'])}'"
+            );
+                
+            /*
+            * Check site, system name and pkg uniqueness 
+            */
+            if(array_pop($dao->listRoles('r.roles_id',$strFilter)) !== null) {
+                return "$label $value already exists".(empty($values['pkg'])?'.':" for package {$values['pkg']}.");
+            }
+            
+            return '';
+        });
+        
+        // human name
+        $this->_objValidator->addRule('role_human_name',function($value,$label) use ($dao,&$values,$mod,$mcp) {
+            
+            $role = $mod->getRole();
+            
+            /*
+            * Build filter to see if role already exists 
+            */
+            $strFilter = sprintf(
+		"r.deleted = 0 AND r.sites_id = %s AND r.human_name = '%s' AND r.pkg %s %s"
+		,$mcp->escapeString($mcp->getSitesId())
+		,$mcp->escapeString($value)
+			
+		// edit edge case
+		,$role !== null?" AND r.roles_id <> {$mcp->escapeString($role['roles_id'])}":''
+		,empty($values['pkg'])?"= ''":"= '{$mcp->escapeString($values['pkg'])}'"
+            );
+		
+            /*
+            * Check site, system name and pkg uniqueness 
+            */
+            if(array_pop($dao->listRoles('r.roles_id',$strFilter)) !== null) {
+                return "$label $value already exists".(empty($values['pkg'])?'.':" for package {$values['pkg']}.");
+            }
+		
+            return '';
+            
+        });
+        
     }
     
     /*
@@ -78,6 +158,15 @@ class MCPPermissionFormRole extends MCPModule {
         
         // Set form values
         $this->_setFrmValues();
+        
+        // validate form
+        if($this->_arrFrmPost !== null) {
+            $this->_arrFrmErrors = $this->_objValidator->validate($this->_getFrmConfig(),$this->_arrFrmValues);
+        }
+        
+        if($this->_arrFrmPost !== null && empty($this->_arrFrmErrors)) {
+            $this->_frmSave();
+        }
         
     }
     
@@ -99,6 +188,13 @@ class MCPPermissionFormRole extends MCPModule {
     */
     protected function _setFrmSave() {
         
+        foreach($this->_getFrmFields() as $strField) {
+            switch($strField) {
+                default:
+                    $this->_arrFrmValues[$strField] = isset($this->_arrFrmPost[$strField])?$this->_arrFrmPost[$strField]:'';
+            }
+        }
+        
     }
     
     /*
@@ -107,8 +203,6 @@ class MCPPermissionFormRole extends MCPModule {
     protected function _setFrmEdit() {
         
         $arrRole = $this->_getRole();
-        
-        $this->_objMCP->debug($arrRole);
         
         foreach($this->_getFrmFields() as $strField) {
             switch($strField) {
@@ -129,6 +223,54 @@ class MCPPermissionFormRole extends MCPModule {
                 default:
                     $this->_arrFrmValues[$strField] = '';
             }
+        }
+        
+    }
+    
+    /*
+    * Save role data to database. 
+    */
+    protected function _frmSave() {
+        
+        // copy values
+        $arrValues = $this->_arrFrmValues;
+        
+        // Get role
+        $arrRole = $this->_getRole();
+        
+        if($arrRole !== null) {
+            $arrValues['roles_id'] = $arrRole['roles_id'];// pk triggers update
+        } else {
+            $arrValues['creators_id'] = (int) $this->_objMCP->getUsersId();
+            $arrValues['sites_id'] = (int) $this->_objMCP->getSitesId();
+        }
+        
+        // save
+        try {
+            
+            // save role
+            $intId = $this->_objDAOPerm->saveRole($arrValues);
+            
+            // Add success message
+            $this->_objMCP->addSystemStatusMessage('Role sucessfully saved.');
+            
+            /*
+            * Refresh role and recompile data 
+            */
+            if($arrRole !== null) {
+                $this->_arrRole = $this->_objDAOPerm->fetchRoleById($arrRole['roles_id']);
+            } else {
+                $this->_arrRole = $this->_objDAOPerm->fetchRoleById($intId);
+            }
+                        
+            $this->_arrFrmValues = array();
+            $this->_setFrmEdit();
+            
+            
+        } catch(MCPDAOException $e) {
+            
+            $this->_objMCP->addSystemErrorMessage('An unknown error has occurred that has prevented role from being saved.');
+            
         }
         
     }
@@ -204,6 +346,15 @@ class MCPPermissionFormRole extends MCPModule {
     }
     
     /*
+    * Get role
+    * 
+    * @return array role  
+    */
+    public function getRole() {
+        return $this->_getRole();
+    }
+    
+    /*
     * Configuation to build tab menu 
     * 
     * @return array ui tree config 
@@ -221,6 +372,7 @@ class MCPPermissionFormRole extends MCPModule {
                 ,array('value'=>self::TAB_USERS)
                 ,array('value'=>self::TAB_PERMS)
              )
+            ,'cls'=>'tabs'
             ,'mutation'=>function($mixValue) use ($mcp,$mod,$base,$tab,$role) {
             
                 switch($mixValue) {
@@ -260,32 +412,53 @@ class MCPPermissionFormRole extends MCPModule {
             $this->_setRole($this->_objDAOPerm->fetchRoleById($intRole));
         }
         
-        // Process form
-        $this->_process();
+        // Tab selection
+        $strTpl = 'Role';
+        $this->_arrTemplateData['TPL_REDIRECT'] = '';
         
-        // Set template data
-        $this->_arrTemplateData['name'] = $this->_getFrmName();
-	$this->_arrTemplateData['action'] = $this->getBasePath();
-	$this->_arrTemplateData['method'] = 'POST';
-        $this->_arrTemplateData['legend'] = 'Role Form';
-	$this->_arrTemplateData['config'] = $this->_getFrmConfig();
-	$this->_arrTemplateData['values'] = $this->_arrFrmValues;
-	$this->_arrTemplateData['errors'] = $this->_arrFrmErrors;
+        // Tab which displays users assigned to role
+        if($this->_strTab === self::TAB_USERS && $this->_getRole() !== null) {
+            
+            $this->_arrTemplateData['TPL_REDIRECT'] = $this->_objMCP->executeComponent(
+                'Component.Permission.Module.Form.Role.Users'
+		,$arrArgs
+		,null
+		,array($this)
+            );
+            $strTpl = 'Redirect';
+            
+        // Tab which displays permissions assigned to role
+        } else if($this->_strTab === self::TAB_PERMS && $this->_getRole() !== null) {
+            
+            $this->_arrTemplateData['TPL_REDIRECT'] = $this->_objMCP->executeComponent(
+                'Component.Permission.Module.Form.Perm.Intro'
+		,$arrArgs
+		,null
+		,array($this)
+            );
+            $strTpl = 'Redirect';
+            
+        // default general form details
+        } else {
+            
+            // Process form
+            $this->_process();
+        
+            // Set template data
+            $this->_arrTemplateData['name'] = $this->_getFrmName();
+            $this->_arrTemplateData['action'] = $this->getBasePath();
+            $this->_arrTemplateData['method'] = 'POST';
+            $this->_arrTemplateData['legend'] = 'Role Form';
+            $this->_arrTemplateData['config'] = $this->_getFrmConfig();
+            $this->_arrTemplateData['values'] = $this->_arrFrmValues;
+            $this->_arrTemplateData['errors'] = $this->_arrFrmErrors;
+            
+        }
         
         // Tab configuration
         $this->_arrTemplateData['tabs'] = $this->_getTabMenu();
         
-        $this->_testPerms();
-        
-	return 'Role/Role.php';
-    }
-    
-    private function _testPerms() {
-        
-        $arrPerms = $this->_objDAOPerm->fetchUsersPermissions($this->_objMCP->getUsersId());
-        
-        $this->debug($arrPerms);
-        
+	return "Role/$strTpl.php";
     }
     
     public function getBasePath() {
@@ -298,7 +471,7 @@ class MCPPermissionFormRole extends MCPModule {
         
         $arrRole = $this->_getRole();
         if($arrRole !== null) {
-            $strVasePath.= '/'.$arrRole['roles_id'];
+            $strBasePath.= '/'.$arrRole['roles_id'];
         }
         
         return $strBasePath;

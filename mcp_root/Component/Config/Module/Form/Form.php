@@ -214,10 +214,10 @@ class MCPConfigForm extends MCPModule {
 		* 
 		* - todo break into sections - permission handling per section of config
 		*/
-		/*$perm = $this->_objMCP->getPermission('MCP_CONFIG');
-		if(!$perm->allowed()) {
+		$perm = $this->_objMCP->getPermission(MCP::EDIT,'Config');
+		if(!$perm['allow']) {
 			throw new MCPPermissionException($perm);
-		}*/
+		}
 		
 		/*
 		* process form 

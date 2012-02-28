@@ -188,7 +188,7 @@ class MCPUserList extends MCPModule {
 		$this->_intPage = !empty($arrArgs) && is_numeric($arrArgs[0])?array_shift($arrArgs):1;
 		
 		// Resolve possible internal redirect
-		$this->_strRequest = !empty($arrArgs) && in_array($arrArgs[0],array('Edit','Fields'))?array_shift($arrArgs):null;
+		$this->_strRequest = !empty($arrArgs) && in_array($arrArgs[0],array('Create','Edit','Fields'))?array_shift($arrArgs):null;
 		
 		// Handle form submit  
 		$this->_handleFrm();
@@ -212,7 +212,7 @@ class MCPUserList extends MCPModule {
 		$strTpl = 'List';
 		$this->_arrTemplateData['REDIRECT_TPL'] = '';
 		
-		if(strcmp($this->_strRequest,'Edit') === 0) {
+		if(strcmp($this->_strRequest,'Edit') === 0 || strcmp($this->_strRequest,'Create') === 0) {
 			$this->_arrTemplateData['REDIRECT_TPL'] = $this->_objMCP->executeComponent(
 				'Component.User.Module.Registration.Form'
 				,$arrArgs

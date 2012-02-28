@@ -23,6 +23,9 @@ class Tree implements \UI\Element {
 			,'mutation'=>array(
 				'default'=>null
 			)
+			,'cls'=>array(
+				'default'=>null
+			)
 			,'form'=>array( // flag to wrap contents in form element
 				'default'=>false
 			)
@@ -66,7 +69,14 @@ class Tree implements \UI\Element {
 		* Build out tree 
 		*/
 		if(!empty($data)) {
-			$out.="<$list_element>";
+			$out.="<$list_element";
+                        
+                        if($cls !== null) {
+                            $out.= ' class="'.$cls.'"';
+                        }
+                        
+                        $out.= '>';
+                        
 			foreach($data as $index=>$item) {
 				$out.= sprintf(
 					'<li%s>%s%s</li>'

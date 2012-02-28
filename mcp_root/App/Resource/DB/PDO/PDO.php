@@ -95,6 +95,7 @@ class MCPPDO extends MCPResource implements MCPDB {
 		*/
 		if(!empty($arrBind)) {
 			if($objResult->execute($arrBind) === false) {
+                                echo '<pre>'.print_r($objResult->errorInfo(),true),'</pre>';
 				$this->_objMCP->triggerError('Unable to execute SQL query.');
 			}
 		}

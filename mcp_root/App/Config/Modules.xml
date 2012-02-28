@@ -975,12 +975,14 @@
                         <required>Y</required>
                         <max>128</max>
                         <min>5</min>
+                        <type>role_system_name</type>
                     </system_name>
                     <human_name>
                         <label>Human Name</label>
                         <required>Y</required>
                         <max>128</max>
                         <min>5</min>
+                        <type>role_human_name</type>
                     </human_name>
                     <pkg>
                         <label>Pkg</label>
@@ -997,5 +999,230 @@
                 <frm_perms>
                     
                 </frm_perms>
+        </mod>
+        <mod pkg="Component.Permission.Module.Form.Perm">
+            <frm>
+                <add>
+                    <label>Create {Entity}</label>
+                    <values>
+                        <value>
+                            <value></value>
+                            <label>--</label>
+                        </value>
+                       <value>
+                            <value>1</value>
+                            <label>Yes</label>
+                        </value>
+                       <value>
+                            <value>0</value>
+                            <label>No</label>
+                        </value>
+                    </values>
+                </add>
+                <read>
+                    <label>Read {Entity}</label>
+                    <values>
+                        <value>
+                            <value></value>
+                            <label>--</label>
+                        </value>
+                       <value>
+                            <value>1</value>
+                            <label>Yes</label>
+                        </value>
+                       <value>
+                            <value>0</value>
+                            <label>No</label>
+                        </value>
+                    </values>
+                </read>
+                <read_own>
+                    <label>If Owner</label>
+                    <values>
+                        <value>
+                            <value></value>
+                            <label>--</label>
+                        </value>
+                       <value>
+                            <value>1</value>
+                            <label>Yes</label>
+                        </value>
+                       <value>
+                            <value>0</value>
+                            <label>No</label>
+                        </value>
+                    </values>
+                </read_own>
+                <edit>
+                    <label>Edit {Entity}</label>
+                    <values>
+                        <value>
+                            <value></value>
+                            <label>--</label>
+                        </value>
+                       <value>
+                            <value>1</value>
+                            <label>Yes</label>
+                        </value>
+                       <value>
+                            <value>0</value>
+                            <label>No</label>
+                        </value>
+                    </values>
+                </edit>
+                <edit_own>
+                    <label>If Owner</label>
+                    <values>
+                        <value>
+                            <value></value>
+                            <label>--</label>
+                        </value>
+                       <value>
+                            <value>1</value>
+                            <label>Yes</label>
+                        </value>
+                       <value>
+                            <value>0</value>
+                            <label>No</label>
+                        </value>
+                    </values>
+                </edit_own>
+                <delete>
+                    <label>Delete {Entity}</label>
+                    <values>
+                        <value>
+                            <value></value>
+                            <label>--</label>
+                        </value>
+                       <value>
+                            <value>1</value>
+                            <label>Yes</label>
+                        </value>
+                       <value>
+                            <value>0</value>
+                            <label>No</label>
+                        </value>
+                    </values>
+                </delete>
+                <delete_own>
+                    <label>If Owner</label>
+                    <values>
+                        <value>
+                            <value></value>
+                            <label>--</label>
+                        </value>
+                       <value>
+                            <value>1</value>
+                            <label>Yes</label>
+                        </value>
+                       <value>
+                            <value>0</value>
+                            <label>No</label>
+                        </value>
+                    </values>
+                </delete_own>
+                <read_child>
+                    <label>Read All {Entity}</label>
+                    <values>
+                        <value>
+                            <value></value>
+                            <label>--</label>
+                        </value>
+                       <value>
+                            <value>1</value>
+                            <label>Yes</label>
+                        </value>
+                       <value>
+                            <value>0</value>
+                            <label>No</label>
+                        </value>
+                    </values>
+                </read_child>
+                <read_own_child>
+                    <label>If Owner</label>
+                    <values>
+                        <value>
+                            <value></value>
+                            <label>--</label>
+                        </value>
+                       <value>
+                            <value>1</value>
+                            <label>Yes</label>
+                        </value>
+                       <value>
+                            <value>0</value>
+                            <label>No</label>
+                        </value>
+                    </values>
+                </read_own_child>
+                <edit_child>
+                    <label>Edit All {Entity}</label>
+                    <values>
+                        <value>
+                            <value></value>
+                            <label>--</label>
+                        </value>
+                       <value>
+                            <value>1</value>
+                            <label>Yes</label>
+                        </value>
+                       <value>
+                            <value>0</value>
+                            <label>No</label>
+                        </value>
+                    </values>
+                </edit_child>
+                <edit_own_child>
+                    <label>If Owner</label>
+                    <values>
+                        <value>
+                            <value></value>
+                            <label>--</label>
+                        </value>
+                       <value>
+                            <value>1</value>
+                            <label>Yes</label>
+                        </value>
+                       <value>
+                            <value>0</value>
+                            <label>No</label>
+                        </value>
+                    </values>
+                </edit_own_child>
+                <delete_child>
+                    <label>Delete All {Entity}</label>
+                    <values>
+                        <value>
+                            <value></value>
+                            <label>--</label>
+                        </value>
+                       <value>
+                            <value>1</value>
+                            <label>Yes</label>
+                        </value>
+                       <value>
+                            <value>0</value>
+                            <label>No</label>
+                        </value>
+                    </values>
+                </delete_child>
+                <delete_own_child>
+                    <label>if Owner</label>
+                    <values>
+                        <value>
+                            <value></value>
+                            <label>--</label>
+                        </value>
+                       <value>
+                            <value>1</value>
+                            <label>Yes</label>
+                        </value>
+                       <value>
+                            <value>0</value>
+                            <label>No</label>
+                        </value>
+                    </values>
+                </delete_own_child>
+            </frm>
         </mod>
 </modules>

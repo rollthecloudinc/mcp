@@ -262,8 +262,8 @@ class MCPDAOTaxonomy extends MCPDAO {
 			      %s"
 			,$arrOptions !== null && isset($arrOptions['select'])?$arrOptions['select']:'t.*'
 			
-			,strcasecmp('vocabulary',$strParentType) === 0?"t.vocabulary_id = {$this->_objMCP->escapeString($intParentId)} AND ":''
-			,strcasecmp('vocabulary',$strParentType) === 0?'IS NULL':" = {$this->_objMCP->escapeString($intParentId)}"
+			,strcasecmp('vocabulary',$strParentType) === 0?"t.vocabulary_id = ".((int) $intParentId)." AND ":''
+			,strcasecmp('vocabulary',$strParentType) === 0?'IS NULL':" = ".((int) $intParentId)
 			
 			,$arrOptions !== null && isset($arrOptions['filter'])?"AND {$arrOptions['filter']}":''
 			,$arrOptions !== null && isset($arrOptions['sort'])?"ORDER BY {$arrOptions['sort']}":''

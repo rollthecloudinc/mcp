@@ -1752,9 +1752,9 @@ class MCPDAOView extends MCPDAO {
 			 ,NULL postprocess_select" // NOTE: sites_id,entity_type, entities_id, entities_primary_key are necessary to build join for dynamic fields
 		   ,sprintf(
 				"f.sites_id = %s AND f.entity_type = '%s' AND f.entities_id %s AND f.deleted = 0"
-				,$this->_objMCP->escapeString($this->_objMCP->getSitesId())
-				,$this->_objMCP->escapeString($entity_type)
-				,$entities_id === null?"IS NULL":"= {$this->_objMCP->escapeString($entities_id)}"
+				,(int) $this->_objMCP->getSitesId()
+				,$entity_type
+				,$entities_id === null?"IS NULL":"= ".((int) $entities_id)
 			)
 		));
 		

@@ -29,6 +29,9 @@ class MCPUtilMaster extends MCPModule {
 				
 			case 'dao.php':
 				return $this->_executeDAORequest();
+                            
+			case 'service.php':
+				return $this->_executeServiceRequest();
 				
 			case 'public.php':
 				return $this->_executePublicRequest();
@@ -197,6 +200,87 @@ class MCPUtilMaster extends MCPModule {
 		return str_replace(ROOT,'',$this->getTemplatePath()).'/DAO/DAO.php';
 		
 	}
+        
+        /*
+        * Request to use a publily accessible http RESTful service.
+        */
+        protected function _executeServiceRequest() {
+            
+		
+            /*
+            * Declare template vars 
+            */
+            $intError = 0;
+            $mixData = null;
+            $strFault = '';
+            
+            /*
+            * Make master template blank 
+            */
+            $this->_objMCP->setMasterTemplate('/Component/Util/Template/Master/Blank.php');
+            
+            /*
+            * First path item represents service location ie. pkg
+            */
+            $strPkg = $this->_objMCP->getModule();
+            
+            if(!$intError && !$strPkg) {
+                $intError = 1;
+                $strFault = 'No service specified';
+            }
+            
+            if(!$intError) {
+                
+                $objService = $this->_objMCP->getInstance($strPkg,array($this->_objMCP));
+                
+                if(!$objService) {
+                    $intError = 2;
+                    $strFault = 'Unable to locate service at specified location.';
+                }
+                
+                if(!$intError && !($objService instanceof MCPService)) {
+                    $intError = 3;
+                    $strFault = 'Requested class is not a valid service.';
+                }
+                
+                if(!$intError) {
+                    
+                    $arrPerm = $objService->checkPerms();
+                    
+                    if(!$intError && !$arrPerm['allow']) {
+                        $intError = 4;
+                        $strFault = 'Service access denied.';
+                    }
+                    
+                    if(!$intError) {
+                        
+                        try {
+                            $mixData = $objService->exec();
+                        } catch(Exception $e) {
+                            $intError = 5;
+                            $strFault = $e->getMessage();
+                        }
+                        
+                    }
+                    
+                }
+                
+            }
+            
+            /*
+            * Assign template data 
+            */
+            $this->_objMCP->assign('SERVICE_REQUEST_DATA',$mixData);
+            $this->_objMCP->assign('SERVICE_REQUEST_ERROR',$intError);
+            $this->_objMCP->assign('SERVICE_REQUEST_FAULT',$strFault);
+            
+            /*
+            * Send back Services template 
+            */
+            header("Content-Type: text/javascript");
+            return str_replace(ROOT,'',$this->getTemplatePath()).'/Service/Service.php';
+            
+        }
 	
 	/*
 	* Stylesheet request 

@@ -3,6 +3,17 @@ $(function() {
 	$('.ui-widget-date').datepicker({
 		dateFormat: 'yy-mm-dd'
 	});
+        
+        // auto complete trial and error
+        $('.widget-autocomplete input[type=text]').each(function() {
+            $(this).autocomplete({
+                source: $(this).attr('data-ui-source'),
+                minLength: 3
+                /*select: function(event,ui) {
+                    $('~ input[type=hidden]',this).val(ui.item.id);
+                }*/
+            });
+        });
 
 	// multi value grid
 	(function() {

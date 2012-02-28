@@ -303,6 +303,20 @@ class MCPMenuFormLink extends MCPModule {
 		} else {
 			$arrSave['creators_id'] = $this->_objMCP->getUsersId();
 		}
+                
+                // Remove all empty string from mod config
+                if(isset($arrSave['mod_cfg']) && is_array($arrSave['mod_cfg'])) {
+                    $arrCopy = array();
+                    foreach($arrSave['mod_cfg'] as $strName=>$mixValue) {
+                        if(is_array($mixValue) || strlen($mixValue) !== 0) {
+                            $arrCopy[$strName] = $mixValue; 
+                        }
+                    }
+                    $arrSave['mod_cfg'] = $arrCopy;
+                    unset($arrCopy);
+                }
+                
+                //$this->debug($arrSave);
 		
 		
 		/*

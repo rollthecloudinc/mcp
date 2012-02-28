@@ -48,7 +48,10 @@ class Table implements \UI\Element {
 			)
 			,'form_legend'=>array( // form legend, when form
 				'default'=>''
-			)
+			),
+                        'form_submit'=>array( // include submit button in footer
+                            'default'=>false
+                        )
 		);
 	}
 	
@@ -76,6 +79,11 @@ class Table implements \UI\Element {
 			$out.= sprintf('<th>%s</th>',$header['label']);
 		}
 		$out.= '</thead>';
+                
+                if($form_submit === true) {
+                    $out.= '<tfoot><tr><td colspan="'.count($headers).'">'.$ui->draw('Common.Form.Submit',array('name'=>$form_name.'[submit]','label'=>'Submit')).'</td></tr></tfoot>';
+                }
+                
 		$out.= '<tbody>';
 		
 		// $cycle = false;
@@ -137,7 +145,7 @@ class Table implements \UI\Element {
 				$out.= sprintf(
 					"<td>%s%s</td>"
 					,$index?'':str_repeat('&nbsp;',$runner * 3) // probably best to use CSS padding or margins instead - indent each level
-					,$header['mutation'] === null?$row[$header['column']]:call_user_func_array($header['mutation'],array($row[$header['column']],$row))
+					,$header['mutation'] === null?$row[$header['column']]:call_user_func_array($header['mutation'],array($row[$header['column']],$row,$header))
 				);
 			}
 			

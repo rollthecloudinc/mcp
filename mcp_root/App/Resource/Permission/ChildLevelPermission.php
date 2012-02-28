@@ -523,7 +523,7 @@ abstract class MCPChildLevelPermission extends MCPDAO implements MCPPermission {
 		return $return;
 		
 	}
-	
+        
 	abstract protected function _getBaseTable(); // @return string
 	abstract protected function _getParentTable(); // @return string
 	abstract protected function _getPrimaryKey(); // @return string

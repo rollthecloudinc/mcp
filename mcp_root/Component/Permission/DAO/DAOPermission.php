@@ -4,6 +4,49 @@
 * Permission data acess layer 
 */
 class MCPDAOPermission extends MCPDAO {
+    
+        const
+    
+        // Permission table item type and item id field names
+        ITEM_TYPE = 'item_type',
+        ITEM_ID = 'item_id',
+        
+        // User and role contextual references
+        CONTEXT_USER = 'user',
+        CONTEXT_ROLE = 'role',
+        
+        // user and role permission table names 
+        TBL_PERMISSIONS_USERS = 'MCP_PERMISSIONS_USERS',
+        TBL_PERMISSIONS_ROLES = 'MCP_PERMISSIONS_ROLES',
+        
+        // Permission, User and Role primary keys
+        PERMISSIONS_ID = 'permissions_id',
+        USERS_ID = 'users_id',
+        ROLES_ID = 'roles_id';
+    
+        protected
+    
+        /*
+        * Permission fields shared accross user and role permission tables.
+        */
+        $_arrPermFields = array(
+            'add',
+            'add_own',
+            'read',
+            'read_own',
+            'delete',
+            'delete_own',
+            'edit',
+            'edit_own',
+            'add_child',
+            'add_own_child',
+            'read_child',
+            'read_own_child',
+            'delete_child',
+            'delete_own_child',
+            'edit_child',
+            'edit_own_child'
+        );
 	
 	/*
 	* List roles
@@ -56,6 +99,76 @@ class MCPDAOPermission extends MCPDAO {
 	}
         
         /*
+        * Get users assigned to role.
+        * 
+        * @param int roles id
+        * @param mix array extra options
+        * @return array    
+        */
+        public function listUsersByRole($intRolesId,$arrOptions=array()) {
+            
+            $strLimit = isset($arrOptions['limit'])?$arrOptions['limit']:null;
+            
+            $strSQL =
+               'SELECT
+                      %s
+                      u.*
+                  FROM
+                      MCP_USERS u
+                 INNER
+                  JOIN
+                      MCP_USERS_ROLES u2r
+                    ON
+                      u.users_id = u2r.users_id
+                 WHERE
+                      u2r.roles_id = :roles_id
+                   AND
+                      u.deleted = 0
+                      %s';         
+            
+            $arrUsers = $this->_objMCP->query(
+                sprintf(
+                     $strSQL
+                    ,$strLimit !== null?'SQL_CALC_FOUND_ROWS':''
+                    ,$strLimit !== null?'LIMIT '.$strLimit:''
+                )
+                ,array(
+                    ':roles_id'=> (int) $intRolesId
+                )
+            );
+            
+            if($strLimit === null) {
+                return $arrUsers;
+            }
+            
+            return array(
+                $arrUsers
+                ,array_pop(array_pop($this->_objMCP->query('SELECT FOUND_ROWS()')))
+            );
+            
+            
+        }
+        
+        /*
+        * Get plugin definitions for a three tier architecture.
+        */
+        public function fetchPlugins() {
+            
+            $arrPlugins = array();
+            
+            /*
+            * Get all permission plugins
+            */
+            foreach($this->_objMCP->getPermissionPlugins() as $arrPlugin) {
+                
+            }
+            
+            
+            
+            
+        }
+        
+        /*
         * Fetch role by id
         * 
         * @param int id
@@ -73,86 +186,369 @@ class MCPDAOPermission extends MCPDAO {
         }
         
         /*
-        * Get raw definition for user permission
+        * Get entity permissions for given user.
+        *  
+        * @param int users id 
+        * @param str item type 
+        * @param mix[] ids
+        * @return array permissions 
         */
-        public function fetchUserPermission($intUserId,$strItemType,$intItemId=null) {
+        public function fetchUserPermissions($intId,$strItemType,$arrItemId) {
+            return $this->_fetchPermissions(self::CONTEXT_ROLE,$intId,$strItemType,$arrItemId); 
+        }
+        
+        /*
+        * Get entity permissions for given role.
+        *  
+        * @param int roles id 
+        * @param str item type
+        * @param mix[] ids  
+        * @return array permissions 
+        */
+        public function fetchRolePermissions($intId,$strItemType,$arrItemId) {           
+            return $this->_fetchPermissions(self::CONTEXT_ROLE,$intId,$strItemType,$arrItemId);          
+        }
+        
+        /*
+        * Save role data
+        * 
+        * @param array role data  
+        * @return int new row id/affected rows 
+        */
+        public function saveRole($arrRole) {
             
-            $arrPerm = array_pop($this->_objMCP->query(
-                'SELECT * FROM MCP_PERMISSIONS_USERS WHERE users_id = :users_id AND item_type = :item_type AND item_id = :item_id'
-                ,array(
-                     ':users_id'=>$intUserId
-                    ,':item_type'=>$strItemType
-                    ,':item_id'=>$intItemId === null?0:((int) $intItemId)
-                )
-            ));
-            
-            if($arrPerm !== null) {
-                return $arrPerm;
+            try {
+                
+                // begin new transaction
+                $this->_objMCP->begin();
+                
+                // save data to db
+                $intId = $this->_save(
+                     $arrRole
+                    ,'MCP_ROLES'
+                    ,'roles_id'
+                    , array('human_name','system_name','description','pkg')
+                    ,'created_on_timestamp'
+                    , null
+                    , array('pkg')
+		); 
+                
+                // commit transaction
+                $this->_objMCP->commit();
+                
+                // return new row id or affected row number based on insert or update
+                return $intId;
+                
+            } catch(MCPDBException $e) {
+                
+                // rollback transaction
+                $this->_objMCP->rollback();
+                
+                // throw more refined exception
+                throw new MCPDAOException($e->getMessage());
+                
             }
             
-            // otherwise create  placeholder with default info
+        }
+        
+        /*
+        * Save user permissions
+        *
+        * @param int users id
+        * @param array permissions    
+        */
+        public function saveUserPermissions($intId,$arrPerms) {
+            return $this->_savePermissions(self::CONTEXT_USER,$intId,$arrPerms);
+        }
+        
+        /*
+        * Save role permissions 
+        * 
+        * @param int roles id 
+        * @param array permissions 
+        */
+        public function saveRolePermissions($intId,$arrPerms) {
+            return $this->_savePermissions(self::CONTEXT_ROLE,$intId,$arrPerms);
+        }
+        
+        /*
+        * Assign a role to users. 
+        * 
+        * @param int roles id
+        * @param array usernames[]
+        */
+        public function assignRoleToUsersByName($intRole,$arrUsers) {
+            
+            $arrBind = array((int) $intRole);
+            $arrValues = array();
+            
+            foreach($arrUsers as $strUsername) {
+                $arrBind[] = (string) $strUsername;
+                $arrValues[] = '?';
+            }
+            
+            /*
+            */
+            $strSQL = '
+                INSERT INTO MCP_USERS_ROLES (roles_id,users_id)
+                  SELECT
+                        r.roles_id
+                       ,u.users_id
+                   FROM
+                       MCP_ROLES r
+                  INNER 
+                   JOIN
+                       MCP_USERS u
+                     ON
+                       r.sites_id = u.sites_id
+                   LEFT OUTER
+                   JOIN
+                       MCP_USERS_ROLES u2r
+                     ON
+                       u.users_id = u2r.users_id
+                    AND
+                       r.roles_id = u2r.roles_id
+                  WHERE
+                       r.roles_id = ?
+                    AND
+                       r.deleted = 0
+                    AND
+                       u.deleted = 0
+                    AND
+                       u.username IN ('.implode(',',$arrValues).')
+                    AND
+                       u2r.roles_id IS NULL';
+            
+            
+            try {
+                $this->_objMCP->begin();
+                $this->_objMCP->query($strSQL,$arrBind);
+                $this->_objMCP->commit();
+            } catch(Exception $e) {
+                throw new Exception('Error occurred assigning users to role.');
+            }
+            
+            
+        }
+        
+        /*
+        * Remove role from given users
+        * 
+        * @param int roles id
+        * @param array user id[]   
+        */
+        public function removeRoleFromUsers($intRole,$arrUsers) {
+            
+            $arrBind = array((int) $intRole);
+            $arrValues = array();
+            
+            foreach($arrUsers as $mixUsersId) {
+               $arrBind[] = (int) $mixUsersId;
+               $arrValues[] = '?';
+            }
+            
+            $strSQL = 'DELETE FROM MCP_USERS_ROLES WHERE roles_id = ? AND users_id IN ('.implode(',',$arrValues).')';
+            
+            try {
+                $this->_objMCP->begin();
+                $this->_objMCP->query($strSQL,$arrBind);
+                $this->_objMCP->commit();
+            } catch(Exception $e) {
+                throw new Exception('Error ocurred removing users from role.');
+            }
+            
+        }
+        
+        /*
+        * Generic method to fetch permissions for both user and roles.
+        * 
+        * @param str context [self::CONTEXT_USER,self::CONTEXT_ROLE]
+        * @param int id user=users_id and role=roles_id
+        * @param str item type 
+        * @param mix[] item ids  
+        * @return array permissions 
+        */
+        protected function _fetchPermissions($strContext,$intId,$strItemType,$arrItemId) {
+            
+            switch($strContext) {
+                case self::CONTEXT_USER:
+                    $strTable = self::TBL_PERMISSIONS_USERS;
+                    $strContextId = self::USERS_ID;
+                    break;
+                
+                case self::CONTEXT_ROLE:
+                    $strTable = self::TBL_PERMISSIONS_ROLES;
+                    $strContextId = self::ROLES_ID;
+                    break;
+                
+                default:
+                    throw new MCPDAOException('First argument for DAOPermission::_fetchPermissions must be one of: '.self::CONTEXT_USER.' or '.self::CONTEXT_ROLE.'.');
+            }
+
+            $arrBind = array();
+            $strSQL = 'SELECT * FROM '.$strTable.' WHERE '.$strContextId.' = ? AND '.self::ITEM_TYPE.' = ? and '.self::ITEM_ID.' IN ('.implode(',',array_fill(0,count($arrItemId),'?')).')';
+            
+            $arrBind[] = (int) $intId;
+            $arrBind[] = (string) $strItemType;
+            
+            foreach($arrItemId as $mixItemId) {
+                $arrBind[] = (int) $mixItemId;
+            }
+            
+            $arrResult = $this->_objMCP->query($strSQL,$arrBind);
+            
+            $arrPerms = array();
+            foreach($arrResult as $arrData) {
+                $arrPerms[$arrData[self::ITEM_ID]] = $arrData;
+            }
+            
+            // create placeholders with defaults for permissions that have not been defined
+            foreach($arrItemId as $mixItemId) {
+                if(!isset($arrPerms[$mixItemId])) {
+                    $arrPerms[$mixItemId] = $this->_getDefaultPermission($strContext,$intId,$strItemType,$mixItemId);
+                }
+            }
+            
+            return $arrPerms;
+            
+        }
+        
+        /*
+        * Create a placeholder permssion for the given item type and item id 
+        * 
+        * @param str context [user,role]
+        * @param int context id user=users_id role=roles_id
+        * @param str item type
+        * @param str item id
+        * @return array placeholder permission   
+        */
+        protected function _getDefaultPermission($strContext,$intId,$strItemType,$intItemId) {
+            
+            switch($strContext) {
+                case self::CONTEXT_USER:
+                    $strContextId = self::USERS_ID;
+                    break;
+                
+                case self::CONTEXT_ROLE:
+                    $strContextId = self::ROLES_ID;
+                    break;
+                
+                default:
+                    throw new MCPDAOException('First argument for DAOPermission::_getDefaultPermission must be one of: '.self::CONTEXT_USER.' or '.self::CONTEXT_ROLE.'.');
+            }
+            
             $arrPerm = array();
+            $arrPerm[self::PERMISSIONS_ID] = null;
+            $arrPerm[$strContextId] = (int) $intId;
+            $arrPerm[self::ITEM_TYPE] = $strItemType;
+            $arrPerm[self::ITEM_ID] = $intItemId;
             
-            foreach($this->_objMCP->query('DESCRIBE MCP_PERMISSIONS_USERS') as $arrField) {
-                $arrPerm[$arrField['Field']] = 0;
+            foreach($this->_arrPermFields as $strField) {
+                $arrPerm[$strField] = null;
             }
-            
-            $arrPerm['permissions_id'] = null;
-            $arrPerm['users_id'] = $intUserId;
-            $arrPerm['item_type'] = $strItemType;
-            $arrPerm['item_id'] = $intItemId === null?0:$intItemId;
             
             return $arrPerm;
             
         }
         
         /*
-        * Get all given users permissions (-child entities) 
+        * Save permissions
         * 
-        * This will probably need a alot of clean-up but we have to start some where. 
+        * @param str context [user,role]  
+        * @param int id role=roles_id user=users_id
+        * @param array permissions
         */
-        public function fetchUsersPermissions($intUserId) {
-            
-            $arrPerms = array();
-            
-            $arrIds = array();
-            
-            $arrAdd = array();
-            $arrDelete = array();
-            $arrEdit = array();
-            $arrRead = array();
-            
-            
-            // Sites ------------------------------------------------------------------
-            
-            $arrSites = $this->_objMCP->getInstance('Component.Site.DAO.DAOSite',array($this->_objMCP))->listAll('s.sites_id,s.site_name');
-            
-            foreach($arrSites as &$arrSite) {
-                $arrIds[] = $arrSite['sites_id'];
+        protected function _savePermissions($strContext,$intId,$arrPerms) {
+           
+            switch($strContext) {
+                case self::CONTEXT_USER:
+                    $strTable = self::TBL_PERMISSIONS_USERS;
+                    $strContextId = self::USERS_ID;
+                    break;
+                
+                case self::CONTEXT_ROLE:
+                    $strTable = self::TBL_PERMISSIONS_ROLES;
+                    $strContextId = self::ROLES_ID;
+                    break;
+                
+                default:
+                    throw new MCPDAOException('First argument for DAOPermission::_savePermissions must be one of: '.self::CONTEXT_USER.' or '.self::CONTEXT_ROLE.'.');
             }
             
-            $arrAdd = $this->_objMCP->getPermission(MCP::ADD,'Site',null,$intUserId);
-            $arrEdit = $this->_objMCP->getPermission(MCP::EDIT,'Site',$arrIds,$intUserId);
-            $arrDelete = $this->_objMCP->getPermission(MCP::DELETE,'Site',$arrIds,$intUserId);
-            $arrRead = $this->_objMCP->getPermission(MCP::READ,'Site',$arrIds,$intUserId);
-            
-            // Get raw definition
-            $arrPerms['site'] = $this->fetchUserPermission($intUserId,'MCP_SITES',null);
-            $arrPerms['site']['allow_add'] = $arrAdd['allow'];
-            
-            // map user permissions for each site to raw site permission data
-            foreach($arrSites as &$arrSite) {
-                $arrPerms['site']['items'][$arrSite['sites_id']] = $this->fetchUserPermission($intUserId,'MCP_SITES',$arrSite['sites_id']);
-                $arrPerms['site']['items'][$arrSite['sites_id']]['item_label'] = $arrSite['site_name'];
-                $arrPerms['site']['items'][$arrSite['sites_id']]['allow_read'] = $arrRead[$arrSite['sites_id']]['allow'];
-                $arrPerms['site']['items'][$arrSite['sites_id']]['allow_edit'] = $arrEdit[$arrSite['sites_id']]['allow'];
-                $arrPerms['site']['items'][$arrSite['sites_id']]['allow_delete'] = $arrDelete[$arrSite['sites_id']]['allow'];
+            /*
+            * Every permission MUST have a item_type and item_id defined. Unlike
+            * many other entities the primary key will not be used for the update. Instead
+            * the unique key will be used.   
+            */
+            foreach($arrPerms as $arrPerm) {
+                if(!isset($arrPerm[self::ITEM_TYPE]) || !isset($arrPerm[self::ITEM_ID])) {
+                    throw new MCPDAOException('Saving permissions requires an item type and item id be defined for every permission being saved.');
+                }
             }
             
-
+            /*
+            * Omit permissions which all fields are null.
+            */
+            $arrData = array();
+            foreach($arrPerms as $arrPerm) {
+                foreach($this->_arrPermFields as $strField) {
+                    if(array_key_exists($strField,$arrPerm) && strlen($arrPerm[$strField]) === 1) {
+                        $arrData[] = $arrPerm;
+                        break;
+                    }
+                }
+            }
+            //$this->debug($arrPerms);
             
-            return $arrPerms;
+            /*
+            * Otherwise procede to build insert statement. 
+            */
+            $arrInsert = array();
+            $arrBind = array();
+            $arrUpdate = array();
             
+            // Create duplicate key update fields
+            foreach($this->_arrPermFields as $strField) {
+                $arrUpdate[] = ' `'.$strField.'` = VALUES(`'.$strField.'`) ';
+            }
+            
+            // create placeholders for each item
+            for($i=0;$i<count($arrData);$i++) {
+                $arrInsert[] = '('.implode(',',array_fill(0,count($this->_arrPermFields) + 3,'?')).')';
+            }
+            
+            // Get data
+            foreach($arrData as $arrPerm) {
+                $arrBind[] = (int) $intId;
+                $arrBind[] = (string) $arrPerm[self::ITEM_TYPE];
+                $arrBind[] = (int) $arrPerm[self::ITEM_ID];
+                
+                foreach($this->_arrPermFields as $strField) {
+                    $arrBind[] = isset($arrPerm[$strField]) && strlen($arrPerm[$strField]) !== 0?$arrPerm[$strField]:null;
+                }
+        
+            }
+            
+            // Build insert/update statement
+            $strSQL = 'INSERT INTO '.$strTable.' (`'.$strContextId.'`,`item_type`,`item_id`,`'.implode('`,`',$this->_arrPermFields).'`) VALUES '.implode(',',$arrInsert).' ON DUPLICATE KEY UPDATE '.implode(',',$arrUpdate);
+            
+            
+            //$this->debug($strSQL);
+            //$this->debug($arrBind);
+            
+            
+            if(!empty($arrBind)) {
+                try {
+                    $this->_objMCP->begin();
+                    $this->_objMCP->query($strSQL,$arrBind);
+                    $this->_objMCP->commit();
+                } catch(MCPDBException $e) {
+                    $this->_objMCP->rollback();
+                    throw new MCPDAOException($e->getMessage());
+                } catch(Exception $e) {
+                    throw new MCPDAOException($e->getMessage());
+                }
+            }
             
         }
 	

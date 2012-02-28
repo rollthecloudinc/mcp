@@ -49,7 +49,7 @@ CREATE TABLE `MCP_CACHED_IMAGES` (
   `cached_images_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `base_images_id` blob NOT NULL,
   PRIMARY KEY (`cached_images_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=302 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=326 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -68,7 +68,7 @@ CREATE TABLE `MCP_CACHED_IMAGES_OPTIONS` (
   UNIQUE KEY `cached_images_id` (`cached_images_id`,`images_option`,`images_value`),
   KEY `cached_images_id_2` (`cached_images_id`),
   CONSTRAINT `mcp_cached_images_options_ibfk_1` FOREIGN KEY (`cached_images_id`) REFERENCES `mcp_cached_images` (`cached_images_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=326 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=350 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -294,7 +294,7 @@ CREATE TABLE `MCP_FIELD_VALUES` (
   KEY `fields_id_2` (`fields_id`,`rows_id`,`deleted`),
   KEY `fields_id` (`fields_id`),
   CONSTRAINT `mcp_field_values_ibfk_1` FOREIGN KEY (`fields_id`) REFERENCES `mcp_fields` (`fields_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=715 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=741 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -353,7 +353,7 @@ CREATE TABLE `MCP_MEDIA_IMAGES` (
   KEY `deleted` (`deleted`),
   CONSTRAINT `mcp_media_images_ibfk_1` FOREIGN KEY (`creators_id`) REFERENCES `mcp_users` (`users_id`),
   CONSTRAINT `mcp_media_images_ibfk_2` FOREIGN KEY (`sites_id`) REFERENCES `mcp_sites` (`sites_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=261 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=294 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -700,7 +700,7 @@ CREATE TABLE `MCP_SESSIONS` (
   UNIQUE KEY `sid` (`sid`),
   KEY `users_id` (`users_id`),
   CONSTRAINT `mcp_sessions_ibfk_1` FOREIGN KEY (`users_id`) REFERENCES `mcp_users` (`users_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1453 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=6887 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1060,4 +1060,4 @@ CREATE TABLE `MCP_VOCABULARY` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2012-01-20  0:41:46
+-- Dump completed on 2012-02-01 19:34:46

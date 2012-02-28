@@ -19,6 +19,8 @@ class Import {
 	public function import($strPkg,$boolError=true) {
 		
 		$strPath = ROOT.DS.str_replace(PKG,DS,$strPkg).'.php';		
+                
+                //echo "<p>$strPkg = $strPath</p>";
 		
 		if(file_exists($strPath)) {		
 			return require_once($strPath);			
