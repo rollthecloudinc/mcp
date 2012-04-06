@@ -196,8 +196,8 @@ class MCPConfigForm extends MCPModule {
                 /*
                 * Get field level permissions 
                 */
-                $read = $this->_objMCP->getPermission(MCP::READ,'Config',array_keys($arrConfig));
                 $edit = $this->_objMCP->getPermission(MCP::EDIT,'Config',array_keys($arrConfig));
+                $read = $this->_objMCP->getPermission(MCP::READ,'Config',array_keys($arrConfig));
                 
                 /*
                 * Disable any configuration fields that the user is not allowed to edit. Completely
