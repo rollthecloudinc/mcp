@@ -398,6 +398,23 @@ class MCPPermissionFormRole extends MCPModule {
         );
         
     }
+    
+    /*
+    * Make certain new user is able to create new role or
+    * edit existing role.  
+    */
+    protected function _chkPerms() {
+        
+        $arrRole = $this->_getRole();
+        $intRoleId = $arrRole !== null?$arrRole['roles_id']:null;
+        
+        $perm = $this->_objMCP->getPermission(($arrRole !== null?MCP::EDIT:MCP::ADD),'Role',$intRoleId);
+        
+	if(!$perm['allow']) {
+            throw new MCPPermissionException($perm);
+	}
+        
+    }
 
     public function execute($arrArgs) {
         
@@ -411,6 +428,9 @@ class MCPPermissionFormRole extends MCPModule {
         if($intRole !== null) {
             $this->_setRole($this->_objDAOPerm->fetchRoleById($intRole));
         }
+        
+        // check permissions
+        $this->_chkPerms();
         
         // Tab selection
         $strTpl = 'Role';

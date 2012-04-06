@@ -6,16 +6,31 @@ $this->import('App.Core.Permission');
 * Consistent interface to interact with permission plugins 
 */
 class MCPPermissionManager extends MCPResource {
+    
+        protected static 
+    
+        /*
+        * User data cache to avoid mumtiple look-ups per request. 
+        */
+        $_userDataCache = array();
 
-	protected
+        protected
 	
 	/*
 	* Plugins that have been loaded cache
 	*/
-	$_arrLoadedPlugins = array();
+	$_arrLoadedPlugins = array(),
+                               
+        /*
+        * Local copy of user DAO 
+        */
+        $_objDAOUser;
 
 	public function __construct(MCP $objMCP) {
 		parent::__construct($objMCP);
+                
+                // instantiate user DAO
+                $this->_objDAOUser = $this->_objMCP->getInstance('Component.User.DAO.DAOUser',array($this->_objMCP));
 	}
 
 	/*
@@ -29,6 +44,24 @@ class MCPPermissionManager extends MCPResource {
 	public function getPermission($strAction,$strEntity,$arrId=null,$intUserId=null) {
 	
 		$permissions = array();
+                
+                /*
+                * Super users bypass all permission checks - they can do everything. Only
+                * devs should really have this permission. All other access should granted
+                * through role and user permissions.  
+                */
+                if($this->_isSuperUser($intUserId)) {
+                    
+                    if($arrId !== null) {
+                        foreach($arrId as $id) {
+                            $permissions[$id] = array('allow'=>true);
+                        }
+                    } else {
+                        $permissions[] = array('allow'=>true);
+                    }
+                
+                    return $permissions;
+                }
 	
 		/*
 		* Get requested permissions
@@ -83,6 +116,27 @@ class MCPPermissionManager extends MCPResource {
             }
             
             return $arrPlugins;
+            
+        }
+        
+        /*
+        * Determine if the given user is a super user.
+        * 
+        * @param int users id
+        * @return bool 
+        */
+        protected function _isSuperUser($intUserId=null) {
+            
+            if($intUserId === null || $intUserId == 0) {
+                return false;
+            }
+            
+            if(isset(self::$_userDataCache[$intUserId])) {
+                return (bool) self::$_userDataCache[$intUserId]['super_user'];
+            }
+            
+            self::$_userDataCache[$intUserId] = $this->_objDAOUser->fetchById($intUserId);
+            return (bool) self::$_userDataCache[$intUserId]['super_user'];
             
         }
 

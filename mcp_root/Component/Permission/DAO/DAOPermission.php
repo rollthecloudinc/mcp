@@ -176,12 +176,29 @@ class MCPDAOPermission extends MCPDAO {
         */
         public function fetchRoleById($intId) {
             
-            return array_pop($this->_objMCP->query(
+            $arrRole = array_pop($this->_objMCP->query(
                 'SELECT * FROM MCP_ROLES WHERE roles_id = :roles_id'
                 ,array(
                     ':roles_id'=>(int) $intId
                 )
             ));
+            
+            /*
+            * Add indirect permission data 
+            */
+            if($arrRole !== null) {
+                
+                $arrAdmin = $this->fetchRolePermissions($intId,'MCP_ROUTE:Admin/*',array(0));
+                $arrCmp = $this->fetchRolePermissions($intId,'MCP_ROUTE:Component/*',array(0));
+                $arrPlt = $this->fetchRolePermissions($intId,'MCP_ROUTE:PlatForm/*',array(0));
+                
+                $arrRole['access_admin'] = $arrAdmin[0]['read'];
+                $arrRole['access_cmp_backdoor'] = $arrCmp[0]['read'];
+                $arrRole['access_plt_backdoor'] = $arrPlt[0]['read'];
+                
+            }
+            
+            return $arrRole;
             
         }
         
@@ -217,6 +234,58 @@ class MCPDAOPermission extends MCPDAO {
         */
         public function saveRole($arrRole) {
             
+            /*
+            * Permission data that can be saved indirectly through
+            * a role. 
+            */
+            $arrPerm = array();
+            
+            // parse out any permissions
+            foreach(array('access_admin','access_cmp_backdoor','access_plt_backdoor') as $strPermField) {
+                if(isset($arrRole[$strPermField])) {
+                    
+                    $arrPermItem = null;
+                    
+                    switch($strPermField) {
+                        case 'access_admin':
+                            $arrPermItem = array('item_type'=>'MCP_ROUTE:Admin/*','item_id'=>0,'read'=>null);
+                            break;
+                        
+                        case 'access_cmp_backdoor':
+                            $arrPermItem = array('item_type'=>'MCP_ROUTE:Component/*','item_id'=>0,'read'=>null);
+                            break;
+                        
+                        case 'access_plt_backdoor':
+                            $arrPermItem = array('item_type'=>'MCP_ROUTE:PlatForm/*','item_id'=>0,'read'=>null);
+                            break;
+                        
+                        default:
+                    }
+                    
+                    if($arrPermItem !== null) {
+                        
+                        if(strcmp($arrRole[$strPermField],'1') === 0) {
+                            $arrPermItem['read'] = 1;
+                        } else if(strcmp($arrRole[$strPermField],'0') === 0) {
+                            $arrPermItem['read'] = 0;
+                        } else {
+                            $arrPermItem['read'] = null;
+                        }
+                        
+                        // trigger update regardless of null - delete is ignored for routes anyway
+                        $arrPermItem['delete'] = 0;
+                        
+                        $arrPerm[] = $arrPermItem;
+                        
+                    }
+                    
+                    // not saved to role table
+                    unset($arrRole[$strPermField]);
+                }
+            }
+            
+            // var_dump($arrPerm);
+            
             try {
                 
                 // begin new transaction
@@ -235,6 +304,11 @@ class MCPDAOPermission extends MCPDAO {
                 
                 // commit transaction
                 $this->_objMCP->commit();
+                
+                // save roles indirect permission settings
+                if(!empty($arrPerm)) {
+                    $this->saveRolePermissions((isset($arrRole['roles_id'])?$arrRole['roles_id']:$intId),$arrPerm);
+                }
                 
                 // return new row id or affected row number based on insert or update
                 return $intId;

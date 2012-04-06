@@ -7,8 +7,27 @@ $this->import('App.Core.Service');
 */
 class MCPPermissionFormRoleUsersService extends MCPResource implements MCPService {
     
-    public function checkPerms() {     
-        return array('allow'=>true); // @todo     
+    public function checkPerms() {   
+        
+        /*
+        * Get page arguments
+        */
+        $arrArgs = $this->_objMCP->getArgs();
+        
+        /*
+        * Role id should be second argument
+        */
+        $intRoleId = isset($arrArgs[0])?$arrArgs[0]:null;
+        
+        if($intRoleId === null) {
+            return array('allow'=>false);
+        }
+        
+        /*
+        * Check permissions 
+        */
+        return $this->_objMCP->getPermission(MCP::EDIT,'Role',$intRoleId);
+        
     }
     
     public function exec() {

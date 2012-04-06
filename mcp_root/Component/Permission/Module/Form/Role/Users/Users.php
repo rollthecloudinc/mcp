@@ -189,13 +189,15 @@ class MCPPermissionFormRoleUsers extends MCPModule {
     
     protected function _getFrmConfig() {
         
+        $arrRole = $this->_objParentModule->getRole();
+        
         return array(
             'username'=>array(
                 'label'=>'UserName',
                 'widget'=>'autocomplete',
                 'type'=>'username',
                 'service'=>array(
-                    'pkg'=>'/service.php/Component.Permission.Module.Form.Role.Users.PermissionFormRoleUsersService'
+                    'pkg'=>'/service.php/Component.Permission.Module.Form.Role.Users.PermissionFormRoleUsersService/'.$arrRole['roles_id']
                 )
             )
         );

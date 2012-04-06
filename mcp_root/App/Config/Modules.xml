@@ -992,6 +992,57 @@
                         <label>Description</label>
                         <widget>textarea</widget>
                     </description>
+                    <access_admin>
+                        <label>Access admin Area</label>
+                        <values>
+                            <value>
+                                <label>PassThru</label>
+                                <value></value>
+                            </value>
+                            <value>
+                                <label>Yes</label>
+                                <value>1</value>
+                            </value>
+                            <value>
+                                <label>No</label>
+                                <value>0</value>
+                            </value>
+                        </values>
+                    </access_admin>
+                    <access_cmp_backdoor>
+                        <label>Access Component Backdoor</label>
+                        <values>
+                            <value>
+                                <label>PassThru</label>
+                                <value></value>
+                            </value>
+                            <value>
+                                <label>Yes</label>
+                                <value>1</value>
+                            </value>
+                            <value>
+                                <label>No</label>
+                                <value>0</value>
+                            </value>
+                        </values>
+                    </access_cmp_backdoor>
+                    <access_plt_backdoor>
+                        <label>Access Platform Backdoor</label>
+                        <values>
+                            <value>
+                                <label>PassThru</label>
+                                <value></value>
+                            </value>
+                            <value>
+                                <label>Yes</label>
+                                <value>1</value>
+                            </value>
+                            <value>
+                                <label>No</label>
+                                <value>0</value>
+                            </value>
+                        </values>
+                    </access_plt_backdoor>
                 </frm_general>
                 <frm_users>
                     

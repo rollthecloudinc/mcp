@@ -235,14 +235,38 @@ class MCPConfigForm extends MCPModule {
 	private function _getFrmFields() {
 		return array_keys($this->_getFrmConfig());
 	}
+        
+        /*
+        * Check permissions. User MUST be able to edit or read at
+        * a single field. If not access is denied to this module.  
+        */
+        protected function _chkPerms() {
+            
+		$arrConfig = $this->_objMCP->getConfigSchema();
+                
+                /*
+                * Get field level permissions 
+                */
+                $edit = $this->_objMCP->getPermission(MCP::EDIT,'Config',array_keys($arrConfig));
+                $read = $this->_objMCP->getPermission(MCP::READ,'Config',array_keys($arrConfig));
+                
+                $boolPass = false;
+                
+                foreach(array_keys($arrConfig) as $strField) {
+                   if($edit[$strField]['allow'] || $read[$strField]['allow']) {
+                       $boolPass = true;
+                   } 
+                }
+                
+                if($boolPass === false) {
+                    throw new MCPPermissionException(array('msg_user'=>'You are not allowed to read or edit any configuration settings.'));
+                }
+            
+        }
 	
 	public function execute($arrArgs) {
 		
-                /*
-                * Permissions are checked on a field by field basis. Thus fields
-                * are exposed for edit and read based on those individual field
-                * permission settings.   
-                */
+                $this->_chkPerms();
 		
 		/*
 		* process form 

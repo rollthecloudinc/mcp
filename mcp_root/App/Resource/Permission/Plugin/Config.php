@@ -10,6 +10,15 @@ $this->import('App.Core.Permission');
 */
 class MCPPermissionConfig extends MCPDAO implements MCPPermission {
     
+        protected static 
+    
+        /*
+        * Cache query result set to generate field
+        * and global permissions.   
+        */
+        $fieldPermsCache    = array(),
+        $globalPermsCache   = array();
+    
         /*
         * Configuration item type prefix identifier. This
         * will make it possible to identify all permissions
@@ -86,6 +95,10 @@ class MCPPermissionConfig extends MCPDAO implements MCPPermission {
         * @param int uers id  
         */
         protected function _fetchFieldPerms($intUser=null) {
+            
+            if(isset(self::$fieldPermsCache[$intUser?$intUser:0])) {
+                return self::$fieldPermsCache[$intUser?$intUser:0];
+            }
             
             $strSQL =
                 "SELECT
@@ -192,6 +205,11 @@ class MCPPermissionConfig extends MCPDAO implements MCPPermission {
                 }
             }
             
+            //$this->debug($strSQL);
+            
+            // cache result for unique user
+            self::$fieldPermsCache[$intUser?$intUser:0] = $arrData;
+            
             return $arrData;
             
         }
@@ -203,6 +221,10 @@ class MCPPermissionConfig extends MCPDAO implements MCPPermission {
         * @return array global user config permission settings 
         */
         protected function _fetchGlobalPerms($intUser=null) {
+            
+            if(isset(self::$globalPermsCache[$intUser?$intUser:0])) {
+                return self::$globalPermsCache[$intUser?$intUser:0];
+            }
             
             $strSQL =
                 "SELECT
@@ -301,6 +323,11 @@ class MCPPermissionConfig extends MCPDAO implements MCPPermission {
             } else {
                 $arrData = $arrData[0];
             }
+            
+            // var_dump($arrData);
+            
+            // cache result for unique user
+            self::$globalPermsCache[$intUser?$intUser:0] = $arrData;
             
             return $arrData;
             
