@@ -153,6 +153,9 @@ class MCPConfigForm extends MCPModule {
 	*/
 	private function _frmSave() {
             
+                //$this->debug($this->_arrFrmValues);
+                //return;
+            
                 try {
 		
                     /*
@@ -185,7 +188,34 @@ class MCPConfigForm extends MCPModule {
 	* @return array configuration
 	*/
 	private function _getFrmConfig() {
-		return $this->_objMCP->getConfigSchema();
+            
+                $arrReturn = array();
+            
+		$arrConfig = $this->_objMCP->getConfigSchema();
+                
+                /*
+                * Get field level permissions 
+                */
+                $read = $this->_objMCP->getPermission(MCP::READ,'Config',array_keys($arrConfig));
+                $edit = $this->_objMCP->getPermission(MCP::EDIT,'Config',array_keys($arrConfig));
+                
+                /*
+                * Disable any configuration fields that the user is not allowed to edit. Completely
+                * remove any fields that the user is not allowed to at least read. 
+                */
+                foreach(array_keys($arrConfig) as $strField) {
+                    if($edit[$strField]['allow']) {
+                        $arrReturn[$strField] = $arrConfig[$strField];
+                    } else if ($read[$strField]['allow']) {
+                        $arrReturn[$strField] = $arrConfig[$strField];
+                        $arrReturn[$strField]['disabled'] = 'Y';
+                    }
+                }
+                
+                //$this->debug($arrReturn);
+                
+                return $arrReturn;
+                
 	}
 	
 	/*
@@ -208,16 +238,11 @@ class MCPConfigForm extends MCPModule {
 	
 	public function execute($arrArgs) {
 		
-		/*
-		* Check permissions 
-		* Can user add/ edit config
-		* 
-		* - todo break into sections - permission handling per section of config
-		*/
-		$perm = $this->_objMCP->getPermission(MCP::EDIT,'Config');
-		if(!$perm['allow']) {
-			throw new MCPPermissionException($perm);
-		}
+                /*
+                * Permissions are checked on a field by field basis. Thus fields
+                * are exposed for edit and read based on those individual field
+                * permission settings.   
+                */
 		
 		/*
 		* process form 

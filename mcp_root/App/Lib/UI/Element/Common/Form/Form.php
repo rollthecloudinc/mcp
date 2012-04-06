@@ -372,7 +372,7 @@ class Form implements \UI\Element {
 							'name'=>sprintf('%s[%s]%s',$name,$field,(isset($data['multi'])?$dynamic_field?"[$i][value]":"[$i]":''))
 							,'id'=>$idbase.strtolower(str_replace('_','-',$field)).( isset($data['multi'])?'-'.($i+1):'' )
 							,'disabled'=>$strDisabled?true:false
-							,'value'=>isset($data['multi'])?isset($values[$field][$i])?$values[$field][$i]:'':$values[$field]								
+							,'value'=>isset($data['multi'])?isset($values[$field][$i])?is_array($values[$field][$i])?$values[$field][$i]['value']:$values[$field][$i]:'':$values[$field]								
 						));
                                                 
                                                 

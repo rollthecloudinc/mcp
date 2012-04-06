@@ -24,15 +24,68 @@ class MCPPermissionConfig extends MCPDAO implements MCPPermission {
 	public function edit($ids,$intUserId=null) {
             
             // Get all config fields available
-            $arrFields = $this->_getConfigFields(true);
+            $arrFields = $this->_getConfigFields(false);
             
-            echo '<pre>',print_r($arrFields,true),'</pre>';
+            // Get permissions
+            $permissions = $this->_rud($intUserId);
             
-            exit;
+            $return = array();
+            foreach($permissions as $permission) {
+                if(in_array($permission['item_id'],$ids)) {
+                    $return[$permission['item_id']] = array(
+                        'allow'=>(bool) $permission['allow_edit']
+                        ,'msg_dev'=>isset($permission['deny_edit_msg_dev'])?$permission['deny_edit_msg_dev']:''
+                        ,'msg_user'=>'You may not edit configuration field value.'
+                    );
+                }
+            }
+            
+		
+            foreach(array_diff($arrFields,array_keys($return)) as $id) {
+                if(in_array($id,$ids)) {
+                    $return[$id] = array(
+                        'allow'=>false
+                        ,'msg_dev'=>'You are not allowed to edit value for specified config field.'
+                        ,'msg_user'=>'You may not edit config field value.'
+                    );
+                }
+            }
+            
+            return $return;
 		
         }
 	
 	public function read($ids,$intUserId=null) {
+            
+            // Get all config fields available
+            $arrFields = $this->_getConfigFields(false);
+            
+            // Get permissions
+            $permissions = $this->_rud($intUserId);
+            
+            $return = array();
+            foreach($permissions as $permission) {
+                if(in_array($permission['item_id'],$ids)) {
+                    $return[$permission['item_id']] = array(
+                        'allow'=>(bool) $permission['allow_read']
+                        ,'msg_dev'=>isset($permission['deny_read_msg_dev'])?$permission['deny_read_msg_dev']:''
+                        ,'msg_user'=>'You may not read configuration field value.'
+                    );
+                }
+            }
+            
+		
+            foreach(array_diff($arrFields,array_keys($return)) as $id) {
+                if(in_array($id,$ids)) {
+                    $return[$id] = array(
+                        'allow'=>false
+                        ,'msg_dev'=>'You are not allowed to read value for specified config field.'
+                        ,'msg_user'=>'You may not read config field value.'
+                    );
+                }
+            }
+            
+            return $return;
 		
 	}
         
@@ -80,6 +133,108 @@ class MCPPermissionConfig extends MCPDAO implements MCPPermission {
             }
             
             return $arrPrefixed;
+            
+        }
+        
+        protected function _rud($intUser=null) {
+            
+            $strSQL =
+                "SELECT
+                       SUBSTR(p.item_type,5) item_id
+                      ,COALESCE(MAX(p.edit),0) allow_edit
+                      ,COALESCE(MAX(p.read),0) allow_read
+                      ,'User does not have user perm or perm assigned to role which user belongs to that allows edit of config field value.' deny_edit_msg_dev
+                      ,'User does not have user perm or perm assigned to role which user belongs to that allows read config field value.' deny_read_msg_dev
+                   FROM
+                      (SELECT
+                            'user_perm' type
+                            ,pu.item_type
+                            ,NULL has_user_perm
+                            ,pu.edit
+                            ,pu.read
+                         FROM
+                            MCP_PERMISSIONS_USERS pu
+                        WHERE
+                            pu.users_id = :users_id
+                          AND
+                            pu.item_type LIKE 'cfg:%'
+                          AND
+                            pu.item_id = 0
+                    UNION ALL
+                       SELECT
+                            'role_perm'
+                            ,pr.item_type
+                            ,CASE
+                                WHEN pu.permissions_id IS NULL
+                                THEN 1
+
+                                ELSE
+                                0
+                             END
+                            ,CASE
+                                WHEN pu.edit IS NOT NULL
+                                THEN pu.edit
+
+                                ELSE
+                                MAX(pr.edit)
+                             END
+                            ,CASE
+                                WHEN pu.read IS NOT NULL
+                                THEN pu.read
+
+                                ELSE
+                                MAX(pr.read)
+                             END
+                         FROM
+                            MCP_PERMISSIONS_ROLES pr
+                        INNER
+                         JOIN
+                            MCP_ROLES r
+                           ON
+                            pr.roles_id = r.roles_id
+                          AND
+                            r.deleted = 0
+                        INNER
+                         JOIN
+                            MCP_USERS_ROLES ur
+                           ON
+                            r.roles_id = ur.roles_id
+                          AND
+                            ur.users_id = :users_id
+                       INNER
+                        JOIN
+                           MCP_PERMISSIONS_USERS pu
+                          ON
+                           ur.users_id = pu.users_id
+                         AND
+                           pr.item_id = pu.item_id
+                         AND
+                           pr.item_type = pu.item_type
+                       WHERE
+                           pr.item_type LIKE 'cfg:%'
+                         AND
+                           pr.item_id = 0
+                       GROUP
+                          BY
+                           pr.item_type) p
+                       WHERE
+                           p.type = 'user_perm'
+                          OR
+                          (p.type = 'role_perm' AND p.has_user_perm = 0)
+                 GROUP
+                    BY
+                     p.item_type";
+            
+            
+            $arrData = $this->_objMCP->query(
+                    $strSQL,
+                    array(
+                        ':users_id'=>((int) ($intUser === null?0:$intUser))
+                    )
+            );
+            
+            return $arrData;
+            
             
         }
         

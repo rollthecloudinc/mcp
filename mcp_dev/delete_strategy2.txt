@@ -1,0 +1,77 @@
+what happens when you delete:
+
+view
+- remove permissions
+- remove all child displays (@todo)
+
+user perms: item_type = 'MCP_VIEWS' and item_id = 67
+role perms: item_type = 'MCP_VIEWS' and item_id = 67
+
+field ( a field can't reference a field so forget about that case)
+- remove all values for the field
+- remove field
+- remove field level permissions
+- remove view sorting, select and filter references
+
+---------------------------------------------------------------
+
+role
+- remove all assignments
+- remove roles permissions
+- remove any permissions for the role
+
+node | term
+- remove all field value references
+- remove {item}
+- remove permissions (perm)
+- remove views (view)
+- remove filters, sorting and selects that reference {item}
+
+node type | vocabulary
+- remove all field and value references
+- remove {child}
+- remove permissions (perm)
+- remove views (view)
+
+menu (not fieldable)
+- remove menu links
+- remove permissions (perm)
+
+menu link (not fieldable)
+- remove menu link
+- remove permissions (perm)
+
+comment (@todo)
+- remove comment
+- remove fields and field values
+
+image | file | video (media)
+- remove {item}
+- remove field values that reference {item}
+- remove any permissions assigned to {item}
+
+user
+- Remove all users content or set to new user?? - option before deletion.
+
+site
+- remove all sites content
+
+
+-------------------------------------
+
+site
+user
+
+
+
+
+
+--------------------------------------------------
+
+purge – anything set to deleted = NULL is removed from db.
+
+- purge will apply globally – if you have permission to pruge
+  than you can run purge for everything on a site or we just
+  make it purge everything - only developers will have this
+  permission anyway. It is unlikely anything will ever need to purged
+  by anyone other than an admin considering it will be hidden.

@@ -265,9 +265,12 @@ class MCPDAOConfig extends MCPDAO {
                     if(!empty($fields)) {
 			$this->_saveDynamicFieldValues($fields);
                     }
-		
-                    // run query
-                    $mixReturn = $this->_objMCP->query($strSQL,$arrBind);
+                    
+                    // save native config fields
+                    if(!empty($arrInsert)) {
+                        // run query
+                        $mixReturn = $this->_objMCP->query($strSQL,$arrBind);
+                    }
                     
                     // commit transaction
                     $this->_objMCP->commit();
