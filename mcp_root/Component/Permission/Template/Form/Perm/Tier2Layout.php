@@ -21,7 +21,10 @@
             
         </div>
         
-        <?php echo $add; ?>
+        <div>
+            <?php echo $add_child; ?>
+            <?php echo $add_own_child; ?>
+        </div>
         
         <div>
             

@@ -596,7 +596,7 @@ class MCPDAONode extends MCPDAO {
 			$arrNodeType
 			,'MCP_NODE_TYPES'
 			,'node_types_id'
-			,array('system_name','human_name','pkg','description','theme_tpl','form_tpl')
+			,array('system_name','human_name','pkg','description','theme_tpl','form_tpl','view_mod')
 			,'created_on_timestamp'
 			,null
 			
@@ -656,6 +656,97 @@ class MCPDAONode extends MCPDAO {
 	* @todo: support variable binding
 	*/
 	public function deleteNodes($mixNodeId) {
+            
+            /*
+            * All rows deleted in this transaction will share
+            * the same timestamp. This will provide ease of
+            * debugging and tracking what has been deleted.    
+            */
+            $time = time();
+            
+            /*
+            * Collection of queries to run when deleting node(s). 
+            */
+            $queries = array();
+            
+            /*
+            * @comments
+            * 
+            * Soft delete nodes comments. Comments are soft deleted
+            * because they should be easily restored when a node 
+            * is restored.   
+            */
+            $queries['comments'] = array(
+                'sql'=> '',
+                'bind'=> array()
+            );
+            
+            // $this->removeComments(true,array(
+            // 'comment_type'=>'node',
+            // 'comment_types_id'=>$mixNodeId
+            //));
+            
+            
+            /*
+            * @user permissions
+            * @role permissions 
+            *  
+            * Purge user or role permissions specifically for the node. Permissions
+            * will not be restorable considering they will be physically removed
+            * from the database when a node is deleted.   
+            */
+            $queries['user_perms'] = array(
+                'sql'=> '',
+                'bind'=> array()
+            );
+            
+            $queries['role_perms'] = array(
+                'sql'=> '',
+                'bind'=> array()
+            );
+            
+            // $this->_objMCP->getInstance('Component.Permission.DAO.DAOPermission',array($this->_objMCP))->removeUserPerms(array('item_type'=>'MCP_NODES','item_id'=>$mixNodeId));
+            // $this->_objMCP->getInstance('Component.Permission.DAO.DAOPermission',array($this->_objMCP))->removeRolePerms(array('item_type'=>'MCP_NODES','item_id'=>$mixNodeId));
+            
+            /*
+            * @field values virtual foreign key references
+            *  
+            * Soft delete any fields that reference node(s) through a virual foreign key. Node
+            * references will be restorable in case of accidental removal of a node. 
+            */
+            $queries['field_fks'] = array(
+                'sql'=> '',
+                'bind'=> array()
+            );
+            
+            // $this->_objMCP->getInstance('Component.Field.DAO.DAOField',array($this->_objMCP))->removeFieldValues(array('db_ref_context'=>'node','db_int'=>$intMixId),true);
+            
+            /*
+            * @field values
+            * @node 
+            *  
+            * Soft delete node(s) and field values. Both node(s) and field values will be 
+            * fully restorable just in case of accidental deletion.
+            */
+            
+            $queries['nodes'] = array(
+                'sql'=> '',
+                'bind'=> array()
+            );
+            
+            // $this->_objMCP->getInstance('Component.Field.DAO.DAOField',array($this->_objMCP))->removeFieldValues(array('entity_type'=>'MCP_NODES','rows_id'=>$intMixId));
+            // soft delete nodes
+            
+            /*
+            * Run queries in succession and rollback transaction
+            * when any one of them fails. When all go through successfully
+            * commit. 
+            */
+            $this->debug($queries);
+            
+            return;
+            
+            
             
                 $time = time();
 

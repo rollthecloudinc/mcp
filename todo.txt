@@ -102,5 +102,15 @@ actually do anything.
 00008 BUG
 If no fields have been created for an entity the create fields button is not showing up. However, once
 a single field is created the button properly shows up for those who have the proper permissions.
+
+
+----------------------------------------------------------------------------
+
+Top priority
+
+- Implement delete
+- Video support and field integration
+- Implement purge
+- Install Routine
      
   

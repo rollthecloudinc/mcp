@@ -762,6 +762,12 @@
 				<required>N</required>
 				<type>node_type_form_tpl</type>
 			</form_tpl>
+			<view_mod>
+				<label>View Module</label>
+				<max>255</max>
+				<required>N</required>
+				<type>node_type_view_mod</type>
+			</view_mod>
 			<description>
 				<label>Description</label>
 				<required>N</required>
@@ -1053,7 +1059,7 @@
         </mod>
         <mod pkg="Component.Permission.Module.Form.Perm">
             <frm>
-                <add>
+                <add_child>
                     <label>Create {Entity}</label>
                     <values>
                         <value>
@@ -1069,7 +1075,24 @@
                             <label>No</label>
                         </value>
                     </values>
-                </add>
+                </add_child>
+                <add_own_child>
+                    <label>if {entity} parent owner</label>
+                    <values>
+                        <value>
+                            <value></value>
+                            <label>--</label>
+                        </value>
+                       <value>
+                            <value>1</value>
+                            <label>Yes</label>
+                        </value>
+                       <value>
+                            <value>0</value>
+                            <label>No</label>
+                        </value>
+                    </values>
+                </add_own_child>
                 <read>
                     <label>Read {Entity}</label>
                     <values>

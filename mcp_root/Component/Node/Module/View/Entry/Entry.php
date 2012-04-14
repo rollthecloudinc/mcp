@@ -4,7 +4,7 @@
 */
 class MCPNodeViewEntry extends MCPModule {
 	
-	private
+	protected
 	
 	/*
 	* Node data access layer 
@@ -19,7 +19,12 @@ class MCPNodeViewEntry extends MCPModule {
 	/*
 	* Determines if node is being edited 
 	*/
-	,$_boolEdit = false;
+	,$_boolEdit = false
+        
+        /*
+        * Allow module to be overridden 
+        */
+        ,$_boolAllowOverride = true;
 	
 	public function __construct(MCP $objMCP,MCPModule $objParentModule=null,$arrConfig=null) {
 		parent::__construct($objMCP,$objParentModule,$arrConfig);
@@ -32,6 +37,8 @@ class MCPNodeViewEntry extends MCPModule {
 	}
 	
 	public function execute($arrArgs) {
+            
+                $arrArgsCopy = $arrArgs;
 		
 		$this->_strNodesId = !empty($arrArgs)?array_shift($arrArgs):null;
 		
@@ -84,9 +91,36 @@ class MCPNodeViewEntry extends MCPModule {
 			
 			// Get the theme template
 			if($this->_arrTemplateData['node'] !== null) {
+                            
 				// Get the node type data to resolve theme
 				$arrNodeType = $this->_objDAONode->fetchNodeTypeById($this->_arrTemplateData['node']['node_types_id']);
 				
+                                /*
+                                * Experimental - seems like it may cause more issues than it solves
+                                *  
+                                * Check for module override and execute that if it exists. This
+                                * makes it possible to completely override the view implemention
+                                * of this module. This can be used for sectioning off content into tabs
+                                * or just about anything else. 
+                                */
+                                /*if($this->_boolAllowOverride === true && isset($arrNodeType['view_mod'])) {
+                                    
+                                    // path to edit node
+                                    $this->_arrTemplateData['EDIT_PATH'] = $this->getBasePath().'/Edit';
+                                    
+                                    // allow edit?
+                                    $perm =  $this->_objMCP->getPermission(MCP::EDIT,'Node',(int) $this->_strNodesId);
+                                    $this->_arrTemplateData['display_edit_link'] = $perm['allow'];
+                                    
+                                    $this->_arrTemplateData['TPL_OVERRIDE_CONTENT'] = $this->_objMCP->executeComponent(
+                                            $arrNodeType['view_mod']
+                                            ,$arrArgsCopy
+                                            ,null
+                                            ,array($this->_objParentModule)
+                                    );
+                                    return 'Entry/Override.php';
+                                }*/
+                                
 				// Set the node type theme template
 				$strTpl = $arrNodeType['theme_tpl'] === null?$strTpl:$arrNodeType['theme_tpl'];
 			}

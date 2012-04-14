@@ -173,7 +173,7 @@ class MCPPermissionFormPerm extends MCPModule {
                 return in_array($strField,array('read','read_own','edit','edit_own','delete','delete_own'));
                 
             case 2:
-                return in_array($strField,array('read','read_own','edit','edit_own','delete','delete_own','add','read_child','read_own_child','edit_child','edit_own_child','delete_child','delete_own_child'));
+                return in_array($strField,array('read','read_own','edit','edit_own','delete','delete_own','add_child','add_own_child','read_child','read_own_child','edit_child','edit_own_child','delete_child','delete_own_child'));
                 
             default:
                 return in_array($strField,array('add','edit','edit_own','read','read_own','delete','delete_own'));
@@ -193,7 +193,7 @@ class MCPPermissionFormPerm extends MCPModule {
         }
         
         
-        $arrConfig = $this->_objMCP->getFrmConfig('Component.Permission.Module.Form.Perm','frm',true);     
+        $arrConfig = $this->_objMCP->getFrmConfig('Component.Permission.Module.Form.Perm','frm',true); 
         
         /*
         * Each tier implements a different set of permissions. Turn off

@@ -1,0 +1,100 @@
+- remove all field value references
+- remove {item}
+- remove permissions (perm)
+- remove views (view)
+- remove comments
+- remove filters, sorting and selects that reference {item}
+
+- delete field values that belong to node
+- delete node permissions
+
+- prompt for view filters, sorting and selects that reference node
+  - either remove or ignore -- when ignored view will no longer function
+  
+-----------------------------------------------------------------------------
+  
+// remove nodes and node field values 
+UPDATE
+     MCP_NODES n || MCP_TERMS
+  LEFT OUTER
+  JOIN 
+     MCP_FIELDS f
+    ON
+     n.node_types_id = f.entities_id
+   AND
+     f.entity_type = 'MCP_NODE_TYPES'
+   AND
+     f.deleted = 0
+  LEFT OUTER
+  JOIN
+     MCP_FIELD_VALUES v
+    ON
+     f.fields_id = v.fields_id
+   AND
+     n.nodes_id = v.rows_id
+   AND
+     v.deleted = 0
+ WHERE
+     n.nodes_id IN (5,6,7)
+     
+     
+     
+     
+     
+// prompt user of any fields that reference node 
+   - these fields will be removed also
+   - clear cache for any entities which reference a given node through a field - or clear cache table whenever deleting items
+ - thinking is that these get removed/purged immediately
+   
+   
+   DELETE
+        MCP_FIELD_VALUES v
+    INNER
+     JOIN
+        MCP_FIELDS f
+       ON
+        v.fields_id = f.fields_id
+      AND
+        f.deleted = 0
+    WHERE
+        f.db_ref_context = 'node' || 'term'
+      AND
+        v.db_int IN (5,6,7)
+        
+        
+// remove comments
+UPDATE
+     MCP_COMMENTS c
+ WHERE
+     comment_type = 'node'
+   AND
+     comment_types_id IN (5,6,7)
+        
+        
+             
+// perms - get deleted immediately
+
+DELETE
+  FROM
+     MCP_PERMISSIONS_USERS pu
+ WHERE
+     pu.item_type = 'MCP_NODES' || 'MCP_TERMS'
+   AND
+     pu.item_id IN (5,6,7)
+     
+DELETE
+  FROM
+     MCP_PERMISSIONS_ROLES pr
+ WHERE
+     pr.item_type = 'MCP_NODES'
+   AND
+     pr.item_id IN (5,6,7)
+     
+     
+// cache - delete item
+
+DELETE 
+  FROM
+     MCP_CACHE c
+ WHERE
+     c.cache_name IN ('node_5','node_6','node_7') || term_x
