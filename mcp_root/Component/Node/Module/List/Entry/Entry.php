@@ -48,10 +48,23 @@ class MCPNodeListEntry extends MCPModule {
 		// set-up delete event handler
 		$id =& $this->_intActionsId;
 		$dao = $this->_objDAONode;
+                $mcp = $this->_objMCP;
 		
-		$this->_objMCP->subscribe($this,'NODE_DELETE',function() use(&$id,$dao)  {
+		$this->_objMCP->subscribe($this,'NODE_DELETE',function() use(&$id,$dao,$mcp)  {
+                    
 			// delete the node type
-			$dao->deleteNodes($id);
+                        try {                 
+                            $dao->deleteNodes($id);
+                            $mcp->addSystemStatusMessage(
+                                 'Content has been successfully deleted.'   
+                            );
+                        } catch(MCPDAOException $e) {
+                            $mcp->_objMCP->addSystemErrorMessage(
+                                    'An error has occurred attempting to delete node. Please try again and contact an administrator if error continues.'
+                                    ,$e->getMessage()
+                            );
+                        }
+                        
 		});
 		
 	}

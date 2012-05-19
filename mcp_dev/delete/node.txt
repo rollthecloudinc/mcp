@@ -36,6 +36,11 @@ UPDATE
      v.deleted = 0
  WHERE
      n.nodes_id IN (5,6,7)
+   SET
+     f.deleted = 0,
+     f.deleted_on_timestamp = NOW(),
+     v.deleted = 0,
+     v.deleted_on_timestamp = NOW()
      
      
      
@@ -98,3 +103,11 @@ DELETE
      MCP_CACHE c
  WHERE
      c.cache_name IN ('node_5','node_6','node_7') || term_x
+
+// view selects, filters, sorting and argument references (prompt user first)
+// create list of views that will be effected - checkbox to remove e items or ignore.
+// busted views ----
+
+SELECT
+  FROM
+     MCP_VIEW_

@@ -665,6 +665,22 @@ class MCPDAONode extends MCPDAO {
             $time = time();
             
             /*
+            * Clean input values to prevent SQL injection considering
+            * variable binding will not be used here because of the IN operator
+            * being used.
+            */
+            $ids = '';
+            if(is_array($mixNodeId)) {
+                foreach($mixNodeId as $id) {
+                    $ids = ','.((int) $id);
+                }
+            } else {
+                $ids = (string) ((int) $mixNodeId);
+            }
+            
+            $ids = trim($ids,',');
+            
+            /*
             * Collection of queries to run when deleting node(s). 
             */
             $queries = array();
@@ -677,8 +693,20 @@ class MCPDAONode extends MCPDAO {
             * is restored.   
             */
             $queries['comments'] = array(
-                'sql'=> '',
-                'bind'=> array()
+                'sql'=> "
+                    UPDATE
+                         MCP_COMMENTS c
+                       SET
+                         c.deleted = NULL
+                        ,c.deleted_on_timestamp = FROM_UNIXTIME(:ts1)
+                     WHERE
+                         c.comment_type = 'node'
+                       AND
+                         c.comment_types_id IN (".$ids.")
+                 ",
+                'bind'=> array(
+                    ':ts1'=> $time
+                )
             );
             
             // $this->removeComments(true,array(
@@ -696,12 +724,28 @@ class MCPDAONode extends MCPDAO {
             * from the database when a node is deleted.   
             */
             $queries['user_perms'] = array(
-                'sql'=> '',
+                'sql'=> "
+                    DELETE
+                      FROM
+                         MCP_PERMISSIONS_USERS
+                     WHERE
+                         item_type = 'MCP_NODES'
+                       AND
+                         item_id IN (".$ids.")
+                 ",
                 'bind'=> array()
             );
             
             $queries['role_perms'] = array(
-                'sql'=> '',
+                'sql'=> "
+                    DELETE
+                      FROM
+                         MCP_PERMISSIONS_ROLES
+                     WHERE
+                         item_type = 'MCP_NODES'
+                       AND
+                         item_id IN (".$ids.")
+                 ",
                 'bind'=> array()
             );
             
@@ -715,8 +759,27 @@ class MCPDAONode extends MCPDAO {
             * references will be restorable in case of accidental removal of a node. 
             */
             $queries['field_fks'] = array(
-                'sql'=> '',
-                'bind'=> array()
+                'sql'=> "
+                   UPDATE
+                        MCP_FIELD_VALUES v
+                    INNER
+                     JOIN
+                        MCP_FIELDS f
+                       ON
+                        v.fields_id = f.fields_id
+                      AND
+                        f.deleted = 0
+                      SET
+                        v.deleted = NULL
+                       ,v.deleted_on_timestamp = FROM_UNIXTIME(:ts1)
+                    WHERE
+                        f.db_ref_context = 'node'
+                      AND
+                        v.db_int IN (".$ids.")
+                 ",
+                'bind'=> array(
+                    ':ts1'=> $time
+                )
             );
             
             // $this->_objMCP->getInstance('Component.Field.DAO.DAOField',array($this->_objMCP))->removeFieldValues(array('db_ref_context'=>'node','db_int'=>$intMixId),true);
@@ -730,98 +793,69 @@ class MCPDAONode extends MCPDAO {
             */
             
             $queries['nodes'] = array(
-                'sql'=> '',
-                'bind'=> array()
+                'sql'=> "
+                    UPDATE
+                         MCP_NODES n
+                      LEFT OUTER
+                      JOIN 
+                         MCP_FIELDS f
+                        ON
+                         n.node_types_id = f.entities_id
+                       AND
+                         f.entity_type = 'MCP_NODE_TYPES'
+                       AND
+                         f.deleted = 0
+                      LEFT OUTER
+                      JOIN
+                         MCP_FIELD_VALUES v
+                        ON
+                         f.fields_id = v.fields_id
+                       AND
+                         n.nodes_id = v.rows_id
+                       AND
+                         v.deleted = 0
+                       SET
+                          n.deleted = NULL
+                         ,n.deleted_on_timestamp = FROM_UNIXTIME(:ts1)
+                         ,v.deleted = NULL
+                         ,v.deleted_on_timestamp = FROM_UNIXTIME(:ts2)
+                     WHERE
+                         n.nodes_id IN (".$ids.")
+                ",
+                'bind'=> array(
+                     ':ts1'=> $time
+                    ,':ts2'=> $time
+                )
             );
             
             // $this->_objMCP->getInstance('Component.Field.DAO.DAOField',array($this->_objMCP))->removeFieldValues(array('entity_type'=>'MCP_NODES','rows_id'=>$intMixId));
             // soft delete nodes
             
-            /*
-            * Run queries in succession and rollback transaction
-            * when any one of them fails. When all go through successfully
-            * commit. 
-            */
-            $this->debug($queries);
+            // debug queries
+            // $this->debug($queries);
             
-            return;
+            // start transaction
+            $this->_objMCP->begin();
             
-            
-            
-                $time = time();
-
-		/*
-		* nodes will be deleted. Fields and field
-		* values will be kept in tact for now considering they can't
-		* be accessed without the node entry, so it isn't hurting anything
-		* and makes it easier to revert or undelete something that may
-		* have been accidently deleted. The same will hold true for comments.
-		*/
-		$strSQL = sprintf(
-			"UPDATE
-			      MCP_NODES n
-                           LEFT OUTER
-                           JOIN
-                              MCP_FIELDS f
-                             ON
-                              n.node_types_id = f.entities_id
-                            AND
-                              f.entity_type = 'MC_NODE_TYPES'
-                            AND
-                              f.deleted = 0
-                           LEFT OUTER
-                           JOIN
-                              MCP_FIELD_VALUES fv
-                             ON
-                              f.fields_id = fv.fields_id
-                            AND
-                              n.nodes_id = fv.rows_id
-                            AND
-                              fv.deleted = 0
-                           LEFT OUTER
-                           JOIN
-                              MCP_FIELDS r
-                             ON
-                              r.db_ref_table = 'MCP_NODES'
-                            AND
-                              r.db_ref_col = 'nodes_id'
-                            AND
-                              r.deleted = 0
-                           LEFT OUTER
-                           JOIN
-                              MCP_FIELD_VALUES rv
-                             ON
-                              r.fields_id = rv.fields_id
-                            AND
-                              n.nodes_id = r.db_int
-                            AND
-                              r.deleted = 0
-			    SET
-			       n.deleted = NULL
-                              ,n.deleted_on_timestamp = FROM_UNIXTIME(".$time.")
-                              
-                              ,fv.deleted = NULL
-                              ,fv.deleted_on_timestamp = FROM_UNIXTIME(".$time.")
-                                  
-                              ,r.deleted = NULL
-                              ,r.deleted_on_timestamp = FROM_UNIXTIME(".$time.")
-                                  
-                              ,rv.deleted = NULL
-                              ,rv.deleted_on_timestamp = FROM_UNIXTIME(".$time.")
-			  WHERE
-			      n.nodes_id IN (%s)"
-			      
-			,is_array($mixNodeId) ? $this->_objMCP->escapeString(implode(',',$mixNodeId)) : $this->_objMCP->escapeString($mixNodeId)
-		);
+            try {
                 
-                /*
-                * Also need to delete any virtual fk references 
-                */
+                // run each query
+                foreach($queries as &$query) {
+                    $this->_objMCP->query($query['sql'],$query['bind']);
+                }
                 
-                $this->debug($strSQL);
-		
-		// echo "<p>$strSQL</p>";
-		//return $this->_objMCP->query($strSQL);
+                // commit the transaction
+                $this->_objMCP->commit();
+                
+            } catch(Exception $e) {
+                
+                // rollback the transaction
+                $this->_objMCP->rollback();
+                
+                // throw DAO exception
+                throw new MCPDAOException($e->getMessage());
+                
+            }
 	
 	}
 	
