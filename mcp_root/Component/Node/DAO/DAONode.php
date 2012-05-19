@@ -618,6 +618,14 @@ class MCPDAONode extends MCPDAO {
 	* @todo: support variable binding
 	*/
 	public function deleteNodeTypes($mixNodeTypesId) {
+            
+                /*
+                * Delete nodes first
+                * Delete views
+                * Dlete permissions 
+                * Delete fields
+                * Delete types 
+                */
 
 		/*
 		* Node types and nodes will be deleted. Fields and field
@@ -655,7 +663,7 @@ class MCPDAONode extends MCPDAO {
 	* 
 	* @todo: support variable binding
 	*/
-	public function deleteNodes($mixNodeId) {
+	public function deleteNodesById($mixNodeId) {
             
             /*
             * All rows deleted in this transaction will share

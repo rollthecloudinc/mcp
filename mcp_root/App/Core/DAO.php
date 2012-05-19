@@ -86,13 +86,6 @@ abstract class MCPDAO extends MCPResource {
 		return $this->_objMCP->query($strSQL,$arrBind);
 		
 	}
-        
-        /*
-        * Soft delete data from a single table. 
-        */
-        protected function _remove($strTable,$arrFilters=array()) {
-            
-        }
 	
 	/*
 	* Helper function that converts hierarchical structure to a tree (set of nested arrays)

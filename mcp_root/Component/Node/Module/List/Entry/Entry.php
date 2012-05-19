@@ -52,9 +52,9 @@ class MCPNodeListEntry extends MCPModule {
 		
 		$this->_objMCP->subscribe($this,'NODE_DELETE',function() use(&$id,$dao,$mcp)  {
                     
-			// delete the node type
+			// delete the node(s)
                         try {                 
-                            $dao->deleteNodes($id);
+                            $dao->deleteNodesById($id);
                             $mcp->addSystemStatusMessage(
                                  'Content has been successfully deleted.'   
                             );

@@ -1,0 +1,152 @@
+in node type id
+
+- remove all field and value references
+- remove {child}
+- remove permissions (perm)
+- remove views (view)
+
+
+// remove node comments by node type ID
+UPDATE 
+     MCP_COMMENTS c
+ INNER
+  JOIN
+     MCP_NODES n
+    ON
+     c.comment_types_id = n.nodes_id
+   AND
+     c.comment_type = 'node'
+ INNER
+  JOIN
+     MCP_NODE_TYPES t
+    ON
+     n.node_types_id = t.node_type_id
+   SET
+     c.deleted = NULL
+    ,c.deleted_on_timestamp = FROM_UNIXTIME(:ts)
+ WHERE
+     t.node_types_id IN (...)
+   AND
+     c.deleted = 0
+
+//// delete nodes and node types permissions
+
+// delete permissions for nodes of type
+DELETE p
+  FROM
+     MCP_PERMISSIONS_ROLES p
+ INNER
+  JOIN
+     MCP_NODES n
+    ON
+     p.item_id = n.nodes_id
+   AND
+     p.item_type = 'MCP_NODES'
+ INNER
+  JOIN
+     MCP_NODE_TYPES t
+    ON
+     n.node_types_id = t.node_types_id
+ WHERE
+     n.node_types_id IN (567899)
+
+DELETE p
+  FROM
+     MCP_PERMISSIONS_USERS p
+ INNER
+  JOIN
+     MCP_NODES n
+    ON
+     p.item_id = n.nodes_id
+   AND
+     p.item_type = 'MCP_NODES'
+ INNER
+  JOIN
+     MCP_NODE_TYPES t
+    ON
+     n.node_types_id = t.node_types_id
+ WHERE
+     n.node_types_id IN (567899)
+
+// delete permissions for node types
+DELETE
+  FROM
+     MCP_PERMISSIONS_ROLES
+ WHERE
+     item_type = 'MCP_NODE_TYPES'
+   AND
+     item_id IN (...)
+
+DELETE
+  FROM
+     MCP_PERMISSIONS_USERS
+ WHERE
+     item_type = 'MCP_NODE_TYPES'
+   AND
+     item_id IN (...)
+
+// remove views (tricky with tree...)
+-- this probably needs to be a reusable function considering the complexity
+
+// remove fields and field values
+UPDATE
+     MCP_FIELD_VALUES v
+ INNER
+  JOIN
+     MCP_FIELDS f
+    ON
+     v.fields_id = f.fields_id
+   SET
+     v.deleted = NULL
+    ,v.deleted_on_timestamp = FROM_UNIXTIME(:ts1)
+    ,f.deleted = NULL
+    ,f.deleted_on_timestamp = FROM_UNIXTIME(:ts1)
+WHERE
+     f.entity_type = 'MCP_NODE_TYPES'
+  AND
+     f.entities_id IN (...)
+
+// remove field and values that reference nodes of types that have been deleted
+UPDATE
+     MCP_FIELDS f
+ INNER
+  JOIN
+     MCP_FIELD_VALUES v
+    ON
+     f.fields_id = v.fields_id
+   SET
+     f.deleted = NULL
+    ,f.deleted_on_timestamp = FROM_UNIXTIME(:ts1)
+    ,v.deleted = NULL
+    ,v.deleted_on_timestamp = FROM_UNIXTIME(:ts1)
+ WHERE
+     f.db_ref_table = 'MCP_NODES'
+   AND
+     f.db_ref_context_id IN (...)
+
+// Remove nodes of type
+UPDATE 
+     MCP_NODES
+   SET
+     deleted = NULL
+    ,deleted_on_timestamp = FROM_UNIXTIME(:ts1)
+ WHERE
+     deleted = 0
+   AND
+     node_types_id IN (...)
+
+// remove node types
+UPDATE
+     MCP_NODE_TYPES
+   SET
+     deleted = NULL
+    ,deleted_on_timestamp = FROM_UNIXTIME(:ts1)
+ WHERE
+     deleted = 0
+   AND
+     node_types_id IN (...)
+
+
+// clear cache for nodes of type and type
+    
+     

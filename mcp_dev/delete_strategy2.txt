@@ -20,14 +20,14 @@ role
 - remove roles permissions
 - remove any permissions for the role
 
-node | term
+node | term w/ input item id
 - remove all field value references
 - remove {item}
 - remove permissions (perm)
 - remove views (view)
 - remove filters, sorting and selects that reference {item}
 
-node type | vocabulary
+node type | vocabulary w/ input type id.
 - remove all field and value references
 - remove {child}
 - remove permissions (perm)
@@ -45,15 +45,15 @@ comment (@todo)
 - remove comment
 - remove fields and field values
 
-image | file | video (media)
+image | file | video (media) - fields only rference these for now.
 - remove {item}
 - remove field values that reference {item}
 - remove any permissions assigned to {item}
 
-user
+user by user id
 - Remove all users content or set to new user?? - option before deletion.
 
-site
+site by site id
 - remove all sites content
 
 
