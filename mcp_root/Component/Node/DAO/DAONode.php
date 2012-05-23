@@ -614,46 +614,293 @@ class MCPDAONode extends MCPDAO {
 	* purgeNodeType. However, for safety reasons any item MUST be deleted before purged.
 	* 
 	* @param mix sinle integer values or array of integer values ( MCP_NODE_TYPES primary key )
-	* 
-	* @todo: support variable binding
 	*/
 	public function deleteNodeTypes($mixNodeTypesId) {
             
-                /*
-                * Delete nodes first
-                * Delete views
-                * Dlete permissions 
-                * Delete fields
-                * Delete types 
-                */
-
-		/*
-		* Node types and nodes will be deleted. Fields and field
-		* values will be kept in tact for now considering they can't
-		* be accessed without the node entry, so it isn't hurting anything
-		* and makes it easier to revert or undelete something that may
-		* have been accidently deleted. The same will hold true for comments.
-		*/
-		$strSQL = sprintf(
-		   'UPDATE 
-			      MCP_NODE_TYPES
-			  LEFT OUTER
-			  JOIN
-			      MCP_NODES
-			    ON
-			      MCP_NODE_TYPES.node_types_id = MCP_NODES.node_types_id
-			   SET
-			      MCP_NODE_TYPES.deleted = NULL
-			     ,MCP_NODES.deleted = NULL
-			 WHERE
-			     MCP_NODE_TYPES.node_types_id IN (%s)'
-			     
-			,is_array($mixNodeTypesId) ? $this->_objMCP->escapeString(implode(',',$mixNodeTypesId)) : $this->_objMCP->escapeString($mixNodeTypesId)
-		);
-		
-		// echo "<p>$strSQL</p>";
-		return $this->_objMCP->query($strSQL);
-		
+            /*
+             * Time used for deletion. Every item deleted will have
+             * the same deleted timestamp.
+             */
+            $time = time();
+            
+            /*
+             * Clean input values to prevent SQL injection considering
+             * variable binding will not be used here because of the IN operator
+             * being used.
+             */
+            $ids = '';
+            if(is_array($mixNodeTypesId)) {
+                foreach($mixNodeTypesId as $id) {
+                    $ids = ','.((int) $id);
+                }
+            } else {
+                $ids = (string) ((int) $mixNodeTypesId);
+            }
+            
+            $ids = trim($ids,',');
+            
+            /*
+            * Collection of queries to execute for deleting node type.
+            */
+            $queries = array();
+            
+            /*
+             * @comments
+             * 
+             * Remove node comments by node type ID.
+             */
+            $queries['comments'] = array(
+                'sql'=>"
+                    UPDATE 
+                         MCP_COMMENTS c
+                     INNER
+                      JOIN
+                         MCP_NODES n
+                        ON
+                         c.comment_types_id = n.nodes_id
+                       AND
+                         c.comment_type = 'node'
+                     INNER
+                      JOIN
+                         MCP_NODE_TYPES t
+                        ON
+                         n.node_types_id = t.node_types_id
+                       SET
+                         c.deleted = NULL
+                        ,c.deleted_on_timestamp = FROM_UNIXTIME(:ts)
+                     WHERE
+                         t.node_types_id IN ($ids)
+                       AND
+                         c.deleted = 0
+                ",
+                'bind'=>array(
+                    ':ts'=> $time
+                )
+            );
+            
+            
+            /*
+             * @role permissions nodes
+             * 
+             * Delete role permissions for nodes of type
+             */
+            $queries['role_perms_node'] = array(
+                'sql'=>"
+                    DELETE p
+                      FROM
+                         MCP_PERMISSIONS_ROLES p
+                     INNER
+                      JOIN
+                         MCP_NODES n
+                        ON
+                         p.item_id = n.nodes_id
+                       AND
+                         p.item_type = 'MCP_NODES'
+                     INNER
+                      JOIN
+                         MCP_NODE_TYPES t
+                        ON
+                         n.node_types_id = t.node_types_id
+                     WHERE
+                         n.node_types_id IN ($ids)
+                ",
+                'bind'=>array()
+            );
+            
+            /*
+             * @user permissions nodes
+             * 
+             * Delete user permissions for nodes of type.
+             */
+            $queries['user_perms_node'] = array(
+                'sql'=>"
+                    DELETE p
+                      FROM
+                         MCP_PERMISSIONS_USERS p
+                     INNER
+                      JOIN
+                         MCP_NODES n
+                        ON
+                         p.item_id = n.nodes_id
+                       AND
+                         p.item_type = 'MCP_NODES'
+                     INNER
+                      JOIN
+                         MCP_NODE_TYPES t
+                        ON
+                         n.node_types_id = t.node_types_id
+                     WHERE
+                         n.node_types_id IN ($ids)
+                 ",
+                'bind'=>array()
+            );
+            
+            /*
+             * @role permissions node type
+             * 
+             * Delete role permissions for node types
+             */
+            $queries['role_perms_node_type'] = array(
+                'sql'=>"
+                    DELETE
+                      FROM
+                         MCP_PERMISSIONS_ROLES
+                     WHERE
+                         item_type = 'MCP_NODE_TYPES'
+                       AND
+                         item_id IN ($ids)
+                ",
+                'bind'=>array()
+            );
+            
+            /*
+             * @user permissions node type
+             * 
+             * Delete permissions for node types
+             */
+            $queries['user_perms_node_type'] = array(
+                'sql'=>"
+                    DELETE
+                      FROM
+                         MCP_PERMISSIONS_USERS
+                     WHERE
+                         item_type = 'MCP_NODE_TYPES'
+                       AND
+                         item_id IN ($ids)
+                ",
+               'bind'=>array()
+            );
+            
+            /*
+             * @fields
+             * @field values
+             * 
+             * Remove fields and field values
+             */
+            $queries['fields'] = array(
+                'sql'=>"
+                    UPDATE
+                         MCP_FIELD_VALUES v
+                     INNER
+                      JOIN
+                         MCP_FIELDS f
+                        ON
+                         v.fields_id = f.fields_id
+                       SET
+                         v.deleted = NULL
+                        ,v.deleted_on_timestamp = FROM_UNIXTIME(:ts1)
+                        ,f.deleted = NULL
+                        ,f.deleted_on_timestamp = FROM_UNIXTIME(:ts2)
+                    WHERE
+                         f.entity_type = 'MCP_NODE_TYPES'
+                      AND
+                         f.entities_id IN ($ids)
+                ",
+                'bind'=>array(
+                    ':ts1'=> $time,
+                    ':ts2'=> $time
+                )
+            );
+            
+            /*
+             * @fields
+             * @field values
+             * 
+             * Remove field and values that reference nodes of types that 
+             * have been deleted
+             */
+            $queries['assoc_fields'] = array(
+                'sql'=>"
+                    UPDATE
+                         MCP_FIELDS f
+                     INNER
+                      JOIN
+                         MCP_FIELD_VALUES v
+                        ON
+                         f.fields_id = v.fields_id
+                       SET
+                         f.deleted = NULL
+                        ,f.deleted_on_timestamp = FROM_UNIXTIME(:ts1)
+                        ,v.deleted = NULL
+                        ,v.deleted_on_timestamp = FROM_UNIXTIME(:ts2)
+                     WHERE
+                         f.db_ref_table = 'MCP_NODES'
+                       AND
+                         f.db_ref_context_id IN ($ids)
+                ",
+                'bind'=>array(
+                    ':ts1'=> $time,
+                    ':ts2'=> $time
+                )
+            );
+            
+            /*
+             * @node
+             * 
+             * Remove nodes of type
+             */
+            $queries['nodes'] = array(
+                'sql'=>"
+                    UPDATE 
+                         MCP_NODES
+                       SET
+                         deleted = NULL
+                        ,deleted_on_timestamp = FROM_UNIXTIME(:ts1)
+                     WHERE
+                         deleted = 0
+                       AND
+                         node_types_id IN ($ids)
+                ",
+                'bind'=>array(
+                    ':ts1'=> $time
+                )
+            );
+            
+            /*
+             * @node type
+             * 
+             * Remove node types
+             */
+            $queries['node_types'] = array(
+                'sql'=>"
+                    UPDATE
+                         MCP_NODE_TYPES
+                       SET
+                         deleted = NULL
+                        ,deleted_on_timestamp = FROM_UNIXTIME(:ts1)
+                     WHERE
+                         deleted = 0
+                       AND
+                         node_types_id IN ($ids)
+                ",
+                'bind'=>array(
+                    ':ts1'=> $time
+                )
+            );
+            
+            // begin transaction
+            $this->_objMCP->begin();
+            
+            try {
+                
+                // run each query
+                foreach($queries as &$query) {
+                    $this->_objMCP->query($query['sql'],$query['bind']);
+                }
+                
+                // commit the transaction
+                $this->_objMCP->commit();
+                
+            } catch(Exception $e) {
+                
+                // rollback the transaction
+                $this->_objMCP->rollback();
+                
+                // throw DAO exception
+                throw new MCPDAOException($e->getMessage());
+                
+            }
+            
 	}
 	
 	/*

@@ -38,10 +38,25 @@ class MCPNodeListType extends MCPModule {
 		// set-up delete event handler
 		$id =& $this->_intActionsId;
 		$dao = $this->_objDAONode;
+                $mcp = $this->_objMCP;
 		
-		$this->_objMCP->subscribe($this,'NODE_TYPE_DELETE',function() use(&$id,$dao)  {
-			// delete the node type
-			$dao->deleteNodeTypes($id);
+		$this->_objMCP->subscribe($this,'NODE_TYPE_DELETE',function() use(&$id,$dao,$mcp)  {
+                    
+                        // delete the node type
+                        try {
+                            
+                            $dao->deleteNodeTypes($id);
+                            $mcp->addSystemStatusMessage(
+                                 'Content type has been successfully deleted.'   
+                            );
+                            
+                        } catch(MCPDAOException $e) {
+                            $mcp->_objMCP->addSystemErrorMessage(
+                                    'An error has occurred attempting to delete content type. Please try again and contact an administrator if error continues.'
+                                    ,$e->getMessage()
+                            );                        
+                        }
+                        
 		});
 	}
 	
