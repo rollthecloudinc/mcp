@@ -86,6 +86,7 @@ DELETE
      item_id IN (...)
 
 // remove views (tricky with tree...)
+// For the time being remove views for tht type ie. Node:6
 -- this probably needs to be a reusable function considering the complexity
 
 // remove fields and field values

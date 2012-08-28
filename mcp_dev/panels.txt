@@ -1,0 +1,7 @@
+MCP implementation of panels
+
+Panels essentially represent a page w/ layout editor and ability to
+specifcy regions that add content (panes) to those regions.
+
+- support arguments just like views
+- a single panel can have many displays

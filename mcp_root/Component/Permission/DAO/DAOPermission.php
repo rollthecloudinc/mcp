@@ -625,7 +625,6 @@ class MCPDAOPermission extends MCPDAO {
             }
             
         }
-	
 }
 
 ?>

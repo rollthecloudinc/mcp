@@ -2,6 +2,14 @@
 // load base XML file to determine path to config and app root directories
 $objBaseXML = simplexml_load_file('base.xml');
 
+/**
+* Dirty hack to get around swapping out config file when
+* using a separate database for a site.
+*/
+if(strcasecmp('local.airsoft-app',$_SERVER['HTTP_HOST']) === 0) {
+	$objBaseXML = simplexml_load_file('base-airsoft-app.xml');
+}
+
 // directory seperator
 define('DS',(string) $objBaseXML->ds);
 

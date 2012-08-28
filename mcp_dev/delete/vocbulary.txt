@@ -1,0 +1,8 @@
+When vcoabulary is deleted all terms in vocabulary need to removed and
+the vocabulary itself. This will include all field, field values and references 
+to terms inside the deleted vocabularies. Unlike deleting a term is safe
+to say that all terms in the vocabulary will be deleted so nothing
+special needs to be done there. The only thing special is getting a list
+of all the term ids in the vocaulary so that any references to them can be removed. or
+actually I don't even thing this is necessary because we can use joins instead. Also, permissions
+for indvidual terms and vocabularies will actually need to be physically deleted from the system.

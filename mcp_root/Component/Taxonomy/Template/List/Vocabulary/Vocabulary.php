@@ -11,7 +11,7 @@ if($allow_create_vocab) {
 	echo $this->ui('Common.Field.Link',array(
 		'url'=>$create_link
 		,'label'=>'Add Vocabulary'
-                ,'class'=>'vocab create'
+                ,'class'=>'vocab create btn success'
 	));
 }
 

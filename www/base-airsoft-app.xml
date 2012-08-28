@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<base>
+	<config>../mcp_config</config>
+	<root>../mcp_root</root>
+	<site>../mcp_site</site>
+	<cache>../mcp_root/Site/airsoft_app/cache</cache>
+	<files>../mcp_root/Site/airsoft_app/files</files>
+	<pkg>.</pkg>
+	<ds>/</ds>
+</base>

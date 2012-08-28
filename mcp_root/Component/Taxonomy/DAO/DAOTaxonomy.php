@@ -522,6 +522,11 @@ class MCPDAOTaxonomy extends MCPDAO {
 	* the tree structure is the takes on a same form and similar dpenedent methods exist.
         * 
         * Important: When deleting terms field references also need to be removed. 
+        * 
+        * Although some other delete methods support sending mutiple ids this will not. The
+        * process is intensive as it is and is better served being broken up. Not to mention
+        * resolving the tree data is a little tricky. Something we don't need to deal with
+        * for other items like nodes. So I am going to leave the signature be.
 	* 
 	* @param int terms id
 	*/
@@ -564,6 +569,33 @@ class MCPDAOTaxonomy extends MCPDAO {
 		foreach($objIds as $intId) {
 			$arrIds[] = $intId;
 		}
+                
+                /**
+                 * Remove any user or role permissions. These will be physically
+                 * deleted from the database considering permissions do not have
+                 * versions.
+                 * 
+                 * I believe we need 2 queries here. On to delete all role permissions
+                 * and the other all user permissions.
+                 */
+                
+                
+                
+                /**
+                 * Remove any field values for terms. This will done using a soft
+                 * delete considering fields provides versioning. In addition,
+                 * terms should be able to be restored.
+                 */
+                
+                /**
+                 * Once all fields have been removed for the term any fields that reference
+                 * terms to be deleted. This is merely a soft delete for any fields that
+                 * reference the term. 
+                 * 
+                 * The edge case here is that it is possible for a field to reference a branch.
+                 * If a field references a single term than the field values associated with
+                 * that field and the field need to be soft deleted.
+                 */
 		
 		/*
 		* Create SQL 

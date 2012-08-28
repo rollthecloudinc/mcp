@@ -176,6 +176,9 @@ class MCPDAOImageCache extends MCPDAO {
 		*/
 		$objImage = imagecreatefromstring($arrImage['image']);
 			
+                // echo "{$this->_objMCP->getImageCachePath()}/cache_$intCachedImagesId.".str_replace('image/','',$arrImage['type']); exit;
+                
+                
 		/*
 		* Write image to new file in image cache directory 
 		*/
