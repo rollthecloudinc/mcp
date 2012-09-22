@@ -283,7 +283,7 @@ class MCPDAOTaxonomy extends MCPDAO {
                 * 
                 * Loose type so that argument can be defined in XML as 0 or 1 
 		*/
-		if($boolR === true) {
+		if($boolR) {
 			foreach($arrTerms as &$arrTerm) {
 				$children = $arrOptions !== null && isset($arrOptions['children'])?$arrOptions['children']:'terms';
                                 $arrTerm[$children] = $this->fetchTerms($arrTerm['tmp_id'],'term',$boolR,$arrOptions);

@@ -27,6 +27,69 @@ class MCPMenuListLink extends MCPModule {
 		
 		// Get menu data access object
 		$this->_objDAOMenu = $this->_objMCP->getInstance('Component.Menu.DAO.DAOMenu',array($this->_objMCP));
+	
+		// set-up delete event handler
+		$id =& $this->_intActionsId;
+		$dao = $this->_objDAOMenu;
+                $mcp = $this->_objMCP;
+		
+		$this->_objMCP->subscribe($this,'MENU_LINK_DELETE',function() use(&$id,$dao,$mcp)  {
+                    
+                        try {        
+                            // delete the link
+                            $dao->deleteLink($id);
+                            // status
+                            $mcp->addSystemStatusMessage('Link and all child links have been sucessfully deleted.');
+                        } catch(MCPDAOException $e) {
+                            // error
+                            $mcp->addSystemErrorMessage('An error has occurred in the process of deleting specified link. No data been affected.');
+                        }
+		});
+		
+		$this->_objMCP->subscribe($this,'MENU_LINK_REMOVE',function() use(&$id,$dao,$mcp)  {
+                        try {
+                            // remove the link
+                            $dao->removeLink($id);
+                            // status
+                            $mcp->addSystemStatusMessage('Link has been sucessfully deleted and children have been moved up one branch.');
+                        } catch(MCPDAOException $e) {
+                            // error
+                            $mcp->addSystemErrorMessage('An error has occurred in the process of removing specified link. No data been affected.');
+                        }
+		});
+		
+	}
+        
+	/*
+	* Handle form submit 
+	*/
+	private function _handleFrm() {
+		
+		/*
+		* Get posted form data 
+		*/
+		$arrPost = $this->_objMCP->getPost('frmLinkList');
+		
+		/*
+		* Route action 
+		*/
+		if($arrPost && isset($arrPost['action']) && !empty($arrPost['action'])) {
+			
+			/*
+			* Get action 
+			*/
+			$strAction = array_pop(array_keys($arrPost['action']));
+			
+			/*
+			* Get links id 
+			*/
+			$this->_intActionsId = array_pop(array_keys(array_pop($arrPost['action'])));
+			
+			/*
+			* Fire event 
+			*/
+			$this->_objMCP->fire($this,"MENU_LINK_".strtoupper($strAction));
+		}
 		
 	}
 	
@@ -125,17 +188,33 @@ class MCPMenuListLink extends MCPModule {
 			// delete link
 			,array(
 				'label'=>'&nbsp;'
-				,'column'=>'menu_link_id'
+				,'column'=>'menu_links_id'
 				,'mutation'=>function($value,$row) use ($mcp) {	
 					return $mcp->ui('Common.Form.Input',array(
 						'value'=>'Delete'
-						,'name'=>"frmMenuLink[$row]"
+						,'name'=>"frmLinkList[action][delete][$value]"
 						,'type'=>'submit'
 						,'disabled'=>!$row['allow_delete']
                                                 ,'class'=>'btn delete'
 					));
 				}
 			)
+                                
+			// remove link
+			,array(
+				'label'=>'&nbsp;'
+				,'column'=>'menu_links_id'
+				,'mutation'=>function($value,$row) use ($mcp) {	
+					return $mcp->ui('Common.Form.Input',array(
+						'value'=>'Remove'
+						,'name'=>"frmLinkList[action][remove][$value]"
+						,'type'=>'submit'
+						,'disabled'=>!$row['allow_delete']
+                                                ,'class'=>'btn delete'
+					));
+				}
+			)
+                                
 		);
 		
 	}
@@ -152,7 +231,12 @@ class MCPMenuListLink extends MCPModule {
 		
 		// Determine if the request is a redirect
 		$this->_strRequest = !empty($arrArgs) && in_array($arrArgs[0],array('Create','Edit','View'))?array_shift($arrArgs):null;
-		
+		              
+		/*
+		* Handle form submit  
+		*/
+		$this->_handleFrm();
+                
 		// Handle internal redirect 
 		$strTpl = 'Link';
 		$this->_arrTemplateData['TPL_REDIRECT_CONTENT'] = '';
@@ -209,6 +293,26 @@ class MCPMenuListLink extends MCPModule {
 		// create new link permissions
 		$perm = $this->_objMCP->getPermission(MCP::ADD,'MenuLink',$arrMenu['menus_id']);
 		$this->_arrTemplateData['allow_link_create'] = $perm['allow'];
+                
+		/*
+		* Form action
+		*/
+		$this->_arrTemplateData['frm_action'] = $this->getBasePath();
+		
+		/*
+		* Form name 
+		*/
+		$this->_arrTemplateData['frm_name'] = 'frmLinkList';
+		
+		/*
+		* Form method 
+		*/
+		$this->_arrTemplateData['frm_method'] = 'POST';
+                
+		/*
+		* Form legend 
+		*/
+		$this->_arrTemplateData['header'] = 'Terms';
 		
 		return "Link/$strTpl.php";
 		

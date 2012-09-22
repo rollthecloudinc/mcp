@@ -16,5 +16,10 @@ echo $this->ui('Common.Listing.Table',array(
 	,'tree'=>true // enable tree support
 	,'child_key'=>'menu_links'
 	,'headers'=>$headers
+	,'form'=>true
+	,'form_legend'=>$header
+	,'form_action'=>$frm_action
+	,'form_method'=>$frm_method
+	,'form_name'=>$frm_name
 ));
 ?> 

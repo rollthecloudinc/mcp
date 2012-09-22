@@ -212,6 +212,66 @@ class MCPDAOMenu extends MCPDAO {
 		
 		
 	}
+        
+	/*
+	* Fetch all links recursive
+	* 
+	* @param int parent id
+	* @param str parent type [menu or link]
+	* @param bool recursive
+	* @param array option set for selecting specific columns, adding filters or changing default sort order
+	* @return array links
+	*/
+	public function fetchLinks($intParentId,$strParentType='menu',$boolR=true,$arrOptions=null) {
+		
+		/*
+		* Build SQL 
+		*/
+		$strSQL = sprintf(
+			"SELECT
+			      m.menu_links_id tmp_id
+                              ,%s
+			   FROM
+			      MCP_MENU_LINKS m
+			  WHERE
+			  	  %s
+			      m.parent_id %s
+			      %s
+			      %s"
+			,$arrOptions !== null && isset($arrOptions['select'])?$arrOptions['select']:'m.*'
+			
+			,strcasecmp('menu',$strParentType) === 0?"m.menus_id = ".((int) $intParentId)." AND ":''
+			,strcasecmp('menu',$strParentType) === 0?'IS NULL':" = ".((int) $intParentId)
+			
+			,$arrOptions !== null && isset($arrOptions['filter'])?"AND {$arrOptions['filter']}":''
+			,$arrOptions !== null && isset($arrOptions['sort'])?"ORDER BY {$arrOptions['sort']}":''
+		);
+		
+                // $this->_objMCP->debug(var_dump($boolR,true));
+		
+		/*
+		* Fetch links 
+		*/
+		$arrLinks = $this->_objMCP->query($strSQL);
+                
+                // echo '<pre>'.print_r($arrTerms,true).'</pre>';
+		
+		/*
+		* Recure 
+                * 
+                * Loose type so that argument can be defined in XML as 0 or 1 
+		*/
+		if($boolR) {
+			foreach($arrLinks as &$arrLink) {
+				$children = $arrOptions !== null && isset($arrOptions['children'])?$arrOptions['children']:'links';
+                                $arrLink[$children] = $this->fetchLinks($arrLink['tmp_id'],'link',$boolR,$arrOptions);
+                                unset($arrLink['tmp_id']);
+			}
+                }
+		
+		return $arrLinks;	
+		
+	}
 	
 	/*
 	* Get single menu by id
@@ -550,7 +610,276 @@ class MCPDAOMenu extends MCPDAO {
 		}
 		
 	}
+        
+        /**
+         * Delete a link
+         * 
+         * Removes link and all children.
+         * 
+         * @param int link id
+         */
+        public function deleteLink($intLinksId) {
+
+                $queries = $this->_makeDeleteLinkQueries($intLinksId);
+                
+                // start transaction
+                $this->_objMCP->begin();
+
+                try {
+
+                    // run each query
+                    foreach($queries as &$query) {
+                        $this->_objMCP->query($query['sql'],$query['bind']);
+                    }
+
+                    // commit the transaction
+                    $this->_objMCP->commit();
+
+                } catch(Exception $e) {
+
+                    // rollback the transaction
+                    $this->_objMCP->rollback();
+
+                    // throw DAO exception
+                    throw new MCPDAOException($e->getMessage());
+
+                }
+            
+        }
+        
+        /**
+         * Remove a link
+         * 
+         * Remove will delete the single link moving all
+         * direct children up one branch in the menu tree.
+         * 
+         * @param int links id
+         */
+        public function removeLink($intLinksId) {
+
+		/*
+		* Get links data 
+		*/
+		$arrTarget = $this->fetchLinkById($intLinksId);
+		
+		/*
+		* Get targets children
+		*/
+		$arrChildren = $this->fetchLinks($arrTarget['menu_links_id'],'link',false,array(
+			'filter'=>'m.deleted = 0'
+		));
+           
+		
+		/*
+		* Get targets siblings
+		*/
+		$arrLinks = $this->fetchLinks(($arrTarget['parent_id'] === null?$arrTarget['menus_id']:$arrTarget['parent_id']),($arrTarget['parent_id'] === null?'menu':'link'),false,array(
+			'filter'=>'m.deleted = 0'
+		));
+		
+		/*
+		* reorder array 
+		*/
+		$arrIds = array();
+		
+		foreach($arrLinks as $arrLink) {
+			
+			/*
+			* Replace links position with children 
+			*/
+			if($arrLink['menu_links_id'] == $arrTarget['menu_links_id']) {
+				foreach($arrChildren as $arrChild) {
+					$arrIds[] = $arrChild['menu_links_id'];
+				}
+				continue;	
+			}
+			
+			$arrIds[] = $arrLink['menu_links_id'];
+		}
+		
+		/*
+		* Build update 
+		*/
+		$arrUpdate = array();
+		foreach($arrIds as $intIndex=>$intId) {
+			$arrUpdate[] = sprintf(
+				"(%s,%s,%s)"
+				,$this->_objMCP->escapeString($intId)
+				,$arrTarget['parent_id'] === null?'NULL':$this->_objMCP->escapeString($arrTarget['parent_id'])
+				,$this->_objMCP->escapeString($intIndex)
+			);
+		}
+		
+		/*
+		* Build update query 
+		*/
+		$strSQL = sprintf(
+			'INSERT IGNORE INTO MCP_MENU_LINKS (menu_links_id,parent_id,weight) VALUES %s ON DUPLICATE KEY UPDATE parent_id=VALUES(parent_id),weight=VALUES(weight)'
+			,implode(',',$arrUpdate)
+		);
+                
+                // start transaction
+                $this->_objMCP->begin();
+
+                try {
+                    
+                    /**
+                     * When this query is ran the target term will not have any child terms Therefore,
+                     * it is completely safe to merely delete the term afterwards.
+                     */
+                    if(!empty($arrUpdate)) {
+                        $this->_objMCP->query($strSQL);
+                    }
+                    
+                    /**
+                     * Get delete queries (must be ran after updating the direct children)
+                     */
+                    $queries = $this->_makeDeleteLinkQueries($intLinksId);
+
+                    // run each query
+                    foreach($queries as &$query) {
+                        $this->_objMCP->query($query['sql'],$query['bind']);
+                    }
+
+                    // commit the transaction
+                    $this->_objMCP->commit();
+
+                } catch(Exception $e) {
+
+                    // rollback the transaction
+                    $this->_objMCP->rollback();
+
+                    // throw DAO exception
+                    throw new MCPDAOException($e->getMessage());
+
+                }
+		
+		return 1;
+            
+        }
 	
+        
+        /**
+         * Get collection of queries that will be used to delete a single
+         * link. This will include queries used to delete all children and
+         * permissions when a target term is deleted.
+         * 
+         * @param in links id
+         * @return array
+         */
+        protected function _makeDeleteLinkQueries($intLinksId) {
+            
+		/*
+		* Get links data 
+		*/
+		$arrTarget = $this->fetchLinkById($intLinksId);
+		
+		/*
+		* Get all child links 
+		*/
+		$arrLinks = $this->fetchLinks($arrTarget['menu_links_id'],'link',true,array(
+			'filter'=>'m.deleted = 0'
+		));
+		
+		$objIds = new ArrayObject(array($arrTarget['menu_links_id']));
+		
+		/*
+		* recursive function to collect all child term ids 
+		*/
+		$func = create_function('$value,$index,$ids','if(strcmp(\'menu_links_id\',$index) == 0) $ids[] = $value;');
+		
+		/*
+		* Collect all child ids 
+		*/
+		array_walk_recursive($arrLinks,$func,$objIds);
+		
+		/*
+		* Collect ids into normal array to use implode 
+		*/
+		$arrIds = array();
+		foreach($objIds as $intId) {
+			$arrIds[] = (int) $intId;
+		}
+                
+                /*
+                * All rows deleted in this transaction will share
+                * the same timestamp. This will provide ease of
+                * debugging and tracking what has been deleted.    
+                */
+                $time = time();
+                
+                /**
+                 * Create string to embed in SQL
+                 */
+                $ids = implode(',',$arrIds);
+                
+                /**
+                 * Collection of queries to run.
+                 */
+                $queries = array();
+                
+                /**
+                 * Delete menu link role and user permissions
+                 */
+                $queries['user_perms'] = array(
+                    'sql'=> "
+                        DELETE
+                          FROM
+                             MCP_PERMISSIONS_USERS
+                         WHERE
+                             item_type = 'MCP_MENU_LINK'
+                           AND
+                             item_id IN (".$ids.")
+                     ",
+                    'bind'=> array()
+                );
+
+                $queries['role_perms'] = array(
+                    'sql'=> "
+                        DELETE
+                          FROM
+                             MCP_PERMISSIONS_ROLES
+                         WHERE
+                             item_type = 'MCP_MENU_LINK'
+                           AND
+                             item_id IN (".$ids.")
+                     ",
+                    'bind'=> array()
+                );
+
+                /**
+                 * Delete links
+                 */
+                $queries['links'] = array(
+                    'sql'=> "
+                        UPDATE 
+                              MCP_MENU_LINKS m
+                           SET
+                              m.deleted = NULL
+                             ,m.deleted_on_timestamp = :ts1
+                         WHERE
+                             m.menu_links_id IN (".$ids.")
+                    ",
+                    'bind'=> array(
+                         ':ts1'=> $time
+                    )
+                );
+                
+                return $queries;
+            
+        }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        /**
+         * Testing datasource
+         */
 	public function testDatasource() {
 		/*return array(
 			array(

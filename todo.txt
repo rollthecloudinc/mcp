@@ -112,5 +112,18 @@ Top priority
 - Video support and field integration
 - Implement purge
 - Install Routine
-     
+- Investigate a better way to handle assets. The way it is being done right now is quit terrible.
+- fields that have mutiple colomns. Essentially store other data. This can in theory be accomplished
+  using contextual fields which reference some table. However, that does not really make it possible
+  to create these types of fields through the admin ui.
+- component grouped configuration - support configuration for component. Probably best to allow
+  write Modules where there is a special module that indicates the component defaults or something. That
+  way we can keep the existing functionality.
+
+  -- site config
+  -- component config (global)
+  -- module config (change per physical page assignment)
   
+- mobile, tablet and desktop admin theming. This will most likely be done using ress. I would
+also like to remove bootstrap and create by own css for the theming more or less mimicking
+what is kinda going on in spark.
