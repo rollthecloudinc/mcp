@@ -73,15 +73,31 @@ class MCPTaxonomyTreeTerm extends MCPModule {
 		// set-up delete event handler
 		$id =& $this->_intActionsId;
 		$dao = $this->_objDAOTaxonomy;
+                $mcp = $this->_objMCP;
 		
-		$this->_objMCP->subscribe($this,'TERM_DELETE',function() use(&$id,$dao)  {
-			// delete the term
-			$dao->deleteTerm($id);
+		$this->_objMCP->subscribe($this,'TERM_DELETE',function() use(&$id,$dao,$mcp)  {
+                    
+                        try {        
+                            // delete the term
+                            $dao->deleteTerm($id);
+                            // status
+                            $mcp->addSystemStatusMessage('Term and all child terms have been sucessfully deleted.');
+                        } catch(MCPDAOException $e) {
+                            // error
+                            $mcp->addSystemErrorMessage('An error has occurred in the process of deleting specified term. No data been affected.');
+                        }
 		});
 		
-		$this->_objMCP->subscribe($this,'TERM_REMOVE',function() use(&$id,$dao)  {
-			// remove the term
-			$dao->removeTerm($id);
+		$this->_objMCP->subscribe($this,'TERM_REMOVE',function() use(&$id,$dao,$mcp)  {
+                        try {
+                            // remove the term
+                            $dao->removeTerm($id);
+                            // status
+                            $mcp->addSystemStatusMessage('Term has been sucessfully deleted and children have been moved up one branch.');
+                        } catch(MCPDAOException $e) {
+                            // error
+                            $mcp->addSystemErrorMessage('An error has occurred in the process of removing specified term. No data been affected.');
+                        }
 		});
 	
 	}
@@ -306,6 +322,11 @@ class MCPTaxonomyTreeTerm extends MCPModule {
 		* Form method 
 		*/
 		$this->_arrTemplateData['frm_method'] = 'POST';
+                
+		/*
+		* Form legend 
+		*/
+		$this->_arrTemplateData['header'] = 'Terms';
                 
                 /*
                 * Table headers 

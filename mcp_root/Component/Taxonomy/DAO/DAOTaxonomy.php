@@ -531,7 +531,186 @@ class MCPDAOTaxonomy extends MCPDAO {
 	* @param int terms id
 	*/
 	public function deleteTerm($intTermsId) {
+            
+                $queries = $this->_makeDeleteTermQueries($intTermsId); 
+                
+                // start transaction
+                $this->_objMCP->begin();
+
+                try {
+
+                    // run each query
+                    foreach($queries as &$query) {
+                        $this->_objMCP->query($query['sql'],$query['bind']);
+                    }
+
+                    // commit the transaction
+                    $this->_objMCP->commit();
+
+                } catch(Exception $e) {
+
+                    // rollback the transaction
+                    $this->_objMCP->rollback();
+
+                    // throw DAO exception
+                    throw new MCPDAOException($e->getMessage());
+
+                }
 		
+	}
+	
+	/*
+	* Delete single term and move its children up one level
+	* 
+	* NOTE: This code is pretty much swipped from the removeLink method
+	* inside the navigation DAO. It is pretty much the same process considering
+	* the tree structure is the takes on a same form and similar dpenedent methods exist.
+	* 
+	* @param int terms id
+	*/
+	public function removeTerm($intTermsId) {
+		
+		/*
+		* Get terms data 
+		*/
+		$arrTarget = $this->fetchTermById($intTermsId);
+		
+		/*
+		* Get targets children
+		*/
+		$arrChildren = $this->fetchTerms($arrTarget['terms_id'],'term',false,array(
+			'filter'=>'t.deleted = 0'
+		));
+		
+		/*
+		* Get targets siblings
+		*/
+		$arrTerms = $this->fetchTerms(($arrTarget['parent_id'] === null?$arrTarget['vocabulary_id']:$arrTarget['parent_id']),($arrTarget['parent_id'] === null?'vocabulary':'term'),false,array(
+			'filter'=>'t.deleted = 0'
+		));
+		
+		/*
+		* reorder array 
+		*/
+		$arrIds = array();
+		
+		foreach($arrTerms as $arrTerm) {
+			
+			/*
+			* Replace terms position with children 
+			*/
+			if($arrTerm['terms_id'] == $arrTarget['terms_id']) {
+				foreach($arrChildren as $arrChild) {
+					$arrIds[] = $arrChild['terms_id'];
+				}
+				continue;	
+			}
+			
+			$arrIds[] = $arrTerm['terms_id'];
+		}
+		
+		/*
+		* Build update 
+		*/
+		$arrUpdate = array();
+		foreach($arrIds as $intIndex=>$intId) {
+			$arrUpdate[] = sprintf(
+				"(%s,%s,%s)"
+				,$this->_objMCP->escapeString($intId)
+				,$arrTarget['parent_id'] === null?'NULL':$this->_objMCP->escapeString($arrTarget['parent_id'])
+				,$this->_objMCP->escapeString($intIndex)
+			);
+		}
+		
+		/*
+		* Build update query 
+		*/
+		$strSQL = sprintf(
+			'INSERT IGNORE INTO MCP_TERMS (terms_id,parent_id,weight) VALUES %s ON DUPLICATE KEY UPDATE parent_id=VALUES(parent_id),weight=VALUES(weight)'
+			,implode(',',$arrUpdate)
+		);
+                
+                // start transaction
+                $this->_objMCP->begin();
+
+                try {
+                    
+                    /**
+                     * When this query is ran the target term will not have any child terms Therefore,
+                     * it is completely safe to merely delete the term afterwards.
+                     */
+                    if(!empty($arrUpdate)) {
+                        $this->_objMCP->query($strSQL);
+                    }
+                    
+                    /**
+                     * Get delete queries (must be ran after updating the direct children)
+                     */
+                    $queries = $this->_makeDeleteTermQueries($intTermsId);
+
+                    // run each query
+                    foreach($queries as &$query) {
+                        $this->_objMCP->query($query['sql'],$query['bind']);
+                    }
+
+                    // commit the transaction
+                    $this->_objMCP->commit();
+
+                } catch(Exception $e) {
+
+                    // rollback the transaction
+                    $this->_objMCP->rollback();
+
+                    // throw DAO exception
+                    throw new MCPDAOException($e->getMessage());
+
+                }
+		
+		return 1;
+		
+	}
+	
+	/*
+	* Get cached term
+	* 
+	* @param in terms id
+	* @return array term data
+	*/
+	private function _getCachedTerm($intId) {
+		return $this->_objMCP->getCacheDataValue("term_{$intId}",$this->getPkg());
+	}
+	
+	/*
+	* Set cached term
+	* 
+	* @param int terms id
+	* @return bool
+	*/
+	private function _setCachedTerm($intId) {
+		
+		/*
+		* Get current snapshot 
+		*/
+		$arrTerm = $this->fetchTermById($intId,false);
+		
+		/*
+		* Update the cache value 
+		*/
+		return $this->_objMCP->setCacheDataValue("term_{$intId}",$arrTerm,$this->getPkg());
+		
+	}
+        
+        /**
+         * Get collection of queries that will be used to delete a single
+         * term. This will include queries used to delete all children and
+         * permissions, fields and values which become invalid when a target
+         * term is deleted.
+         * 
+         * @param in terms id
+         * @return array
+         */
+        protected function _makeDeleteTermQueries($intTermsId) {
+            
 		/*
 		* Get terms data 
 		*/
@@ -567,189 +746,167 @@ class MCPDAOTaxonomy extends MCPDAO {
 		*/
 		$arrIds = array();
 		foreach($objIds as $intId) {
-			$arrIds[] = $intId;
+			$arrIds[] = (int) $intId;
 		}
+                
+                /*
+                * All rows deleted in this transaction will share
+                * the same timestamp. This will provide ease of
+                * debugging and tracking what has been deleted.    
+                */
+                $time = time();
+                
+                /**
+                 * Create string to embed in SQL
+                 */
+                $ids = implode(',',$arrIds);
+                
+                /**
+                 * Collection of queries to run.
+                 */
+                $queries = array();
                 
                 /**
                  * Remove any user or role permissions. These will be physically
                  * deleted from the database considering permissions do not have
                  * versions.
                  * 
-                 * I believe we need 2 queries here. On to delete all role permissions
+                 * I believe we need 2 queries here. One to delete all role permissions
                  * and the other all user permissions.
                  */
+                $queries['user_perms'] = array(
+                    'sql'=> "
+                        DELETE
+                          FROM
+                             MCP_PERMISSIONS_USERS
+                         WHERE
+                             item_type = 'MCP_TERMS'
+                           AND
+                             item_id IN (".$ids.")
+                     ",
+                    'bind'=> array()
+                );
+
+                $queries['role_perms'] = array(
+                    'sql'=> "
+                        DELETE
+                          FROM
+                             MCP_PERMISSIONS_ROLES
+                         WHERE
+                             item_type = 'MCP_TERMS'
+                           AND
+                             item_id IN (".$ids.")
+                     ",
+                    'bind'=> array()
+                );
                 
-                
+               /**
+                * @field values virtual foreign key references
+                *  
+                * Soft delete any fields that reference term(s) through a virual foreign key. Term
+                * references will be restorable in case of accidental removal of a term.
+                * 
+                * Unlike similiar queries fields can also reference a single branch of
+                * the vocabulary tree. Therefore, it is also necessary to delete any
+                * values that belong to a field that references a branch where the root
+                * is a term that is being deleted. This is specified by a context type
+                * of term_child where the context_id referenes the highest level item.
+                */
+                $queries['field_fks'] = array(
+                    'sql'=> "
+                       UPDATE
+                            MCP_FIELD_VALUES v
+                        INNER
+                         JOIN
+                            MCP_FIELDS f
+                           ON
+                            v.fields_id = f.fields_id
+                          AND
+                            f.deleted = 0
+                          SET
+                            v.deleted = NULL
+                           ,v.deleted_on_timestamp = FROM_UNIXTIME(:ts1)
+                        WHERE
+                            v.deleted = 0
+                          AND
+                            ((f.db_ref_context = 'term'      AND v.db_int IN (".$ids."))
+                           OR
+                            (f.db_ref_context = 'term_child' AND f.db_ref_context_id IN (".$ids.")))
+                     ",
+                    'bind'=> array(
+                        ':ts1'=> $time
+                    )
+                );
                 
                 /**
-                 * Remove any field values for terms. This will done using a soft
-                 * delete considering fields provides versioning. In addition,
-                 * terms should be able to be restored.
+                 * Delete fields that reference branches of the vocabulary.
                  */
+                $queries['child_fields'] = array(
+                    'sql'=> "
+                        UPDATE
+                             MCP_FIELDS f
+                           SET
+                              f.deleted = NULL
+                             ,f.deleted_on_timestamp = :ts1
+                         WHERE
+                              f.deleted = 0
+                            AND
+                              f.db_ref_context = 'term_child'
+                            AND
+                              f.db_ref_context_id IN (".$ids.")
+                    ",
+                    'bind'=> array(
+                        ':ts1'=> $time
+                    )
+                );
                 
-                /**
-                 * Once all fields have been removed for the term any fields that reference
-                 * terms to be deleted. This is merely a soft delete for any fields that
-                 * reference the term. 
-                 * 
-                 * The edge case here is that it is possible for a field to reference a branch.
-                 * If a field references a single term than the field values associated with
-                 * that field and the field need to be soft deleted.
-                 */
-		
-		/*
-		* Create SQL 
-		* 
-		* @todo: convert to variable binding
-		*/
-		$strSQL = sprintf(
-			'UPDATE
-			       MCP_TERMS
-			    SET
-			       MCP_TERMS.deleted = NULL
-			  WHERE
-			       MCP_TERMS.terms_id IN (%s)'
-			,$this->_objMCP->escapeString(implode(',',$arrIds))
-		);
-		
-		// echo "<p>$strSQL<p>";
-		return $this->_objMCP->query($strSQL);
-		
-	}
-	
-	/*
-	* Delete single term and move its children up one level
-	* 
-	* NOTE: This code is pretty much swipped from the removeLink method
-	* inside the navigation DAO. It is pretty much the same process considering
-	* the tree structure is the takes on a same form and similar dpenedent methods exist.
-	* 
-	* @todo: convert to variable binding
-	* 
-	* @param int terms id
-	*/
-	public function removeTerm($intTermsId) {
-		
-		/*
-		* Get terms data 
-		*/
-		$arrTarget = $this->fetchTermById($intTermsId);
-		
-		/*
-		* Get targets children
-		*/
-		$arrChildren = $this->fetchTerms($arrTarget['terms_id'],'term',false,array(
-			'filter'=>'t.deleted = 0'
-		));
-		
-		/*
-		* Get targets siblings
-		*/
-		$arrTerms = $this->fetchTerms($arrTarget['parent_id'],($arrTarget['parent_id'] === null?'vocabulary':'term'),false,array(
-			'filter'=>'t.deleted = 0'
-		));
-		
-		/*
-		* @todo: when fetchTerms is converted to variable binding update this
-		* method as appropriate to be compatible with change to fetchTerms
-		* signature that supports variable binding.
-		*/ 
-		
-		/*
-		* reorder array 
-		*/
-		$arrIds = array();
-		
-		foreach($arrTerms as $arrTerm) {
-			
-			/*
-			* Replace links position with children 
-			*/
-			if($arrTerm['terms_id'] == $arrTarget['terms_id']) {
-				foreach($arrChildren as $arrChild) {
-					$arrIds[] = $arrChild['terms_id'];
-				}
-				continue;	
-			}
-			
-			$arrIds[] = $arrTerm['terms_id'];
-		}
-		
-		/*
-		* Build update 
-		*/
-		$arrUpdate = array();
-		foreach($arrIds as $intIndex=>$intId) {
-			$arrUpdate[] = sprintf(
-				"(%s,%s,'%s',%s)"
-				,$this->_objMCP->escapeString($intId)
-				,$this->_objMCP->escapeString($arrTarget['parent_id'])
-				,$this->_objMCP->escapeString($intIndex)
-			);
-		}
-		
-		/*
-		* Build update query 
-		*/
-		$strSQL = sprintf(
-			'INSERT IGNORE INTO MCP_TERMS (terms_id,parent_id,weight) VALUES %s ON DUPLICATE KEY UPDATE parent_id=VALUES(parent_id),weight=VALUES(weight)'
-			,implode(',',$arrUpdate)
-		);
-		
-		/*
-		* Create delete query (soft-delete)
-		*/
-		$strSQLDelete = sprintf(
-			'UPDATE 
-			      MCP_TERMS
-			    SET 
-			      MCP_TERMS.deleted = NULL 
-			  WHERE 
-			      MCP_TERMS.terms_id = %s'
-			,$this->_objMCP->escapeString($arrTarget['terms_id'])
-		);
-		
-		/*
-		* Delete link and update children 
-		*/
-		$this->_objMCP->query($strSQLDelete);
-		$this->_objMCP->query($strSQL);
-		// echo "<p>$strSQLDelete</p>";
-		// echo "<p>$strSQL</p>";
-		
-		return 1;
-		
-	}
-	
-	/*
-	* Get cached term
-	* 
-	* @param in terms id
-	* @return array term data
-	*/
-	private function _getCachedTerm($intId) {
-		return $this->_objMCP->getCacheDataValue("term_{$intId}",$this->getPkg());
-	}
-	
-	/*
-	* Set cached term
-	* 
-	* @param int terms id
-	* @return bool
-	*/
-	private function _setCachedTerm($intId) {
-		
-		/*
-		* Get current snapshot 
-		*/
-		$arrTerm = $this->fetchTermById($intId,false);
-		
-		/*
-		* Update the cache value 
-		*/
-		return $this->_objMCP->setCacheDataValue("term_{$intId}",$arrTerm,$this->getPkg());
-		
-	}
+                /*
+                * @field values
+                * @term
+                *  
+                * Soft delete term(s) and field values. Both term(s) and field values will be 
+                * fully restorable just in case of accidental deletion.
+                */
+
+                $queries['terms'] = array(
+                    'sql'=> "
+                        UPDATE
+                             MCP_TERMS t
+                          LEFT OUTER
+                          JOIN 
+                             MCP_FIELDS f
+                            ON
+                             t.vocabulary_id = f.entities_id
+                           AND
+                             f.entity_type = 'MCP_VOCABULARY'
+                           AND
+                             f.deleted = 0
+                          LEFT OUTER
+                          JOIN
+                             MCP_FIELD_VALUES v
+                            ON
+                             f.fields_id = v.fields_id
+                           AND
+                             t.terms_id = v.rows_id
+                           AND
+                             v.deleted = 0
+                           SET
+                              t.deleted = NULL
+                             ,t.deleted_on_timestamp = FROM_UNIXTIME(:ts1)
+                             ,v.deleted = NULL
+                             ,v.deleted_on_timestamp = FROM_UNIXTIME(:ts2)
+                         WHERE
+                             t.terms_id IN (".$ids.")
+                    ",
+                    'bind'=> array(
+                         ':ts1'=> $time
+                        ,':ts2'=> $time
+                    )
+                );
+                
+                return $queries;
+            
+        }
 	
 }
 ?>
