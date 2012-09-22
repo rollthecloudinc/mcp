@@ -1,0 +1,11 @@
+The views component is inspired by Drupal views. It will effectively attempt
+to recreate the functionality of views. One significant advantage will be
+data will be stored accross mutiple tables in a proper normalized format
+without serialization. In addition, views will be able to be used by any
+entity within the system that has a schema defined. At least that is the intended 
+goal.
+
+Up to this point views has been partially implemented. Views function for
+nodes and nothing else though yet. Also, there is not admin UI yet. The admin
+UI has be built. However, if you enter data directly into the db properly the
+functionality does exist for nodes.

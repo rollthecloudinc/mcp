@@ -723,12 +723,6 @@ class MCPDAOTaxonomy extends MCPDAO {
 			'filter'=>'t.deleted = 0'
 		));
 		
-		/*
-		* @todo: when fetchTerms is converted to variable binding update this
-		* method as appropriate to be compatible with change to fetchTerms
-		* signature that supports variable binding.
-		*/ 
-		
 		$objIds = new ArrayObject(array($arrTarget['terms_id']));
 		
 		/*
