@@ -123,6 +123,11 @@ Top priority
   -- site config
   -- component config (global)
   -- module config (change per physical page assignment)
+
+
+- intelligent form builder - i hate the way forms are handled, especially the way they are rendered. The idea
+  will be create a separate form layer and be able to load a config into it. Well the framework
+  will supply a bride for taking a standard form config and coverting it to an actual form object.
   
 - mobile, tablet and desktop admin theming. This will most likely be done using ress. I would
 also like to remove bootstrap and create by own css for the theming more or less mimicking

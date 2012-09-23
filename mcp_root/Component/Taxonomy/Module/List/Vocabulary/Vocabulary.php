@@ -40,10 +40,20 @@ class MCPTaxonomyListVocabulary extends MCPModule {
 		// set-up delete event handler
 		$id =& $this->_intActionsId;
 		$dao = $this->_objDAOTaxonomy;
+                $mcp = $this->_objMCP;
 		
-		$this->_objMCP->subscribe($this,'VOCABULARY_DELETE',function() use(&$id,$dao)  {
-			// delete the vocabulary
-			$dao->deleteVocabulary($id);
+		$this->_objMCP->subscribe($this,'VOCABULARY_DELETE',function() use(&$id,$dao,$mcp)  {
+                        try {
+                            // delete the vocabulary
+                            $dao->deleteVocabulary($id);
+                            // status
+                            $mcp->addSystemStatusMessage('Vocabulary has been successfully deleted.');
+                        } catch(MCPDAOException $e) {
+                            $mcp->addSystemErrorMessage(
+                                    'An error has occurred attempting to delete vocabulary. Please try again and contact an administrator if error continues.'
+                                    ,$e->getMessage()
+                            ); 
+                        }
 		});
 	
 	}

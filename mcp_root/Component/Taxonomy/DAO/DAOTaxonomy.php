@@ -497,20 +497,299 @@ class MCPDAOTaxonomy extends MCPDAO {
 	* @todo: convert to variable binding
 	*/
 	public function deleteVocabulary($mixVocabularyId) {
-		
-		$strSQL = sprintf(
-			'UPDATE
-			      MCP_VOCABULARY
-			    SET
-			      MCP_VOCABULARY.deleted = NULL
-			  WHERE
-			      MCP_VOCABULARY.vocabulary_id IN (%s)'
-			      
-			,is_array($mixVocabularyId) ? $this->_objMCP->escapeString(implode(',',$mixVocabularyId)) : $this->_objMCP->escapeString($mixVocabularyId)
-		);
-		
-		// echo "<p>$strSQL</p>";
-		return $this->_objMCP->query($strSQL);
+            
+            /*
+             * Time used for deletion. Every item deleted will have
+             * the same deleted timestamp.
+             */
+            $time = time();
+            
+            /*
+             * Clean input values to prevent SQL injection considering
+             * variable binding will not be used here because of the IN operator
+             * being used.
+             */
+            $ids = '';
+            if(is_array($mixVocabularyId)) {
+                foreach($mixVocabularyId as $id) {
+                    $ids = ','.((int) $id);
+                }
+            } else {
+                $ids = (string) ((int) $mixVocabularyId);
+            }
+            
+            $ids = trim($ids,',');
+            
+            /*
+            * Collection of queries to execute for deleting vocabulary.
+            */
+            $queries = array();
+            
+            
+            /*
+             * @role permissions terms
+             * 
+             * Delete role permissions for terms in vocabulary
+             */
+            $queries['role_perms_term'] = array(
+                'sql'=>"
+                    DELETE p
+                      FROM
+                         MCP_PERMISSIONS_ROLES p
+                     INNER
+                      JOIN
+                         MCP_TERMS t
+                        ON
+                         p.item_id = t.terms_id
+                       AND
+                         p.item_type = 'MCP_TERMS'
+                     INNER
+                      JOIN
+                         MCP_VOCABULARY v
+                        ON
+                         t.vocabulary_id = v.vocabulary_id
+                     WHERE
+                         v.vocabulary_id IN ($ids)
+                ",
+                'bind'=>array()
+            );
+            
+            /*
+             * @user permissions terms
+             * 
+             * Delete user permissions for terms in vocabulary.
+             */
+            $queries['user_perms_term'] = array(
+                'sql'=>"
+                    DELETE p
+                      FROM
+                         MCP_PERMISSIONS_USERS p
+                     INNER
+                      JOIN
+                         MCP_TERMS t
+                        ON
+                         p.item_id = t.terms_id
+                       AND
+                         p.item_type = 'MCP_TERMS'
+                     INNER
+                      JOIN
+                         MCP_VOCABULARY v
+                        ON
+                         t.vocabulary_id = v.vocabulary_id
+                     WHERE
+                         v.vocabulary_id IN ($ids)
+                 ",
+                'bind'=>array()
+            );
+            
+            /*
+             * @role permissions vocabulary
+             * 
+             * Delete role permissions for vocabulary
+             */
+            $queries['role_perms_vocabulary'] = array(
+                'sql'=>"
+                    DELETE
+                      FROM
+                         MCP_PERMISSIONS_ROLES
+                     WHERE
+                         item_type = 'MCP_VOCABULARY'
+                       AND
+                         item_id IN ($ids)
+                ",
+                'bind'=>array()
+            );
+            
+            /*
+             * @user permissions vocabulary
+             * 
+             * Delete permissions for vocabulary
+             */
+            $queries['user_perms_vocabulary'] = array(
+                'sql'=>"
+                    DELETE
+                      FROM
+                         MCP_PERMISSIONS_USERS
+                     WHERE
+                         item_type = 'MCP_VOCABULARY'
+                       AND
+                         item_id IN ($ids)
+                ",
+               'bind'=>array()
+            );
+            
+            /*
+             * @fields
+             * @field values
+             * 
+             * Remove fields and field values
+             */
+            $queries['fields'] = array(
+                'sql'=>"
+                    UPDATE
+                         MCP_FIELD_VALUES v
+                     INNER
+                      JOIN
+                         MCP_FIELDS f
+                        ON
+                         v.fields_id = f.fields_id
+                       SET
+                         v.deleted = NULL
+                        ,v.deleted_on_timestamp = FROM_UNIXTIME(:ts1)
+                        ,f.deleted = NULL
+                        ,f.deleted_on_timestamp = FROM_UNIXTIME(:ts2)
+                    WHERE
+                         f.entity_type = 'MCP_VOCABULARY'
+                      AND
+                         f.entities_id IN ($ids)
+                ",
+                'bind'=>array(
+                    ':ts1'=> $time,
+                    ':ts2'=> $time
+                )
+            );
+            
+            /*
+             * @fields
+             * @field values
+             * 
+             * Remove field and values that reference terms in vocabulary that 
+             * have been deleted
+             */
+            $queries['assoc_fields'] = array(
+                'sql'=>"
+                    UPDATE
+                         MCP_FIELDS f
+                     INNER
+                      JOIN
+                         MCP_FIELD_VALUES v
+                        ON
+                         f.fields_id = v.fields_id
+                       SET
+                         f.deleted = NULL
+                        ,f.deleted_on_timestamp = FROM_UNIXTIME(:ts1)
+                        ,v.deleted = NULL
+                        ,v.deleted_on_timestamp = FROM_UNIXTIME(:ts2)
+                     WHERE
+                         f.db_ref_table = 'MCP_TERMS'
+                       AND
+                         f.db_ref_context = 'term'
+                       AND
+                         f.db_ref_context_id IN ($ids)
+                ",
+                'bind'=>array(
+                    ':ts1'=> $time,
+                    ':ts2'=> $time
+                )
+            );
+            
+            /*
+             * @fields
+             * @field values
+             * 
+             * Remove field and values that reference term branch in vocabulary that 
+             * have been deleted
+             */
+            $queries['assoc_fields_branch'] = array(
+                'sql'=>"
+                    UPDATE
+                         MCP_TERMS t
+                     INNER
+                      JOIN
+                         MCP_FIELDS f
+                        ON
+                         t.terms_id = f.db_ref_context_id
+                       AND
+                         f.db_ref_context = 'term_child'
+                     INNER
+                      JOIN
+                         MCP_FIELD_VALUES v
+                        ON
+                         f.fields_id = v.fields_id
+                       SET
+                         f.deleted = NULL
+                        ,f.deleted_on_timestamp = FROM_UNIXTIME(:ts1)
+                        ,v.deleted = NULL
+                        ,v.deleted_on_timestamp = FROM_UNIXTIME(:ts2)
+                     WHERE
+                         f.db_ref_context_id IN ($ids)
+                ",
+                'bind'=>array(
+                    ':ts1'=> $time,
+                    ':ts2'=> $time
+                )
+            );
+            
+            /*
+             * @term
+             * 
+             * Remove nodes of type
+             */
+            $queries['terms'] = array(
+                'sql'=>"
+                    UPDATE 
+                         MCP_TERMS
+                       SET
+                         deleted = NULL
+                        ,deleted_on_timestamp = FROM_UNIXTIME(:ts1)
+                     WHERE
+                         deleted = 0
+                       AND
+                         vocabulary_id IN ($ids)
+                ",
+                'bind'=>array(
+                    ':ts1'=> $time
+                )
+            );
+            
+            /*
+             * @vocabulary
+             * 
+             * Remove node types
+             */
+            $queries['vocabularies'] = array(
+                'sql'=>"
+                    UPDATE
+                         MCP_VOCABULARY
+                       SET
+                         deleted = NULL
+                        ,deleted_on_timestamp = FROM_UNIXTIME(:ts1)
+                     WHERE
+                         deleted = 0
+                       AND
+                         vocabulary_id IN ($ids)
+                ",
+                'bind'=>array(
+                    ':ts1'=> $time
+                )
+            );
+            
+            
+            //$this->_objMCP->debug('<pre>'.print_r($queries,true).'</pre>');
+            //return;
+            
+            // begin transaction
+            $this->_objMCP->begin();
+            
+            try {
+                
+                // run each query
+                foreach($queries as &$query) {
+                    $this->_objMCP->query($query['sql'],$query['bind']);
+                }
+                
+                // commit the transaction
+                $this->_objMCP->commit();
+                
+            } catch(Exception $e) {
+                
+                // rollback the transaction
+                $this->_objMCP->rollback();
+                
+                // throw DAO exception
+                throw new MCPDAOException($e->getMessage());
+                
+            }
 		
 	}
 	

@@ -51,7 +51,7 @@ class MCPNodeListType extends MCPModule {
                             );
                             
                         } catch(MCPDAOException $e) {
-                            $mcp->_objMCP->addSystemErrorMessage(
+                            $mcp->addSystemErrorMessage(
                                     'An error has occurred attempting to delete content type. Please try again and contact an administrator if error continues.'
                                     ,$e->getMessage()
                             );                        
