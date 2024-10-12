@@ -7,4 +7,5 @@
 	<files>../mcp_files</files>
 	<pkg>.</pkg>
 	<ds>/</ds>
+        <installed>1</installed>
 </base>

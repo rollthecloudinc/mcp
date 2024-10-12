@@ -1,0 +1,37 @@
+# ignore all cached items #
+mcp_cache/images/*
+
+# ignore main config #
+mcp_config/Main.xml
+
+# ignore all platforms #
+mcp_root/PlatForm/*
+
+# ignore all sites #
+mcp_root/Site/*
+
+# ignore all files #
+mcp_files/images/*
+mcp_files/files
+mcp_files/audio
+mcp_files/video
+
+# ignore remote and reserve #
+remote
+reserve
+
+# ignore lib, jason_fugh and other #
+www/jason_fugh
+www/lib
+www/other
+
+#ignore ghost . files
+**/*.php
+**/*.txt
+**/._*
+
+# IDE files
+org.eclipse.*
+.jsdtscope
+.project
+.buildpath

@@ -263,81 +263,91 @@ class MCP {
 		*/
 		$objDBConfig = array_pop($this->_objXMLMain->xpath("//site[@id='{$this->getSitesId()}']/db"));
 		
-		/*
-		* Create database object and connect
-		* 
-		* Different adapters may be used by changing the adapter XML config value. The value
-		* should reflect the full path to the adpater. The adapter is required to implement
-		* MCPDB and extend MCPResource. This is required so all the adapters can be interchanged.
-		* Default adapters are stored inside App.Resource.DB. Custom adapters should not be placed
-		* here. Instead you should dedicate a pkg or site directory to them so they aren't lost
-		* when updating to new versions of MCP.
-		*/
-		$this->_objDB = $this->getInstance((string) $objDBConfig->adapter,array($this));
-		$this->_objDB->connect(
-			 (string) $objDBConfig->host
-			,(string) $objDBConfig->user
-			,(string) $objDBConfig->pass
-			,(string) $objDBConfig->db
-		);
+                if(INSTALLED) {
+                
+                    /*
+                    * Create database object and connect
+                    * 
+                    * Different adapters may be used by changing the adapter XML config value. The value
+                    * should reflect the full path to the adpater. The adapter is required to implement
+                    * MCPDB and extend MCPResource. This is required so all the adapters can be interchanged.
+                    * Default adapters are stored inside App.Resource.DB. Custom adapters should not be placed
+                    * here. Instead you should dedicate a pkg or site directory to them so they aren't lost
+                    * when updating to new versions of MCP.
+                    */
+                    $this->_objDB = $this->getInstance((string) $objDBConfig->adapter,array($this));
+                    $this->_objDB->connect(
+                             (string) $objDBConfig->host
+                            ,(string) $objDBConfig->user
+                            ,(string) $objDBConfig->pass
+                            ,(string) $objDBConfig->db
+                    );
+                
+                }
 		
 		/*
 		* Create MCP event handler
 		*/
 		$this->_objEventHandler = $this->getInstance('App.Resource.Event.EventHandler',array($this));
 		
-		/*
-		* Set the current site
-		*/
-		$this->_objSite = MCPSite::createInstance($this);
+                if(INSTALLED) {
+                    /*
+                    * Set the current site
+                    */
+                    $this->_objSite = MCPSite::createInstance($this);
+                }
 		
 		/*
 		* Initiate cookie manager - required for proper session handling
 		*/
 		$this->_objCookieManager = $this->getInstance('App.Resource.Cookie.CookieManager',array($this));
-		
-		/*
-		* Initiate cache handler
-		*/
-		$this->import('App.Resource.Cache.CacheHandler');
-		$this->_objCacheHandler = MCPCacheHandler::createInstance($this);
-		
-		/*
-		* Initiate session handler
-		*/
-		$this->import('App.Resource.Session.SessionHandler');
-		$this->_objSessionHandler = MCPSessionHandler::createInstance($this);
-		
-		/*
-		* Required for garbage collector to function appropriatly
-		*/
-		ini_set('session.gc_probability', 100);
-		ini_set('session.gc_divisor', 100);
+                
+                if(INSTALLED) {
+                    /*
+                    * Initiate cache handler
+                    */
+                    $this->import('App.Resource.Cache.CacheHandler');
+                    $this->_objCacheHandler = MCPCacheHandler::createInstance($this);
+
+                    /*
+                    * Initiate session handler
+                    */
+                    $this->import('App.Resource.Session.SessionHandler');
+                    $this->_objSessionHandler = MCPSessionHandler::createInstance($this);
+
+                    /*
+                    * Required for garbage collector to function appropriatly
+                    */
+                    ini_set('session.gc_probability', 100);
+                    ini_set('session.gc_divisor', 100);
+                }
 		
 		/*
 		* Begin session once session handler has been created
 		*/
 		session_start();
 		
-		/*
-		* Create config instance 
-		*/
-		$this->_objConfig = MCPConfig::createInstance($this);
+                if(INSTALLED) {
+                    /*
+                    * Create config instance 
+                    */
+                    $this->_objConfig = MCPConfig::createInstance($this);
 				
-		/*
-		* Create user instance
-		*/
-		$this->_objUser = MCPUser::createInstance($this);
+                    /*
+                    * Create user instance
+                    */
+                    $this->_objUser = MCPUser::createInstance($this);
 		
-		/*
-		* Create permission handler
-		*/
-		$this->_objPermissionHandler = $this->getInstance('App.Resource.Permission.PermissionManager',array($this));
-		
-		/*
-		* Create Template singleton
-		*/
-		$this->_objTemplate = MCPTemplate::createInstance($this);
+                    /*
+                    * Create permission handler
+                    */
+                    $this->_objPermissionHandler = $this->getInstance('App.Resource.Permission.PermissionManager',array($this));                
+                 }
+                
+                /*
+                 * Create Template singleton
+                 */
+                $this->_objTemplate = MCPTemplate::createInstance($this);
 		
 		/*
 		* Instatiate UI drawing library 
@@ -352,26 +362,30 @@ class MCP {
                 */
                 $this->_objUI->registerPath(ROOT.'/Component/Node/Theme');
 		
-		/*
-		* Assign default master template path
-		*/
-		//$this->_strMasterTemplatePath = 'Site'.DS.'*'.DS/*.'Template'.DS*/.'master.php';
-		$this->_strMasterTemplatePath = $this->getConfigValue('site_master_template');
-		
-		/*
-		* Assign default email master template path 
-		*/
-		$this->_strEmailHTMLMasterTemplatePath = $this->getConfigValue('site_email_html_master_template');
-		
-		/*
-		* Assign default email plain text master template path 
-		*/
-		$this->_strEmailPlainTextMasterTemplatePath = $this->getConfigValue('site_email_plain_text_master_template');
-		
+                if(INSTALLED) {
+                    /*
+                    * Assign default master template path
+                    */
+                    //$this->_strMasterTemplatePath = 'Site'.DS.'*'.DS/*.'Template'.DS*/.'master.php';
+                    $this->_strMasterTemplatePath = $this->getConfigValue('site_master_template');
+
+                    /*
+                    * Assign default email master template path 
+                    */
+                    $this->_strEmailHTMLMasterTemplatePath = $this->getConfigValue('site_email_html_master_template');
+
+                    /*
+                    * Assign default email plain text master template path 
+                    */
+                    $this->_strEmailPlainTextMasterTemplatePath = $this->getConfigValue('site_email_plain_text_master_template');
+                }
+                
 		/*
 		* Execute login
 		*/
-		$this->executeLogin();
+                if(INSTALLED) {
+                    $this->executeLogin();
+                }
 		
 	}
 	
@@ -1242,7 +1256,16 @@ class MCP {
 					
 					if(strcmp('default',$objConfig->getName()) == 0) {
 						$mixValue = str_replace(array('SITES_ID','USERS_ID'),array($this->getSitesId(),$this->getUsersId()),(string) $objConfig);
-					} else {
+                                        
+                                                
+                                        // nested children
+                                        } else if(strcmp('children',$objConfig->getName()) === 0) {
+                                            
+                                            $objNestedXml = simplexml_load_string("<?xml version=\"1.0\"?><mod>{$objConfig->asXml()}</mod>"); 
+                                            $mixValue = $this->getFrmConfig($objNestedXml,'children');
+                                            
+                                            
+                                        } else {
 						$mixValue = (string) $objConfig;
 					}
 					

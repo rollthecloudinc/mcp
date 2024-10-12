@@ -51,7 +51,9 @@ class MCPTemplate extends MCPResource {
                 /*
                 * Maybe not the best place but it will work. 
                 */
-                $this->_doctype = $this->_objMCP->getConfigValue('site_doctype');
+                if(INSTALLED) {
+                    $this->_doctype = $this->_objMCP->getConfigValue('site_doctype');
+                }
 	}
 	
 	/*

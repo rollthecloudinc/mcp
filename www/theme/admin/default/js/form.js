@@ -82,6 +82,8 @@ $(function() {
 			var input = $('input[name*="[action][delete]"]',clone).get(0);
 			input.name = input.name.replace(/\[[0-9]*\]/,'[' + count + ']');
 			input.id = input.id.replace(/-[0-9]*-/,'-' + (count + 1) + '-');
+                        
+                        alert('add');
 
 			$('input:not([type="submit"]):not([type="hidden"]):not(option),select,textarea',clone).each(function() {
                         

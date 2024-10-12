@@ -474,6 +474,27 @@ class MCPDAOField extends MCPDAO {
 				$values.= '<widget>'.$field['cfg_widget'].'</widget>';
 				
 			}
+                        
+                        /**
+                         * Add meta data for video fields
+                         */
+                        if(strcasecmp($field['cfg_media'],'video') === 0) {
+                            $values.= 
+                                '<children>
+                                    <codec>
+                                        <type>select</type>
+                                        <label>Codec</label>
+                                        <widget>select</widget>
+                                        <sql>SELECT codecs_id value, codecs_id label FROM MCP_ENUM_VIDEO_CODECS</sql>
+                                    </codec>
+                                    <container>
+                                        <type>select</type>
+                                        <label>Container</label>
+                                        <widget>select</widget>
+                                        <sql>SELECT containers_id value, ext label FROM MCP_ENUM_VIDEO_CONTAINERS</sql>
+                                    </container>
+                                 </children>';
+                        }
 			
 			/*
 			* ---------------------------------------------------------------------------------------
@@ -558,7 +579,7 @@ class MCPDAOField extends MCPDAO {
 						      			<arg>username ASC</arg>
 						         	</args>
 							 </dao>';
-						break;				
+						break;	
 						
 					default:
 				}
@@ -658,7 +679,7 @@ class MCPDAOField extends MCPDAO {
                 
                 /*$cfg = $this->_objMCP->getFrmConfig($xml,'frm');
                 echo '<pre>'.print_r($cfg,true).'</pre>';
-                exit;*/
+                exit;
 		
 		/*
 		* Convert to config 
