@@ -270,6 +270,8 @@ class MCPNodeFormEntry extends MCPModule {
 		if( $this->_arrCachedFrmConfig !== null ) {
 			return $this->_arrCachedFrmConfig;
 		}
+                
+                
 		
 		/*
 		* get current node 
@@ -333,7 +335,7 @@ class MCPNodeFormEntry extends MCPModule {
 		*/
 		$this->_arrCachedFrmConfig = $config;
                 
-                // $this->_objMCP->debug($config);
+                $this->_objMCP->debug($config);
                 
                 // $this->debug($this->_arrCachedFrmConfig); exit;
 		

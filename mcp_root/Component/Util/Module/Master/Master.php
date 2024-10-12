@@ -35,6 +35,9 @@ class MCPUtilMaster extends MCPModule {
 				
 			case 'public.php':
 				return $this->_executePublicRequest();
+                            
+			case 'install.php':
+				return $this->_executeInstallRequest();
 			
 			default:
 				return $this->_executeIndex();
@@ -676,6 +679,19 @@ class MCPUtilMaster extends MCPModule {
 		return str_replace(ROOT,'',$this->getTemplatePath()).'/Public/Public.php';
 		
 	}
+        
+        /**
+         * Install cms.
+         */
+        protected function _executeInstallRequest() {
+            
+            //echo 'hi'; exit;
+            
+            //$this->_objMCP->assign('REQUEST_CONTENT',$this->_objMCP->executeComponent("Component.Util.Module.Install"));
+            
+            return '/Component/Util/Template/Master/Install/Install.php';
+            
+        }
 	
 }
 ?>

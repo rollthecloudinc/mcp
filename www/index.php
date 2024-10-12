@@ -1,4 +1,6 @@
 <?php
+error_reporting(E_ALL);
+
 // load base XML file to determine path to config and app root directories
 $objBaseXML = simplexml_load_file('base.xml');
 
@@ -30,6 +32,9 @@ define('CACHE',WWW.DS.$objBaseXML->cache);
 
 // absolute files path
 define('FILES',WWW.DS.$objBaseXML->files);
+
+// install flag
+define('INSTALLED',(bool) ((string) $objBaseXML->installed));
 
 require_once(ROOT.DS.'App'.DS.'Lib'.DS.'Console'.DS.'Console.php');
 require_once(ROOT.DS.'App'.DS.'Lib'.DS.'Import'.DS.'Import.php');

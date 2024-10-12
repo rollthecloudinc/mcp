@@ -380,7 +380,9 @@ class Form implements \UI\Element {
 						
                                             
                                                 $element.= $ui->draw('Common.Form.Video',array(
-                                                    'base_name'=>sprintf('%s[%s]%s',$name,$field,(isset($data['multi'])?"[$i]":''))
+                                                    'base_name'=>sprintf('%s[%s]%s',$name,$field,(isset($data['multi'])?"[$i][0]":'[0]')),
+                                                    'codec'=> $data['children']['codec'],
+                                                    'container'=> $data['children']['container']
                                                 ));
                                             
 					} else {

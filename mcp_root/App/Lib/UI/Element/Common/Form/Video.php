@@ -7,6 +7,12 @@ class Video implements \UI\Element {
         return array( 
                'base_name'=>array(
                    'required'=>true
+               ),
+               'codec'=> array(
+                   'required'=> true
+               ),
+               'container'=> array(
+                   'required'=> true
                )
         );
     }
@@ -57,12 +63,7 @@ class Video implements \UI\Element {
             'name'=>$base_name.'[codec]'
             ,'id'=>'xxx'
             ,'data'=>array(
-                'values'=>array(
-                     array('values'=>'','label'=>'Pick Codec')
-                    ,array('value'=>'1','label'=>'One')
-                    ,array('value'=>'2','label'=>'Two')
-                    ,array('value'=>'3','label'=>'Three')
-                )
+                'values'=> $codec['values']
             )
             ,'value'=>''
         ));
@@ -82,12 +83,7 @@ class Video implements \UI\Element {
             'name'=>$base_name.'[container]'
             ,'id'=>'xxxccc'
             ,'data'=>array(
-                'values'=>array(
-                     array('values'=>'','label'=>'Pick Format')
-                    ,array('value'=>'1','label'=>'One')
-                    ,array('value'=>'2','label'=>'Two')
-                    ,array('value'=>'3','label'=>'Three')
-                )
+                'values'=> $container['values']
             )
             ,'value'=>''
         ));
